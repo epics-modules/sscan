@@ -6,6 +6,7 @@ menu(sscanDSTATE) {
 	choice(sscanDSTATE_UNPACKED, "UNPACKED")
 	choice(sscanDSTATE_TRIG_ARRAY_READ, "TRIG_ARRAY_READ")
 	choice(sscanDSTATE_ARRAY_READ_WAIT, "ARRAY_READ_WAIT")
+	choice(sscanDSTATE_RECORD_ARRAY_DATA, "RECORD_ARRAY_DATA")
 	choice(sscanDSTATE_SAVE_DATA_WAIT, "SAVE_DATA_WAIT")
 	choice(sscanDSTATE_PACKED, "PACKED")
 	choice(sscanDSTATE_POSTED, "POSTED")
@@ -74,6 +75,7 @@ menu(sscanFAZE) {
 	choice(sscanFAZE_TRIG_ARRAY_READ,"TRIG_ARRAY_READ")
 	choice(sscanFAZE_ARRAY_READ_WAIT,"WAIT:ARRAY_READ")
 	choice(sscanFAZE_PREVIEW,"PREVIEW")
+	choice(sscanFAZE_RECORD_SCALAR_DATA,"RECORD SCALAR DATA")
 }
 menu(sscanACQM) {
 	choice(sscanACQM_NORMAL,"NORMAL")

@@ -18,6 +18,7 @@ typedef struct recDynLink{
 	void	*pdynLinkPvt;
 	short	status;
 	short	onQueue;
+	short	getCallbackInProgress;
 } recDynLink;
 typedef void (*recDynCallback)(recDynLink *);
 
@@ -48,9 +49,9 @@ epicsShareFunc long epicsShareAPI recDynLinkGetPrecision(recDynLink *precDynLink
 epicsShareFunc long epicsShareAPI recDynLinkGetUnits(recDynLink *precDynLink,char *units,int maxlen);
 
 /*get only valid mfor rdlINPUT. put only valid for rdlOUTPUT*/
-epicsShareFunc long epicsShareAPI recDynLinkGet(recDynLink *precDynLink,
-	void *pbuffer, size_t *nRequest,
+epicsShareFunc long epicsShareAPI recDynLinkGet(recDynLink *precDynLink, void *pbuffer, size_t *nRequest,
 	TS_STAMP *timestamp,short *status,short *severity);
+long epicsShareAPI recDynLinkGetCallback(recDynLink *precDynLink, size_t *nRequest, recDynCallback userGetCallback);
 epicsShareFunc long epicsShareAPI recDynLinkPut(recDynLink *precDynLink,void *pbuffer,size_t nRequest);
 epicsShareFunc long epicsShareAPI recDynLinkPutCallback(recDynLink *precDynLink,void *pbuffer,size_t nRequest, recDynCallback notifyCallback);
 
