@@ -185,6 +185,7 @@ long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	precDynLink->onQueue++;
 	if (epicsMessageQueueTrySend(recDynLinkInpMsgQ, (void *)&cmd, sizeof(cmd))) {
 		errMessage(0,"recDynLinkAddInput: epicsMessageQueueTrySend error");
+		precDynLink->onQueue--;
 	}
 	return(0);
 }
@@ -232,7 +233,7 @@ long epicsShareAPI recDynLinkClear(recDynLink *precDynLink)
 	dynLinkPvt	*pdynLinkPvt;
 	msgQCmd	cmd;
 
-	DEBUG(10,"recDynLinkAddOutput: precDynLink=%p\n", precDynLink);
+	DEBUG(10,"recDynLinkClear: precDynLink=%p\n", precDynLink);
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
 	if (!pdynLinkPvt) {
 		printf("recDynLinkClear: recDynLinkSearch was never called\n");
