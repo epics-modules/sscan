@@ -146,7 +146,7 @@ LOCAL void notifyCallback(struct event_handler_args eha);
 LOCAL void recDynLinkInp(void);
 LOCAL void recDynLinkOut(void);
 
-long recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
+long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	short dbrType,int options,
 	recDynCallback searchCallback,recDynCallback monitorCallback)
 {
@@ -179,7 +179,7 @@ long recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	return(0);
 }
 
-long recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
+long epicsShareAPI recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 	short dbrType, int options, recDynCallback searchCallback)
 {
 	dynLinkPvt		*pdynLinkPvt;
@@ -211,7 +211,7 @@ long recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 	return(0);
 }
 
-long recDynLinkClear(recDynLink *precDynLink)
+long epicsShareAPI recDynLinkClear(recDynLink *precDynLink)
 {
 	dynLinkPvt	*pdynLinkPvt;
 	msgQCmd	cmd;
@@ -238,7 +238,7 @@ long recDynLinkClear(recDynLink *precDynLink)
 	return(0);
 }
 
-long recDynLinkConnectionStatus(recDynLink *precDynLink)
+long epicsShareAPI recDynLinkConnectionStatus(recDynLink *precDynLink)
 {
 	dynLinkPvt	*pdynLinkPvt;
 	long		status;
@@ -248,7 +248,7 @@ long recDynLinkConnectionStatus(recDynLink *precDynLink)
 	return(status);
 }
 
-long recDynLinkGetNelem(recDynLink *precDynLink,size_t *nelem)
+long epicsShareAPI recDynLinkGetNelem(recDynLink *precDynLink,size_t *nelem)
 {
 	dynLinkPvt  *pdynLinkPvt;
 
@@ -258,7 +258,7 @@ long recDynLinkGetNelem(recDynLink *precDynLink,size_t *nelem)
 	return(0);
 }
 
-long recDynLinkGetControlLimits(recDynLink *precDynLink,
+long epicsShareAPI recDynLinkGetControlLimits(recDynLink *precDynLink,
 	double *low,double *high)
 {
 	dynLinkPvt	*pdynLinkPvt;
@@ -270,7 +270,7 @@ long recDynLinkGetControlLimits(recDynLink *precDynLink,
 	return(0);
 }
 
-long recDynLinkGetGraphicLimits(recDynLink *precDynLink,
+long epicsShareAPI recDynLinkGetGraphicLimits(recDynLink *precDynLink,
 	double *low,double *high)
 {
 	dynLinkPvt	*pdynLinkPvt;
@@ -282,7 +282,7 @@ long recDynLinkGetGraphicLimits(recDynLink *precDynLink,
 	return(0);
 }
 
-long recDynLinkGetPrecision(recDynLink *precDynLink,int *prec)
+long epicsShareAPI recDynLinkGetPrecision(recDynLink *precDynLink,int *prec)
 {
 	dynLinkPvt	*pdynLinkPvt;
 
@@ -292,7 +292,7 @@ long recDynLinkGetPrecision(recDynLink *precDynLink,int *prec)
 	return(0);
 }
 
-long recDynLinkGetUnits(recDynLink *precDynLink,char *units,int maxlen)
+long epicsShareAPI recDynLinkGetUnits(recDynLink *precDynLink,char *units,int maxlen)
 {
 	dynLinkPvt	*pdynLinkPvt;
     int			maxToCopy;
@@ -306,7 +306,7 @@ long recDynLinkGetUnits(recDynLink *precDynLink,char *units,int maxlen)
 	return(0);
 }
 
-long recDynLinkGet(recDynLink *precDynLink,void *pbuffer,size_t *nRequest,
+long epicsShareAPI recDynLinkGet(recDynLink *precDynLink,void *pbuffer,size_t *nRequest,
 	TS_STAMP *timestamp,short *status,short *severity)
 {
 	dynLinkPvt	*pdynLinkPvt;
@@ -332,12 +332,12 @@ all_done:
 }
 
 /* for backward compatibility with recDynLink in base */
-long recDynLinkPut(recDynLink *precDynLink,void *pbuffer,size_t nRequest)
+long epicsShareAPI recDynLinkPut(recDynLink *precDynLink,void *pbuffer,size_t nRequest)
 {
 	return(recDynLinkPutCallback(precDynLink, pbuffer, nRequest, NULL));
 }
 
-long recDynLinkPutCallback(recDynLink *precDynLink,void *pbuffer,size_t nRequest,
+long epicsShareAPI recDynLinkPutCallback(recDynLink *precDynLink,void *pbuffer,size_t nRequest,
 	recDynCallback notifyCallback)
 {
 	dynLinkPvt	*pdynLinkPvt;

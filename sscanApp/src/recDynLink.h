@@ -27,30 +27,30 @@ typedef void (*recDynCallback)(recDynLink *);
 #define rdlDBONLY	0x1
 #define rdlSCALAR	0x2
 
-long recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
+epicsShareFunc long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	short dbrType,int options,
 	recDynCallback searchCallback,recDynCallback monitorCallback);
-long recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
+epicsShareFunc long epicsShareAPI recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 	short dbrType,int options, recDynCallback searchCallback);
-long recDynLinkClear(recDynLink *precDynLink);
+epicsShareFunc long epicsShareAPI recDynLinkClear(recDynLink *precDynLink);
 /*The following routine returns (0,-1) for (connected,not connected)*/
-long recDynLinkConnectionStatus(recDynLink *precDynLink);
+epicsShareFunc long epicsShareAPI recDynLinkConnectionStatus(recDynLink *precDynLink);
 /*thye following routine returns (0,-1) if (connected,not connected)*/
-long recDynLinkGetNelem(recDynLink *precDynLink,size_t *nelem);
+epicsShareFunc long epicsShareAPI recDynLinkGetNelem(recDynLink *precDynLink,size_t *nelem);
 /*The following 4 routines return (0,-1) if data (is, is not) yet available*/
 /*searchCallback is not called until this info is available*/
-long recDynLinkGetControlLimits(recDynLink *precDynLink,
+epicsShareFunc long epicsShareAPI recDynLinkGetControlLimits(recDynLink *precDynLink,
 	double *low,double *high);
-long recDynLinkGetGraphicLimits(recDynLink *precDynLink,
+epicsShareFunc long epicsShareAPI recDynLinkGetGraphicLimits(recDynLink *precDynLink,
 	double *low,double *high);
-long recDynLinkGetPrecision(recDynLink *precDynLink,int *prec);
-long recDynLinkGetUnits(recDynLink *precDynLink,char *units,int maxlen);
+epicsShareFunc long epicsShareAPI recDynLinkGetPrecision(recDynLink *precDynLink,int *prec);
+epicsShareFunc long epicsShareAPI recDynLinkGetUnits(recDynLink *precDynLink,char *units,int maxlen);
 
 /*get only valid mfor rdlINPUT. put only valid for rdlOUTPUT*/
-long recDynLinkGet(recDynLink *precDynLink,
+epicsShareFunc long epicsShareAPI recDynLinkGet(recDynLink *precDynLink,
 	void *pbuffer, size_t *nRequest,
 	TS_STAMP *timestamp,short *status,short *severity);
-long recDynLinkPut(recDynLink *precDynLink,void *pbuffer,size_t nRequest);
-long recDynLinkPutCallback(recDynLink *precDynLink,void *pbuffer,size_t nRequest, recDynCallback notifyCallback);
+epicsShareFunc long epicsShareAPI recDynLinkPut(recDynLink *precDynLink,void *pbuffer,size_t nRequest);
+epicsShareFunc long epicsShareAPI recDynLinkPutCallback(recDynLink *precDynLink,void *pbuffer,size_t nRequest, recDynCallback notifyCallback);
 
 #endif /*INCrecDynLinkh*/
