@@ -1868,6 +1868,14 @@ would get last scan's data.</td></tr>
 the callback is still outstanding.   <br>If a client should read an array now,
 it would get last scan's data.</td></tr>
 
+<tr><td>2</td><td>ARRAY_GET_CALLBACK_WAIT</td><td>recDynLinkGetCallback() has been
+issued for array-valued PV's, and one or more callbacks are still outstanding.
+</td></tr>
+
+<tr><td>3</td><td>RECORD_ARRAY_DATA</td><td>It's time to read array data.  If
+any array-valued PV's exist, the data state will change to
+ARRAY_GET_CALLBACK_WAIT while waiting for the callbacks.</td></tr>
+
 <tr><td>3</td><td>SAVE_DATA_WAIT</td><td>Arrays are filled, but cannot be
 posted yet because the data-storage client is not finished writing last scan's
 data.   <br>If a client should read an array now, it would get last scan's

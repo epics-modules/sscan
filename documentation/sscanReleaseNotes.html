@@ -64,6 +64,10 @@ updated when sscanRecord menu fields were modified.  In particular,
 scanParm*.db and alignParms.db used to specify "Relative" positioning, while
 the sscan record accepted only "RELATIVE" or "ABSOLUTE".
 
+<li>The sscan record now issues recDynLinkGetCallback() for each positioner and
+detector PV, and waits for the callback before using the PV value that was cached
+by recDynLink. 
+
 <li>Added recDynLinkGetCallback() to recDynLink library.  Also fixed some bugs.  
 
 <li><a href="cvsLog.txt">cvs log</a>
