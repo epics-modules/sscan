@@ -1,12 +1,12 @@
 
 file {
-	name="C:\Program Files\EPICS WIN32 Extensions\synApps_4_6_adl\scanParms2Pos.adl"
-	version=020306
+	name="/home/oxygen4/MOONEY/epics/synApps_5_1/support/sscan/cvs/sscanApp/op/adl/scanParms2Pos.adl"
+	version=030004
 }
 display {
 	object {
-		x=620
-		y=674
+		x=489
+		y=251
 		width=470
 		height=105
 	}
@@ -95,7 +95,7 @@ display {
 		height=13
 	}
 	monitor {
-		chan="$(P)$(PV1).DESC"
+		chan="$(PV1).DESC"
 		clr=54
 		bclr=0
 	}
@@ -224,7 +224,7 @@ text {
 		height=10
 	}
 	monitor {
-		chan="$(P)$(PV1).NAME"
+		chan="$(PV1).NAME"
 		clr=54
 		bclr=3
 	}
@@ -251,7 +251,7 @@ text {
 		height=10
 	}
 	monitor {
-		chan="$(P)$(PV1).EGU"
+		chan="$(PV1).EGU"
 		clr=54
 		bclr=3
 	}
@@ -291,7 +291,7 @@ menu {
 		height=13
 	}
 	monitor {
-		chan="$(P)$(PV2).DESC"
+		chan="$(PV2).DESC"
 		clr=54
 		bclr=0
 	}
@@ -353,7 +353,7 @@ menu {
 		height=10
 	}
 	monitor {
-		chan="$(P)$(PV2).NAME"
+		chan="$(PV2).NAME"
 		clr=54
 		bclr=3
 	}
@@ -380,7 +380,7 @@ text {
 		height=10
 	}
 	monitor {
-		chan="$(P)$(PV2).EGU"
+		chan="$(PV2).EGU"
 		clr=54
 		bclr=3
 	}
@@ -482,22 +482,6 @@ text {
 	label="Abort"
 	press_msg="1"
 }
-"text update" {
-	object {
-		x=0
-		y=0
-		width=130
-		height=13
-	}
-	monitor {
-		chan="$(P)scanActive.VAL"
-		clr=54
-		bclr=3
-	}
-	align="horiz. centered"
-	limits {
-	}
-}
 text {
 	object {
 		x=380
@@ -509,5 +493,41 @@ text {
 		clr=14
 	}
 	textix="Abs/Rel"
+	align="horiz. centered"
+}
+text {
+	object {
+		x=0
+		y=0
+		width=130
+		height=13
+	}
+	"basic attribute" {
+		clr=54
+	}
+	"dynamic attribute" {
+		vis="calc"
+		calc="A==1"
+		chan="$(SCAN).BUSY"
+	}
+	textix="RUNNING..."
+	align="horiz. centered"
+}
+text {
+	object {
+		x=0
+		y=0
+		width=130
+		height=13
+	}
+	"basic attribute" {
+		clr=54
+	}
+	"dynamic attribute" {
+		vis="calc"
+		calc="A==0"
+		chan="$(SCAN).BUSY"
+	}
+	textix="DONE"
 	align="horiz. centered"
 }
