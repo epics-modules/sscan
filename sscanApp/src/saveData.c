@@ -102,10 +102,16 @@
  *                    <sscanRecord>.AWAIT when <sscanRecord>.DATA goes to 1, and 0
  *                    when the data have been written.
  *     07-08-04  tmm  v1.20 Merged 3.13 array/AWAIT into 3.14 versions
+ *     02-16-05  tmm  v1.21 Run on Linux and Solaris ioc's.  ca_add_event()
+ *                    apparently does not return an event id; replaced calls that require this
+ *                    with calls to ca_add_subscription().  If not vxWorks, then
+ *                    we don't do file-system mounting (we let system admin do it)
+ *                    This means we always use server path, rather than local path
+ *                    relative to a locally defined mount point.
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.20.0"
+#define SAVE_DATA_VERSION   "1.21.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -798,7 +804,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.15 2005-02-16 22:01:23 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.16 2005-02-16 22:09:35 mooney Exp $\n");
 }
 
 void saveData_Info() {
