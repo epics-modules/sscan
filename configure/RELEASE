@@ -8,7 +8,7 @@ TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 #SNCSEQ=/home/oxygen/MOONEY/epics/synApps_4_6/support/seq
 
 # EPICS_BASE usually appears last so other apps can override stuff:
-EPICS_BASE=/corvette/usr/local/epics/base-3.14.5
+EPICS_BASE=$(GATEWAY)/epics/base-3.14.7
 
 #Capfast users may need the following definitions
 #CAPFAST_TEMPLATES=
