@@ -1,21 +1,4 @@
-menu(scanparmSM) {
-	choice(scanparmSM_Linear,"Linear")
-	choice(scanparmSM_Table,"Table")
-	choice(scanparmSM_On_The_Fly,"On-The-Fly")
-}
-menu(scanparmAR) {
-	choice(scanparmAR_Absolute,"Absolute")
-	choice(scanparmAR_Relative,"Relative")
-}
-menu(scanparmAFT) {
-	choice(scanparmAFT_Stay,"STAY")
-	choice(scanparmAFT_Start_Pos,"START POS")
-	choice(scanparmAFT_Prior_Pos,"PRIOR POS")
-	choice(scanparmAFT_Peak_Pos,"PEAK POS")
-	choice(scanparmAFT_Valley_Pos,"VALLEY POS")
-	choice(scanparmAFT_RisingEdge_Pos,"+EDGE POS")
-	choice(scanparmAFT_FallingEdge_Pos,"-EDGE POS")
-}
+include "sscanMenu.dbd" 
 recordtype(scanparm) {
 	include "dbCommon.dbd" 
 	field(VERS,DBF_FLOAT) {
@@ -47,7 +30,7 @@ recordtype(scanparm) {
 		prompt("StepMode")
 		promptgroup(GUI_COMMON)
 		interest(1)
-		menu(scanparmSM)
+		menu(sscanP1SM)
 	}
 	field(OSM,DBF_OUTLINK) {
 		prompt("SM OutLink")
@@ -59,7 +42,7 @@ recordtype(scanparm) {
 		prompt("absRel")
 		promptgroup(GUI_COMMON)
 		interest(1)
-		menu(scanparmAR)
+		menu(sscanP1AR)
 	}
 	field(OAR,DBF_OUTLINK) {
 		prompt("AR OutLink")
@@ -71,7 +54,7 @@ recordtype(scanparm) {
 		prompt("After")
 		promptgroup(GUI_COMMON)
 		interest(1)
-		menu(scanparmAFT)
+		menu(sscanPASM)
 	}
 	field(OAFT,DBF_OUTLINK) {
 		prompt("AFT OutLink")
@@ -151,7 +134,7 @@ recordtype(scanparm) {
 		special(SPC_NOMOD)
 		interest(1)
 	}
-	field(NP,DBF_SHORT) {
+	field(NP,DBF_LONG) {
 		prompt("nPts")
 		promptgroup(GUI_DISPLAY)
 		pp(TRUE)
@@ -186,7 +169,7 @@ recordtype(scanparm) {
 		special(SPC_NOMOD)
 		interest(1)
 	}
-	field(MP,DBF_SHORT) {
+	field(MP,DBF_LONG) {
 		prompt("MaxPts")
 		special(SPC_NOMOD)
 		interest(1)
@@ -214,10 +197,22 @@ recordtype(scanparm) {
 		pp(TRUE)
 		interest(1)
 	}
+	field(OLOAD,DBF_OUTLINK) {
+		prompt("LOAD OutLink")
+		promptgroup(GUI_COMMON)
+		special(SPC_NOMOD)
+		interest(1)
+	}
 	field(GO,DBF_SHORT) {
 		prompt("Go")
 		promptgroup(GUI_DISPLAY)
 		pp(TRUE)
+		interest(1)
+	}
+	field(OGO,DBF_OUTLINK) {
+		prompt("GO OutLink")
+		promptgroup(GUI_COMMON)
+		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(STEP,DBF_DOUBLE) {
