@@ -209,9 +209,17 @@
  * 5.19 07-10-03  rls   Bug fix for NUM_DET not matching 70 detectors in *.dbd file.
  * 5.20 07-08-04  tmm   Merged 3.13.x-compatible 5.18, with AWAIT and array read,
  *                      with 3.14.x-compatible 5.19, into 3.14.6-compatible 5.20
+ * 5.21 08-18-04  tmm   get enum strings; FLNK if scan fails, so ca_put_callback() completes;
+ *                      call scanOnce() from special if we're waiting for saveData and AWAIT==0;
+ *                      if limit trouble stops scan, hang instead of declaring done.
+ * 5.22 10-13-04  tmm   Use ca_get_callback() to acquire data.  Previously, the sscan record
+ *                      relied on monitors coming in before the callback resulting from a
+ *                      ca_put_callback -- whose processing triggered the monitors.  This was
+ *                      almost always ok, but CA buffer overruns and TCP retries could result
+ *                      in the sscan record acquiring stale data.
  */
 
-#define VERSION 5.20
+#define VERSION 5.22
 
 
 #include <stddef.h>
