@@ -9,7 +9,7 @@ grecord(scanparm,"$(P)$(Q):alignParms") {
 	field(PRE,"4")
 	field(OPRE,"$(P)$(Q):alignPre.A  PP MS")
 	field(OSM,"$(SCANREC).P1SM  CA NMS")
-	field(AR,"Relative")
+	field(AR,"RELATIVE")
 	field(OAR,"$(SCANREC).P1AR  CA NMS")
 	field(AFT,"$(AFTER)")
 	field(OAFT,"$(SCANREC).PASM  CA NMS")
