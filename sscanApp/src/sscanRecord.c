@@ -235,6 +235,12 @@
  *                      data-storage client even if it doesn't wait for anything else, to
  *                      abandon even that caution if user insists, and to show user where it
  *                      is in the process.
+ * 5.26 02-25-05  tmm   Before-scan link didn't work right in NoWait case.
+ * 5.27 03-11-05  tmm   ExportAddress for volatile variables.  Check for npts <=0 in
+ *                      init_record.  Reject illegal npts in special().  ajdLinParms() now
+ *                      checks that step-increment agrees with overall scan direction.
+ *                      Freeze flags for start, end, and width are ignored in this check.
+ *                      Probably should consider deleting all the freeze-flag stuff.
  */
 
 #define VERSION 5.25
@@ -585,10 +591,14 @@ static void		savePosParms(sscanRecord * psscan, unsigned short i);
 static void		zeroPosParms(sscanRecord * psscan, unsigned short i);
 
 /* variables ... */
-volatile long	sscanRecordDebug = 0;
-volatile long	sscanRecordViewPos = 0;
-volatile long	sscanRecordDontCheckLimits = 0;
-volatile unsigned long sscanRecordLookupTime = 1;
+volatile int	sscanRecordDebug = 0;
+epicsExportAddress(int, sscanRecordDebug);
+volatile int	sscanRecordViewPos = 0;
+epicsExportAddress(int, sscanRecordViewPos);
+volatile int	sscanRecordDontCheckLimits = 0;
+epicsExportAddress(int, sscanRecordDontCheckLimits);
+volatile int	sscanRecordLookupTime = 1;
+epicsExportAddress(int, sscanRecordLookupTime);
 
 
 static int isBlank(char *name)
@@ -742,9 +752,10 @@ init_record(sscanRecord *psscan, int pass)
 
 		return (0);
 	}
-	/* Make sure npts <= mpts */
+	/* Make sure npts is reasonable */
 	if (psscan->npts > psscan->mpts) psscan->npts = psscan->mpts;
-	
+	if (psscan->npts <= 0) psscan->npts = 1;
+
 	callbackSetCallback(doPuts, &precPvt->doPutsCallback);
 	callbackSetPriority(psscan->prio, &precPvt->doPutsCallback);
 	callbackSetUser((void *)psscan, &precPvt->doPutsCallback);
@@ -1090,6 +1101,11 @@ special(struct dbAddr *paddr, int after)
 				break;
 			default:
 				break;
+			}
+		} else if (special_type == SPC_SC_N) {
+			/* Reject illegal npts values */
+			if ((psscan->npts > psscan->mpts) || (psscan->npts < 1)) {
+				return(-1);
 			}
 		}
 		return (0);
@@ -3408,6 +3424,34 @@ doPuts(CALLBACK *pCB)
 
 	switch ((int)psscan->faze) {
 
+	case sscanFAZE_BEFORE_SCAN:
+		if (sscanRecordDebug >= 5)
+			printf("%s:BEFORE_SCAN Link\n", psscan->name);
+		if (psscan->bsnv == OK) {
+			if (psscan->bswait == sscanLINKWAIT_YES) {
+				psscan->faze = sscanFAZE_BEFORE_SCAN_WAIT; POST(&psscan->faze);
+				precPvt->numPositionerCallbacks++;
+				status = recDynLinkPutCallback(&precPvt->caLinkStruct[BS_OUT],
+						&(psscan->bscd), 1, notifyCallback);
+				if (status) precPvt->numPositionerCallbacks--;
+				if (status == NOTIFY_IN_PROGRESS) {
+					psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
+					sprintf(psscan->smsg, "Before-scan link is busy");
+					POST(&psscan->smsg);
+				}
+			} else {
+				status = recDynLinkPut(&precPvt->caLinkStruct[BS_OUT],
+						&(psscan->bscd), 1);
+			}
+		}
+		if (psscan->faze == sscanFAZE_BEFORE_SCAN_WAIT) {
+			/* wait for callback */
+			break;
+		} else {
+			/* Fall through to MOVE_MOTORS if we didn't do a putCallback. */
+			psscan->faze = sscanFAZE_MOVE_MOTORS;
+		}
+
 	case sscanFAZE_START_FLY:
 	case sscanFAZE_MOVE_MOTORS:
 		if (sscanRecordDebug >= 5) {
@@ -3500,30 +3544,6 @@ doPuts(CALLBACK *pCB)
 				}
 			}
 		}
-		break;
-
-	case sscanFAZE_BEFORE_SCAN:
-		if (sscanRecordDebug >= 5)
-			printf("%s:BEFORE_SCAN Link\n", psscan->name);
-		if (psscan->bsnv == OK) {
-			psscan->faze = sscanFAZE_BEFORE_SCAN_WAIT; POST(&psscan->faze);
-			if (psscan->bswait == sscanLINKWAIT_YES) {
-				psscan->faze = sscanFAZE_BEFORE_SCAN_WAIT; POST(&psscan->faze);
-				precPvt->numPositionerCallbacks++;
-				status = recDynLinkPutCallback(&precPvt->caLinkStruct[BS_OUT],
-						&(psscan->bscd), 1, notifyCallback);
-				if (status) precPvt->numPositionerCallbacks--;
-				if (status == NOTIFY_IN_PROGRESS) {
-					psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
-					sprintf(psscan->smsg, "Before-scan link is busy");
-					POST(&psscan->smsg);
-				}
-			} else {
-				status = recDynLinkPut(&precPvt->caLinkStruct[BS_OUT],
-						&(psscan->bscd), 1);
-			}
-		}
-		/* Leave the phase at BEFORE_SCAN if we didn't do a putCallback. */
 		break;
 
 	case sscanFAZE_RETRACE_MOVE:
@@ -3747,6 +3767,20 @@ adjLinParms(paddr)
 			if (fabs(pParms->p_si) <= DBL_EPSILON) {
 				psscan->npts = psscan->mpts;
 			} else {
+				if ((pParms->p_si < 0) != (pParms->p_ep < pParms->p_sp)) {
+					if (sscanRecordDebug >= 2) printf("%s:Positioner %d; step dir != scan dir\n", psscan->name, i);
+					/* step increment goes one way, end-start goes the other */ 
+					if (!pParms->p_fe && !pParms->p_fs && !pParms->p_fw) {
+						/* swap start and end */
+						double t = pParms->p_ep;
+						pParms->p_ep = pParms->p_sp; POST(&pParms->p_ep);
+						pParms->p_sp = t; POST(&pParms->p_sp);
+						pParms->p_wd = pParms->p_ep - pParms->p_sp; POST(&pParms->p_wd);
+					} else {
+						pParms->p_si = (pParms->p_ep - pParms->p_sp) / MAX(1,(psscan->npts - 1));
+						POST(&pParms->p_si);
+					}
+				}
 				psscan->npts = ((pParms->p_ep - pParms->p_sp) / pParms->p_si) + 1;
 			}
 			if (psscan->npts > psscan->mpts) {
