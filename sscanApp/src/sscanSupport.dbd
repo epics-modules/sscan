@@ -17,7 +17,3 @@ include "sscanRecord.dbd"
 ################
 # OTHER SUPPORT
 ################
-registrar(saveDataRegistrar)
-variable(debug_saveData, int)
-variable(debug_saveDataMsg, int)
-variable(saveData_MessagePolicy, int)
