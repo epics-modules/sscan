@@ -166,7 +166,6 @@ recordtype(sscan) {
 	field(AWAIT, DBF_SHORT) {
 		prompt("Waiting for data-storage client")
 		special(SPC_MOD)
-		pp(TRUE)
 	}
 	field(AAWAIT, DBF_MENU) {
 		prompt("AutoWait for data-storage client")
