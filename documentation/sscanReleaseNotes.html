@@ -1,0 +1,56 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<title>sscanReleaseNotes</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<h1 align="center">sscan Release Notes</h1>
+
+<h2 align="center">Release 2-3</h2>
+
+<p align="left">This is the first release of the synApps sscan module.
+Version numbering for this module begins with 2.3 because this module
+was split from version 2.2 of the std module, and I wanted to retain
+the CVS histories of module contents.</p>
+
+This version is intended to build with EPICS base 3.14.5.
+
+Differences from software as previously released in std 2.2:
+<ul>
+<li><p>Converted to EPICS 3.14.  Currently saveData runs on vxWorks only. 
+<li><p>Docs updated and moved to sscan/documentation
+<li><p>saveData - added iocsh support; changed number
+of data points from short to long int, to support
+very large scans.  The data file format is unchanged, however,
+because the number of points was already being written as a four-byte
+quantity.
+<li><p>sscanRecord - Number of points in a scan is essentially limited only by
+available memory.  save-restored value of NPTS is now checked against MPTS.
+Array mode (ACQT="1D ARRAY") was broken.  (The change from ACQM="ARRAYS" to
+ACQT="1D ARRAY" wasn't done correctly.)
+<p>Previously, the sscan record's response to an abort request (.EXSC=0) while
+no scan was in progress (.BUSY==0) was to return nonzero from special(), and
+EPICS tolerated this without comment.  Now it signals an error to the client.
+But we don't (always?) want this action to be regarded as an error.  For now,
+the scan database just declines to abort a sscan record that isn't busy, but
+clients writing directly to the sscan record directly can still get this
+error message.
+<li><p>recDynLink - Fixed memory leak (epicsMutex created but not destroyed).
+Switched communication with link tasks from ring buffer to message queue.
+recDynOut was calling ca_pend_event, which used to flush the ca buffer, but
+evidently no longer does; replaced with ca_flush_io.
+<li><p>saveData_settings.req - new file.
+<li><p>scan_settings.req - added fields ACQT and ACQM.
+</ul>
+<address>
+    Suggestions and Comments to: <br>
+    <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
+    (mooney@aps.anl.gov) <br>
+    Last modified: March 4, 2004 
+</address>
+</body>
+</html>
