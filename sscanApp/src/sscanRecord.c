@@ -231,9 +231,13 @@
  *                      knew to wait for the callbacks; packData() wasn't looking for any change in
  *                      dstate after calling arrayRead(), so it didn't wait for callbacks.
  * 5.24 11-08-04  tmm   Abort no longer clears PAUS.
+ * 5.25 01-14-05  tmm	Abort and killing scans reworked to allow sscan record to wait for
+ *                      data-storage client even if it doesn't wait for anything else, to
+ *                      abandon even that caution if user insists, and to show user where it
+ *                      is in the process.
  */
 
-#define VERSION 5.24
+#define VERSION 5.25
 
 
 #include <stddef.h>
