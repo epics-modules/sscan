@@ -33,6 +33,7 @@ of this distribution.
 #include <taskwd.h>
 #include <dbDefs.h>
 #include <epicsPrint.h>
+#include <epicsExport.h>
 #include <db_access.h>
 #include <db_access_routines.h>
 #include <cadef.h>
@@ -59,6 +60,7 @@ volatile int recDynOUTCallFlush = 1;
 #endif
 #endif
 volatile int recDynLinkDebug = 0;
+epicsExportAddress(int, recDynLinkDebug);
 
 /*Definitions to map between old and new database access*/
 /*because we are using CA must include db_access.h*/
@@ -568,7 +570,7 @@ LOCAL void recDynLinkOut(void)
 				epicsMessageQueuePending(recDynLinkOutMsgQ));
 			n = epicsMessageQueueReceive(recDynLinkOutMsgQ, (void *)&cmd,
 				sizeof(msgQCmd));
-			DEBUG(5,"recDynLinkOut: got message of size %d\n", n); 
+			DEBUG(5,"recDynLinkOut: got message of size %d, cmd=%d\n", n, cmd.cmd); 
 			if (n != s) {
 				printf("recDynLinkOutTask: got %d bytes, expected %d\n", n, s);
 				continue;
@@ -585,6 +587,12 @@ LOCAL void recDynLinkOut(void)
 			}
 			precDynLink = cmd.data.precDynLink;
 			pdynLinkPvt = precDynLink->pdynLinkPvt;
+                        if (pdynLinkPvt==NULL) {
+                           printf("ERROR: recDynLinkOut precDynLink=%p\n", precDynLink);
+                           printf("ERROR:   pdynLinkPvt=%p\n", pdynLinkPvt);
+                           continue;
+                        }
+			DEBUG(5,"recDynLinkOut: pdynLinkPvt->pvname=%s\n", pdynLinkPvt->pvname); 
 			switch (cmd.cmd) {
 			case (cmdSearch):
 				SEVCHK(ca_create_channel(pdynLinkPvt->pvname,
