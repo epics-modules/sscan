@@ -214,7 +214,6 @@
 #define VERSION 5.20
 
 
-
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -240,6 +239,7 @@
 #include	<taskwd.h>
 #include <epicsMutex.h>	/* semaphore */
 #include <epicsTimer.h>	/* access to timers for delayed callbacks */
+#include	<dbStaticLib.h>	/* for enumStrings stuff */
 
 #include	"recDynLink.h"
 #include "epicsExport.h"
@@ -505,6 +505,14 @@ typedef struct recPvtStruct {
 	short			userSetAWAIT;
 } recPvtStruct;
 
+/* enum strings */
+int sscanFAZE_numStrings;
+char **sscanFAZE_strings;
+int sscanDSTATE_numStrings;
+char **sscanDSTATE_strings;
+int sscanPASM_numStrings;
+char **sscanPASM_strings;
+
 /*  forward declarations */
 static void		checkMonitors(sscanRecord *psscan);
 static long		initScan(sscanRecord *psscan);
@@ -578,6 +586,8 @@ init_record(sscanRecord *psscan, int pass)
 
 	recDynLinkPvt  *puserPvt;
 
+	DBENTRY	dbentry;
+	DBENTRY	*pdbentry = &dbentry;
 
 	if (pass == 0) {
 		psscan->vers = VERSION;
@@ -735,6 +745,20 @@ init_record(sscanRecord *psscan, int pass)
 
 	psscan->dstate = sscanDSTATE_UNPACKED; POST(&psscan->dstate);
 
+	/* get menu choices for selected fields */
+	dbInitEntry(pdbbase, pdbentry);
+	dbFindRecord(pdbentry, psscan->name);
+	dbFindField(pdbentry, "FAZE");
+	sscanFAZE_numStrings = dbGetNMenuChoices(pdbentry);
+	sscanFAZE_strings = dbGetMenuChoices(pdbentry);
+	dbFindField(pdbentry, "DSTATE");
+	sscanDSTATE_numStrings = dbGetNMenuChoices(pdbentry);
+	sscanDSTATE_strings = dbGetMenuChoices(pdbentry);
+	dbFindField(pdbentry, "PASM");
+	sscanPASM_numStrings = dbGetNMenuChoices(pdbentry);
+	sscanPASM_strings = dbGetMenuChoices(pdbentry);
+	dbFinishEntry(pdbentry);
+
 	return (0);
 }
 
@@ -746,8 +770,8 @@ process(sscanRecord *psscan)
 	epicsTimeStamp	timeCurrent;
 
 	if (sscanRecordDebug >= 2) {
-		printf("%s:process:entry:faze=%d, nPCBs=%d, nTCBs=%d, nRCBs=%d, xsc=%d, pxsc=%d\n",
-			psscan->name, (int)psscan->faze, precPvt->numPositionerCallbacks,
+		printf("%s:process:entry:faze='%s', nPCBs=%d, nTCBs=%d, nRCBs=%d, xsc=%d, pxsc=%d\n",
+			psscan->name, sscanFAZE_strings[psscan->faze], precPvt->numPositionerCallbacks,
 			precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, psscan->xsc, psscan->pxsc);
 	}
 
@@ -857,7 +881,11 @@ process(sscanRecord *psscan)
 
 	if (psscan->busy && psscan->xsc &&
 			(precPvt->numPositionerCallbacks || precPvt->numTriggerCallbacks || precPvt->numAReadCallbacks)) {
-		if (sscanRecordDebug >= 5) printf("%s:process: already busy\n", psscan->name);
+		if (sscanRecordDebug >= 2) {
+			printf("%s:process already busy faze='%s', nPCBs=%d, nTCBs=%d, nRCBs=%d, xsc=%d, pxsc=%d\n",
+				psscan->name, sscanFAZE_strings[psscan->faze], precPvt->numPositionerCallbacks,
+				precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, psscan->xsc, psscan->pxsc);
+		}
 		sprintf(psscan->smsg, psscan->paus ? "Scan is paused" : "Already busy!");
 		POST(&psscan->smsg);
 		return(0);
@@ -942,15 +970,14 @@ process(sscanRecord *psscan)
 			   (psscan->faze == sscanFAZE_SCAN_DONE)) {
 			psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze);
 		} else {
-			printf("%s:process: How did I get here? (faze=%d, dstate=%d)\n",
-				psscan->name, (int)psscan->faze, psscan->dstate);
+			printf("%s:process: How did I get here? (faze='%s', dstate='%s')\n",
+				psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
 		}
 	}
 	checkMonitors(psscan);
 
 	/* do forward link on last scan aquisition */
-	if (psscan->busy && (psscan->faze == sscanFAZE_SCAN_DONE) &&
-			(status || (psscan->dstate == sscanDSTATE_POSTED))) {
+	if (psscan->busy && (psscan->faze == sscanFAZE_SCAN_DONE) && (psscan->dstate == sscanDSTATE_POSTED)) {
 		psscan->busy = 0; POST(&psscan->busy);
 		psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
 		recGblFwdLink(psscan);
@@ -1013,8 +1040,9 @@ special(struct dbAddr *paddr, int after)
 	}
 
 	if (sscanRecordDebug > 10) {
-		printf("%s:special(),special_type=%d, fieldIx=%d, exsc=%d, xsc=%d, faze=%d\n",
-			psscan->name, special_type, fieldIndex, psscan->exsc, psscan->xsc, psscan->faze);
+		printf("%s:special(),special_type=%d, fieldIx=%d, exsc=%d, xsc=%d, faze='%s'\n",
+			psscan->name, special_type, fieldIndex, psscan->exsc, psscan->xsc,
+			sscanFAZE_strings[psscan->faze]);
 	} else if (sscanRecordDebug > 5) {
 		printf("%s:special(),special_type=%d, fieldIx=%d\n",
 			psscan->name, special_type, fieldIndex);
@@ -1036,7 +1064,8 @@ special(struct dbAddr *paddr, int after)
 				} else {
 					/* New scan.  Renew old positioner links so we get current limits data */
 					if ((psscan->faze != sscanFAZE_IDLE) && (psscan->faze != sscanFAZE_PREVIEW)) {
-						printf("Starting new scan with unexpected scan phase (%d).\n", psscan->faze);
+						printf("Starting new scan with unexpected faze ('%s').\n",
+							sscanFAZE_strings[psscan->faze]);
 					}
 					for (i=0; i<NUM_POS; i++) {
 						puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i].puserPvt;
@@ -1247,6 +1276,11 @@ special(struct dbAddr *paddr, int after)
 			break;
 		case sscanRecordAWAIT:
 			if (psscan->await) precPvt->userSetAWAIT = 1;
+			if (sscanRecordDebug >= 2)
+				printf("%s:special await=%d, dstate='%s'\n",
+					psscan->name, psscan->await, sscanDSTATE_strings[psscan->dstate]);
+			if ((psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) && (psscan->await == 0))
+				scanOnce(psscan);
 			break;
 
 		case sscanRecordACQM:
@@ -2381,7 +2415,12 @@ initScan(sscanRecord *psscan)
 		psscan->exsc = 0; POST(&psscan->exsc);
 		POST(&psscan->smsg);
 		POST(&psscan->alrt);
-		psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze);
+		/* Probably shouldn't say the scan is done when limit trouble is
+		 * encountered, because multidimensional scan could appear to be acquiring
+		 * data that it's not, in fact, even attempting to acquire.  Better to
+		 * hang, so user will notice the problem.
+		 */ 
+		/* psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze); */
 		return (status);
 	}
 	/* Then calculate the starting position */
@@ -2789,8 +2828,8 @@ packData(sscanRecord *psscan)
 	float			*pDBuf, *pf, *pf1, *pf2;
 	unsigned short	*pPvStat;
 
-	if (sscanRecordDebug >= 1) printf("%s:packData, faze=%d, data_state=%d\n",
-		psscan->name, psscan->faze, psscan->dstate);
+	if (sscanRecordDebug >= 1) printf("%s:packData, faze='%s', data_state='%s'\n",
+		psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
 
 	if (psscan->dstate == sscanDSTATE_PACKED) return;
 
@@ -2850,8 +2889,8 @@ packData(sscanRecord *psscan)
 	}
 
 	if ((psscan->cpt > 1) && (psscan->pasm >= sscanPASM_Peak_Pos)) {
-		if (sscanRecordDebug >= 5) printf("%s:packData cpt=%ld,pasm=%d\n",
-			psscan->name, (long)psscan->cpt, psscan->pasm);
+		if (sscanRecordDebug >= 5) printf("%s:packData cpt=%ld, pasm='%s'\n",
+			psscan->name, (long)psscan->cpt, sscanPASM_strings[psscan->pasm]);
 		/* Find peak/valley/edge in reference detector data array and go to it. */
 		markIndex = -1;
 
@@ -2972,10 +3011,7 @@ packData(sscanRecord *psscan)
 				pPBuf = precPvt->posBufPtr[i].pFill;
 				pPos->p_dv = pPBuf[markIndex];
 			}
-			sprintf(psscan->smsg, "%s found.",
-				(psscan->pasm==sscanPASM_Peak_Pos)?"Peak":
-				(psscan->pasm==sscanPASM_Valley_Pos)?"Valley":
-				(psscan->pasm==sscanPASM_RisingEdge_Pos)?"+Edge":"-Edge");
+			sprintf(psscan->smsg, "%s found.", sscanPASM_strings[psscan->pasm]);
 			POST(&psscan->smsg);
 		} else {
 			/* Can't find an optimal value.  Go to prior position. */
@@ -2983,10 +3019,7 @@ packData(sscanRecord *psscan)
 			for (i = 0; i < precPvt->valPosPvs; i++, pPos++) {
 				pPos->p_dv = pPos->p_pp;
 			}
-			sprintf(psscan->smsg, "%s NOT found.",
-				(psscan->pasm==sscanPASM_Peak_Pos)?"Peak":
-				(psscan->pasm==sscanPASM_Valley_Pos)?"Valley":
-				(psscan->pasm==sscanPASM_RisingEdge_Pos)?"+Edge":"-Edge");
+			sprintf(psscan->smsg, "%s NOT found.", sscanPASM_strings[psscan->pasm]);
 			POST(&psscan->smsg);
 			psscan->alrt = 1; POST(&psscan->alrt);
 
@@ -3064,7 +3097,7 @@ doPuts(CALLBACK *pCB)
 	precPvt = psscan->rpvt;
 
 	if (sscanRecordDebug >= 2)
-		printf("%s:doPuts:entry:phase=%d\n", psscan->name, (int)psscan->faze);
+		printf("%s:doPuts:entry:faze='%s'\n", psscan->name, sscanFAZE_strings[psscan->faze]);
 
 	if (psscan->paus) {
 		sprintf(psscan->smsg, "Scan paused by operator");
