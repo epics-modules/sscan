@@ -665,7 +665,7 @@ LOCAL void recDynLinkInp(void)
 			printf("recDynLinkInp: ca_current_context() returned NULL\n");
 			retried = 1;
 		}
-		taskDelay(1);
+		epicsThreadSleep(epicsThreadSleepQuantum());
 		pCaInputContext = ca_current_context();
 	}
 	if (retried) printf("recDynLinkInp: ca_current_context() returned non-NULL\n");
@@ -759,7 +759,7 @@ LOCAL void recDynLinkOut(void)
 			printf("recDynLinkOut: waiting for CA context\n");
 			retried = 1;
 		}
-		taskDelay(1);
+		epicsThreadSleep(epicsThreadSleepQuantum());
 	}
 	if (retried) printf("recDynLinkOut: got CA context\n");
 	SEVCHK(ca_attach_context(pCaInputContext), "ca_attach_context");
