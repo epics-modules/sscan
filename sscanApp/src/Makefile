@@ -32,7 +32,8 @@ LIBRARY_IOC += sscan
 
 sscan_SRCS += sscanRecord.c
 sscan_SRCS += scanparmRecord.c
-sscan_SRCS  += busyRecord.c
+sscan_SRCS += busyRecord.c
+sscan_SRCS += recDynLink.c
 
 # save scan data stuff
 sscan_SRCS_vxWorks += xdr_stdio.c
