@@ -7,31 +7,31 @@ grecord(bi,"$(P)scanActive") {
 grecord(bo,"$(P)AbortScan1") {
 	field(DTYP,"Soft Channel")
 	field(DISV,"0")
-	field(SDIS,"$(P)scan1.BUSY  NPP NMS")
+	field(SDIS,"$(P)scan1.FAZE  NPP NMS")
 	field(OUT,"$(P)scan1.EXSC  CA NMS")
 }
 grecord(bo,"$(P)AbortScan2") {
 	field(DTYP,"Soft Channel")
 	field(DISV,"0")
-	field(SDIS,"$(P)scan2.BUSY  NPP NMS")
+	field(SDIS,"$(P)scan2.FAZE  NPP NMS")
 	field(OUT,"$(P)scan2.EXSC  CA NMS")
 }
 grecord(bo,"$(P)AbortScan3") {
 	field(DTYP,"Soft Channel")
 	field(DISV,"0")
-	field(SDIS,"$(P)scan3.BUSY  NPP NMS")
+	field(SDIS,"$(P)scan3.FAZE  NPP NMS")
 	field(OUT,"$(P)scan3.EXSC  CA NMS")
 }
 grecord(bo,"$(P)AbortScan4") {
 	field(DTYP,"Soft Channel")
 	field(DISV,"0")
-	field(SDIS,"$(P)scan4.BUSY  NPP NMS")
+	field(SDIS,"$(P)scan4.FAZE  NPP NMS")
 	field(OUT,"$(P)scan4.EXSC  CA NMS")
 }
 grecord(bo,"$(P)AbortScanH") {
 	field(DTYP,"Soft Channel")
 	field(DISV,"0")
-	field(SDIS,"$(P)scanH.BUSY  NPP NMS")
+	field(SDIS,"$(P)scanH.FAZE  NPP NMS")
 	field(OUT,"$(P)scanH.EXSC  CA NMS")
 }
 grecord(bo,"$(P)saveData_realTime1D") {
