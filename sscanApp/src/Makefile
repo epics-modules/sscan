@@ -25,6 +25,7 @@ DBDINC += busyRecord
 DBD += sscan.dbd
 DBD += sscanSupport.dbd
 DBD += sscanVXSupport.dbd
+DBD += sscanMenu.dbd
 
 INC += recDynLink.h
 
