@@ -6,7 +6,7 @@
 </head>
 <body>
 <h1>
-The SSCAN record v5.20</h1>
+The SSCAN record v5.25</h1>
 Author: Tim M. Mooney<br>
 Based on the scan record, written by Ned D. Arnold.<br>
 <p>&nbsp;Advanced Photon Source
@@ -245,10 +245,11 @@ In this case, you can cause the SSCAN record automatically to set
 <tt>AWAIT==1</tt>, whenever it posts data, by setting the <tt>AAWAIT</tt> (auto
 array wait) field to "1".  (It's OK if the client also sets <tt>AWAIT==1</tt>.)
 
-<P> Only one data-storage client can use AWAIT.  If you have more than one data-storage
-client, you must arrange for them to pool their use of the AWAIT field, so that
-it gets reset to zero only when all have finished.  (It's OK if AWAIT gets set to
-one more than once.  Only the first AWAIT==1 write has any effect.)
+<P> Only one data-storage client can use AWAIT.  If you have more than one
+data-storage client, you must arrange for them to pool their use of the AWAIT
+field, so that it gets reset to zero only when all have finished.  (It's OK if
+AWAIT gets set to one more than once.  Only the first AWAIT==1 write has any
+effect.)
 
 <P>Note that this <tt>AWAIT</tt> handshake protects scan data no matter how the
 SSCAN record gets executed, unlike the old method described next.
@@ -267,38 +268,42 @@ implemented as a channel-access client -- and it can still be used for that
 purpose, while a data-storage client is using it to protect data acquired from
 an inner-loop scan. 
 
-<p>Here's how the handshake works in a data-storage application:  The data-storage client notices that an inner SSCAN record has started a scan (typically,
-it monitors the <tt>DATA</tt> field, which is set to zero at the beginning of a scan), and writes a "1" to the outer SSCAN record's <tt>WAIT</tt> field.  This
-prevents the outer SSCAN record from continuing until the client has
-read the inner scan's data.  The client waits for <tt>DATA==1</tt>, which indicates that new data are available.  When the client has finished reading
-the inner scan's data, it writes a "0" to the outer SSCAN record's <tt>WAIT</tt>
-field, allowing the scan to continue.
+<p>Here's how the handshake works in a data-storage application:  The data-storage
+client notices that an inner SSCAN record has started a scan (typically, it monitors
+the <tt>DATA</tt> field, which is set to zero at the beginning of a scan), and
+writes a "1" to the outer SSCAN record's <tt>WAIT</tt> field.  This prevents the
+outer SSCAN record from continuing until the client has read the inner scan's data. 
+The client waits for <tt>DATA==1</tt>, which indicates that new data are available. 
+When the client has finished reading the inner scan's data, it writes a "0" to the
+outer SSCAN record's <tt>WAIT</tt> field, allowing the scan to continue.
 
-<P>If there are several clients that want the scan to <tt>WAIT</tt> for them,
-they can all write to the <tt>WAIT</tt> field.  Each "1" increments the scan's
-wait-count field, <tt>WCNT</tt>; each "0" decrements it.  When <tt>WCNT</tt> reaches zero, the scan continues.
+<P>If there are several clients that want the scan to <tt>WAIT</tt> for them, they
+can all write to the <tt>WAIT</tt> field.  Each "1" increments the scan's wait-count
+field, <tt>WCNT</tt>; each "0" decrements it.  When <tt>WCNT</tt> reaches zero, the
+scan continues.
 
-<p>In fast scans, there might not be time for a client to notice that an
-inner scan has started and write that "1" to the outer scan's <tt>WAIT</tt>
-field before the inner scan completes and is triggered again.  In this case,
-the outer scan can be made automatically to write a "1" to it's own
-<tt>WAIT</tt> field whenever it triggers detectors.  It will do this if its AutoWaitCounT (<tt>AWCT</tt>) field is set to "1".  In this case,
-the client must NOT write another "1" to the outer scan's <tt>WAIT</tt> field
-(that would increment the wait count to 2), but must only write "0" to the
-<tt>WAIT</tt> field to indicate that it is ready for the scan to continue.
+<p>In fast scans, there might not be time for a client to notice that an inner scan
+has started and write that "1" to the outer scan's <tt>WAIT</tt> field before the
+inner scan completes and is triggered again.  In this case, the outer scan can be
+made automatically to write a "1" to it's own <tt>WAIT</tt> field whenever it
+triggers detectors.  It will do this if its AutoWaitCounT (<tt>AWCT</tt>) field is
+set to "1".  In this case, the client must NOT write another "1" to the outer scan's
+<tt>WAIT</tt> field (that would increment the wait count to 2), but must only write
+"0" to the <tt>WAIT</tt> field to indicate that it is ready for the scan to
+continue.
 
 If there are N clients, the autoWaitCount can be set to N, and the scan
 will continue only after N "0"s have been written to the <tt>WAIT</tt> field.
 
-The advantage of the autoWaitCount==0 method is that scans can be performed whether or not a client is available to write to the <tt>WAIT</tt> field.  The
-disadvantage is that the is not reliable for vry fast scans.
+The advantage of the autoWaitCount==0 method is that scans can be performed whether
+or not a client is available to write to the <tt>WAIT</tt> field.  The disadvantage
+is that the is not reliable for vry fast scans.
 
 Note that this form of handshaking doesn't do a very thorough job of data
-protection, because it does not directly prevent a SSCAN record from
-overwriting its own arrays; it only prevents an outer-loop SSCAN record from
-<em>telling</em> an inner-loop record to overwrite its arrays.  If the SSCAN
-record is executed by some other agent, the <tt>WAIT</tt> handshake doesn't protect data
-at all.
+protection, because it does not directly prevent a SSCAN record from overwriting its
+own arrays; it only prevents an outer-loop SSCAN record from <em>telling</em> an
+inner-loop record to overwrite its arrays.  If the SSCAN record is executed by some
+other agent, the <tt>WAIT</tt> handshake doesn't protect data at all.
 
 <h3>1.3.2 Handshaking with CA clients that implement positioners or detectors</h3>
 
@@ -331,12 +336,12 @@ implemented as part of the processing of forward links, so the fact that the
 busy record allows a CA client to control the execution of a forward link means
 that the client can control the timing of a putNotify callback.
 
-<P>Here's how it works in practice: some developer causes a BUSY record (let's
-call it <tt>xxx:detBusy</tt>) to be loaded into the IOC; the SSCAN record writes
-"1" to a <tt>xxx:detBusy.VAL</tt>; the client monitors <tt>xxx:detBusy.VAL</tt>, and
-begins some operation when it goes to "1"; when processing is complete, the
-client writes "0" to <tt>xxx:detBusy.VAL</tt>; this causes the record to execute its
-forward link.  Thus, the busy record appears to be executing all the time the client
+<P>Here's how it works in practice: some developer causes a BUSY record (let's call
+it <tt>xxx:detBusy</tt>) to be loaded into the IOC; the SSCAN record writes "1" to a
+<tt>xxx:detBusy.VAL</tt>; the client monitors <tt>xxx:detBusy.VAL</tt>, and begins
+some operation when it goes to "1"; when processing is complete, the client writes
+"0" to <tt>xxx:detBusy.VAL</tt>; this causes the record to execute its forward
+link.  Thus, the busy record appears to be executing all the time the client
 actually <em>is</em> executing, so EPICS knows when the client is done.
 
 <P>Very simple, but it does require that a dedicated record be loaded in some IOC.
