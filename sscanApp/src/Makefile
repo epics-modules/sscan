@@ -26,6 +26,8 @@ DBD += sscan.dbd
 DBD += sscanSupport.dbd
 DBD += sscanVXSupport.dbd
 
+INC += recDynLink.h
+
 #=============================
 
 LIBRARY_IOC += sscan
@@ -41,7 +43,6 @@ sscan_SRCS_vxWorks += xdr_lib.c
 sscan_SRCS_vxWorks += saveData.c
 sscan_SRCS_vxWorks += req_file.c
 
-sscan_LIBS += std
 sscan_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 include $(TOP)/configure/RULES
