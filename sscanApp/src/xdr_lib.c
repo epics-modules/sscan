@@ -17,14 +17,16 @@
 
 
 #include <stdlib.h>
+#include <string.h>
 #include "xdr_lib.h"
 
-
+#ifdef vxWorks
 bool_t xdr_complex(XDR* xdrs, struct complex *p)     
 {
   return(xdr_float(xdrs, &p->r) &&
          xdr_float(xdrs, &p->i));
 }
+#endif
 
 bool_t xdr_counted_string(XDR* xdrs, char** p)
 {
