@@ -11,6 +11,11 @@ support/sscan/configure/RULES.iocBoot
 deleted; Obsolete in 3.14.7
 =============================================================================
 
+support/sscan/documentation/Scans.ppt
+
+New file
+=============================================================================
+
 support/sscan/documentation/busyRecord.html
 
 New file
@@ -246,6 +251,17 @@ New file, Tim forgot to commit
 =============================================================================
 
 support/sscan/sscanApp/src/sscanRecord.c
+
+v5.26 Allow before-scan and after-scan links to write to their own sscan record.
+
+ExportAddress for volatile variables.
+
+Check for npts<=0 in init_record.
+
+Reject illegal npts in special().
+
+ajdLinParms() now checks that step-increment agrees with overall scan direction.
+(Freeze flags for start, end, and width are ignored in this check.)
 
 Abort and killing scans reworked to allow sscan record to wait for data-storage
 client even if it doesn't wait for anything else, to abandon even that caution
