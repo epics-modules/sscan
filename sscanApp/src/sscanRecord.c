@@ -217,9 +217,23 @@
  *                      ca_put_callback -- whose processing triggered the monitors.  This was
  *                      almost always ok, but CA buffer overruns and TCP retries could result
  *                      in the sscan record acquiring stale data.
+ * 5.23 10-22-04  tmm   Fixed get_callback stuff: process() wasn't resetting numGetCallbacks to
+ *                      zero when a scan was killed; userGetCallback() wasn't changing dstate
+ *                      after all array callbacks had arrived, so process wasn't routing execution
+ *                      correctly; pvSearchCallback() wasn't changing puserPvt->nelem, or resetting
+ *                      data-buffer pointers, unless nelem's previous value was zero; readArrays()
+ *                      had code for array-valued positioners that would have crashed if it ever ran,
+ *                      because recDynLink would not have allocated buffer memory for them, since we
+ *                      specify that positioners are scalars in calls to recDynLinkAddInput;
+ *                      readArrays() was using puserPvt->pAddr->no_elements for the number of
+ *                      elements, but this only works for local PV's; readArrays() was not
+ *                      changing dstate after queuing recDynLinkGetCallback() requests, so nobody
+ *                      knew to wait for the callbacks; packData() wasn't looking for any change in
+ *                      dstate after calling arrayRead(), so it didn't wait for callbacks.
+ * 
  */
 
-#define VERSION 5.22
+#define VERSION 5.23
 
 
 #include <stddef.h>
@@ -812,6 +826,8 @@ process(sscanRecord *psscan)
 			sprintf(psscan->smsg, "NOTE: detector still active");
 		} else if (precPvt->numAReadCallbacks) {
 			sprintf(psscan->smsg, "NOTE: array-read still active");
+		} else if (precPvt->numGetCallbacks) {
+			sprintf(psscan->smsg, "NOTE: array-read still active");
 		} else {
 			sprintf(psscan->smsg, " ");
 		}
@@ -820,6 +836,7 @@ process(sscanRecord *psscan)
 		precPvt->numPositionerCallbacks = 0;
 		precPvt->numTriggerCallbacks = 0;
 		precPvt->numAReadCallbacks = 0;
+		precPvt->numGetCallbacks = 0;
 		if (psscan->dstate <= sscanDSTATE_PACKED) {
 			if (psscan->await && !(precPvt->userSetAWAIT)) {
 				/*
@@ -1943,6 +1960,7 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 
 	case DETECTOR:
 		if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+			/* might be array valued, so don't specify rdlSCALAR */
 			recDynLinkAddInput(&precPvt->caLinkStruct[i], ppvn,
 			      DBR_FLOAT, 0 /*rdlSCALAR*/, pvSearchCallback, NULL);
 		} else {
@@ -2063,7 +2081,7 @@ userGetCallback(recDynLink * precDynLink)
 		linkNames[puserPvt->linkIndex]);
 
 	if (precDynLink->status) {
-		if (sscanRecordDebug >= 5) printf("%s:userGetCallback: error %d on link '%s'.  Retrying.\n",
+		if (sscanRecordDebug >= 1) printf("%s:userGetCallback: error %d on link '%s'.  Retrying.\n",
 			psscan->name, precDynLink->status, linkNames[puserPvt->linkIndex]);
 		/* Retry. */
 		nRequest = (psscan->faze == sscanFAZE_RECORD_SCALAR_DATA) ? 1 : psscan->npts;
@@ -2096,7 +2114,13 @@ userGetCallback(recDynLink * precDynLink)
 		 * At this point, faze == sscanFAZE_RECORD_SCALAR_DATA or sscanFAZE_SCAN_DONE
 		 * 
 		 */
-		if (sscanRecordDebug >= 5) printf("%s:userGetCallback:calling scanOnce()\n", psscan->name);
+		if (psscan->dstate == sscanDSTATE_ARRAY_GET_CALLBACK_WAIT) {
+			psscan->dstate = sscanDSTATE_RECORD_ARRAY_DATA;
+		}
+		if (sscanRecordDebug >= 5) {
+			printf("%s:userGetCallback: calling scanOnce(), faze='%s', data_state='%s'\n",
+				psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
+		}
 		scanOnce(psscan);
 		return;
 	}
@@ -2238,7 +2262,13 @@ pvSearchCallback(recDynLink * precDynLink)
 			sprintf(psscan->smsg, "Array-valued detector");
 			POST(&psscan->smsg);
 		}
+		/*
+		 * Note we haven't set puserPvt->nelem to nelem yet, so if it's nonzero,
+		 * this link has been used before.  Otherwise, we need to allocate and
+		 * initialize it's data buffers.
+		 */ 
 		if (puserPvt->nelem == 0) {
+			/* Allocate data buffers, and init data pointer */
 			printf("%s: Allocating memory for detector %d (link '%s')\n",
 				psscan->name, detIndex+1, linkNames[puserPvt->linkIndex]);
 			precPvt->detBufPtr[detIndex].pBufA =
@@ -2251,17 +2281,22 @@ pvSearchCallback(recDynLink * precDynLink)
 			    !(precPvt->detBufPtr[detIndex].pBufB)) {
 				/* MEMORY ALLOCATION FAILED */
 				printf("%s:MEMORY ALLOCATION FAILED \n", psscan->name);
-				puserPvt->nelem = 0;
+				/* leave puserPvt->nelem == 0 */
 			} else {
 				puserPvt->nelem = nelem;
-				if (precPvt->validBuf == B_BUFFER) {
-					precPvt->detBufPtr[detIndex].pFill =
-						precPvt->detBufPtr[detIndex].pBufA;
-				} else {
-					precPvt->detBufPtr[detIndex].pFill =
-						precPvt->detBufPtr[detIndex].pBufB;
-				}
 			}
+		} else {
+			puserPvt->nelem = nelem;
+		}
+		if (sscanRecordDebug >= 5) printf("%s:pvSearchCallback: link '%s', setting nelem to %ld.\n",
+			psscan->name, linkNames[puserPvt->linkIndex], puserPvt->nelem);
+
+		if (precPvt->validBuf == B_BUFFER) {
+			precPvt->detBufPtr[detIndex].pFill =
+				precPvt->detBufPtr[detIndex].pBufA;
+		} else {
+			precPvt->detBufPtr[detIndex].pFill =
+				precPvt->detBufPtr[detIndex].pBufB;
 		}
 		break;
 
@@ -2850,19 +2885,33 @@ readArrays(sscanRecord *psscan)
 	float			*pFbuff, *pf;
 
 	/*** Read positioner and detector data into arrays. ***/
+	/*
+	 * Note this routine will get called twice if it needs to read any remote array-valued PV's.
+	 * The first time it's called, it do any needed recDynLinkGetCallback()'s.  If it did any,
+	 * it will just return.  When all the callbacks have come in, this routine will be called
+	 * again, this time to copy data to local storage.
+	 */
+	 
 	if (sscanRecordDebug >= 5) {
 		printf("%s:readArrays - dstate=%s\n", psscan->name, sscanDSTATE_strings[psscan->dstate]);
 	}
 
 	if (psscan->dstate == sscanDSTATE_ARRAY_READ_WAIT) {
 		/* Queue any remote reads */
+
+#if 0
+		/*
+		 * array-valued positioners, which we told recDynLink we don't have.  (We told
+		 * recDynLink these were scalars, so it didn't allocate the memory buffer that
+		 * recDynLinkGetCallback's callback would fill.)
+		 */
 		pPvStat = &psscan->r1nv;
 		pPvStatPos = &psscan->p1nv;
 		pPos = (posFields *) & psscan->p1pp;
 		for (i = 0; i < NUM_POS; i++, pPos++, pPvStatPos++, pPvStat++) {
 			/* if positioner-readback PV is OK, use it */
 			puserPvt = precPvt->caLinkStruct[i + NUM_POS].puserPvt;
-			if (puserPvt->pAddr->no_elements > 1) {
+			if (puserPvt->nelem > 1) {
 				nRequest = psscan->npts;
 				if (*pPvStat == PV_OK) {
 					if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
@@ -2873,18 +2922,20 @@ readArrays(sscanRecord *psscan)
 				}
 			}
 		}
+#endif
 
-		/*
-		 * Read array-valued detectors, if any.  Note that we might be accumulating with the
-		 * previous scan's data, so read into a buffer first.
-		 */
+		/* Queue reads for array-valued detectors, if any. */
 		status = 0;
 		pPvStat = &psscan->d01nv;
 		pDet = (detFields *) & psscan->d01hr;
 		for (i = 0; i < precPvt->valDetPvs; i++, pDet++, pPvStat++) {
 			if (precPvt->acqDet[i] && (precPvt->detBufPtr[i].pFill != NULL)) {
 				puserPvt = precPvt->caLinkStruct[i + D1_IN].puserPvt;
-				if (puserPvt->pAddr->no_elements > 1) {
+				if (sscanRecordDebug >= 5) {
+					printf("%s:readArrays: link=%s, nelem=%ld\n", psscan->name,
+						linkNames[puserPvt->linkIndex], puserPvt->nelem);
+				}
+				if (puserPvt->nelem > 1) {
 					nRequest = psscan->npts;
 					if (*pPvStat == PV_OK) {
 						if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
@@ -2896,7 +2947,11 @@ readArrays(sscanRecord *psscan)
 				}
 			}
 		}
-		if (precPvt->numGetCallbacks) return;
+
+		if (precPvt->numGetCallbacks) {
+			psscan->dstate = sscanDSTATE_ARRAY_GET_CALLBACK_WAIT;
+			return;
+		}
 		psscan->dstate = sscanDSTATE_RECORD_ARRAY_DATA;
 	}
 
@@ -2913,7 +2968,7 @@ readArrays(sscanRecord *psscan)
 		pDbuff = precPvt->posBufPtr[i].pFill;
 		/* if readback PV is OK, use that value */
 		puserPvt = precPvt->caLinkStruct[i + NUM_POS].puserPvt;
-		if (puserPvt->pAddr->no_elements > 1) {
+		if (puserPvt->nelem > 1) {
 			nRequest = nReq = psscan->npts;
 			if (*pPvStat == PV_OK) {
 				if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
@@ -2950,7 +3005,7 @@ readArrays(sscanRecord *psscan)
 		pFbuff = addToPrev ? (float *)precPvt->dataBuffer : precPvt->detBufPtr[i].pFill;
 		if (precPvt->acqDet[i] && (precPvt->detBufPtr[i].pFill != NULL)) {
 			puserPvt = precPvt->caLinkStruct[i + D1_IN].puserPvt;
-			if (puserPvt->pAddr->no_elements > 1) {
+			if (puserPvt->nelem > 1) {
 				nRequest = nReq = psscan->npts;
 				if (*pPvStat == PV_OK) {
 					if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
@@ -3028,6 +3083,10 @@ packData(sscanRecord *psscan)
 	case sscanDSTATE_RECORD_ARRAY_DATA:
 		/* remote array gets have completed, the data is now in recDynLink buffers */
 		readArrays(psscan);
+		if (psscan->dstate == sscanDSTATE_ARRAY_GET_CALLBACK_WAIT) {
+			/* Wait for callbacks to arrive.  When they do, process() should send us back here. */
+			return;
+		}
 		if (psscan->await) {
 			/* can't pack; saveData's still using last scan's data buffers */
 			psscan->dstate = sscanDSTATE_SAVE_DATA_WAIT; POST(&psscan->dstate);
