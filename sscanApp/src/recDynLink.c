@@ -48,19 +48,6 @@ volatile int recDynINPCallPendIoTime_ms = 100;
 volatile int recDynOUTCallPend = 0;
 volatile int recDynOUTCallFlush = 1;
 
-#ifdef NODEBUG
-#define DEBUG(l,f,v...) ;
-#else
-#ifdef __GNUC__
-#define DEBUG(l,f,v...) { if(l<=recDynLinkDebug) printf(f ,## v); }
-#else
-#ifdef __SUNPRO_CC
-#define DEBUG(l,...) { if(l<=recDynLinkDebug) printf(__VA_ARGS__); }
-#else
-#define DEBUG(l,f,v) { if(l<=recDynLinkDebug) printf(f, v); }
-#endif
-#endif
-#endif
 volatile int recDynLinkDebug = 0;
 epicsExportAddress(int, recDynLinkDebug);
 
@@ -159,11 +146,13 @@ long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	struct dbAddr	dbaddr;
 	msgQCmd		cmd;
     
-	DEBUG(10,"recDynLinkAddInput: precDynLink=%p\n", precDynLink); 
+	if (recDynLinkDebug > 10)
+            printf("recDynLinkAddInput: precDynLink=%p\n", precDynLink); 
 	if (options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr)) return(-1);
 	if (!inpTaskId) recDynLinkStartTasks();
 	if (precDynLink->pdynLinkPvt) {
-		DEBUG(10,"recDynLinkAddInput: clearing old pdynLinkPvt\n"); 
+		if (recDynLinkDebug > 10)
+                    printf("recDynLinkAddInput: clearing old pdynLinkPvt\n"); 
 		recDynLinkClear(precDynLink);
 	}
 	pdynLinkPvt = (dynLinkPvt *)calloc(1,sizeof(dynLinkPvt));
@@ -197,11 +186,13 @@ long epicsShareAPI recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 	struct dbAddr	dbaddr;
 	msgQCmd		cmd;
     
-	DEBUG(10,"recDynLinkAddOutput: precDynLink=%p\n", precDynLink); 
+	if (recDynLinkDebug > 10) 
+            printf("recDynLinkAddOutput: precDynLink=%p\n", precDynLink); 
 	if (options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr)) return(-1);
 	if (!outTaskId) recDynLinkStartTasks();
 	if (precDynLink->pdynLinkPvt) {
-		DEBUG(10,"recDynLinkAddOutput: clearing old pdynLinkPvt\n"); 
+		if (recDynLinkDebug > 10) 
+                    printf("recDynLinkAddOutput: clearing old pdynLinkPvt\n"); 
 		recDynLinkClear(precDynLink);
 	}
 	pdynLinkPvt = (dynLinkPvt *)calloc(1,sizeof(dynLinkPvt));
@@ -233,7 +224,8 @@ long epicsShareAPI recDynLinkClear(recDynLink *precDynLink)
 	dynLinkPvt	*pdynLinkPvt;
 	msgQCmd	cmd;
 
-	DEBUG(10,"recDynLinkClear: precDynLink=%p\n", precDynLink);
+	if (recDynLinkDebug > 10) 
+            printf("recDynLinkClear: precDynLink=%p\n", precDynLink);
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
 	if (!pdynLinkPvt) {
 		printf("recDynLinkClear: recDynLinkSearch was never called\n");
@@ -243,7 +235,8 @@ long epicsShareAPI recDynLinkClear(recDynLink *precDynLink)
 	cmd.data.pdynLinkPvt = pdynLinkPvt;
 	cmd.cmd = cmdClear;
 	if (precDynLink->onQueue) {
-		DEBUG(1,"recDynLinkClear: waiting for queued action on %s\n", pdynLinkPvt->pvname);
+		if (recDynLinkDebug > 1) 
+                    printf("recDynLinkClear: waiting for queued action on %s\n", pdynLinkPvt->pvname);
 		while (precDynLink->onQueue) epicsEventSignal(wakeUpEvt);
 	}
 	if (pdynLinkPvt->io==ioInput) {
@@ -350,7 +343,8 @@ long epicsShareAPI recDynLinkGet(recDynLink *precDynLink,void *pbuffer,size_t *n
 	epicsMutexMustLock(pdynLinkPvt->lock);
 	memcpy(pbuffer,pdynLinkPvt->pbuffer,
 		(*nRequest * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
-	DEBUG(5,"recDynLinkGet: PV=%s, user asked for=%ld, got %ld\n", pdynLinkPvt->pvname,
+	if (recDynLinkDebug > 5) 
+            printf("recDynLinkGet: PV=%s, user asked for=%ld, got %d\n", pdynLinkPvt->pvname,
 		save_nRequest, *nRequest);
  	if (timestamp) *timestamp = pdynLinkPvt->timestamp; /*array copy*/
 	if (status) *status = pdynLinkPvt->status;
@@ -386,7 +380,8 @@ long epicsShareAPI recDynLinkGetCallback(recDynLink *precDynLink, size_t *nReque
 	cmd.data.precDynLink = precDynLink;
 	cmd.cmd = cmdGetCallback;
 	precDynLink->onQueue++;
-	DEBUG(5,"recDynLinkGetCallback: PV=%s, nRequest=%d\n", pdynLinkPvt->pvname,
+	if (recDynLinkDebug > 5) 
+            printf("recDynLinkGetCallback: PV=%s, nRequest=%d\n", pdynLinkPvt->pvname,
 		pdynLinkPvt->nRequest); 
 	if (epicsMessageQueueTrySend(recDynLinkOutMsgQ, (void *)&cmd, sizeof(cmd))) {
 		errMessage(0,"recDynLinkGetCallback: epicsMessageQueueTrySend error");
@@ -673,7 +668,8 @@ LOCAL void recDynLinkInp(void)
 	while(TRUE) {
 		didGetCallback = 0;
 		while (epicsMessageQueuePending(recDynLinkInpMsgQ) && interruptAccept) {
-			DEBUG(5,"epicsMessageQueuePending(recDynLinkInpMsgQ)=%d\n", 
+			if (recDynLinkDebug > 5) 
+                            printf("epicsMessageQueuePending(recDynLinkInpMsgQ)=%d\n", 
 				epicsMessageQueuePending(recDynLinkInpMsgQ));
 			n = epicsMessageQueueReceive(recDynLinkInpMsgQ, (void *)&cmd,sizeof(cmd));
 			if (n != s) {
@@ -691,13 +687,15 @@ LOCAL void recDynLinkInp(void)
 			}
 			precDynLink = cmd.data.precDynLink;
 			pdynLinkPvt = precDynLink->pdynLinkPvt;
-			DEBUG(5,"recDynLinkInp: precDynLink=%p", precDynLink); 
+			if (recDynLinkDebug > 5) 
+                            printf("recDynLinkInp: precDynLink=%p", precDynLink); 
 			if (pdynLinkPvt==NULL) {
 				printf("\n***ERROR***: pdynLinkPvt=%p\n", pdynLinkPvt);
 				precDynLink->onQueue--;
 				continue;
 			} else {
-				DEBUG(5,", pvname=%s\n", pdynLinkPvt->pvname);
+				if (recDynLinkDebug > 5) 
+                                    printf(", pvname=%s\n", pdynLinkPvt->pvname);
 			}
 			switch (cmd.cmd) {
 			case (cmdSearch) :
@@ -767,11 +765,13 @@ LOCAL void recDynLinkOut(void)
 	while(TRUE) {
 		epicsEventWaitWithTimeout(wakeUpEvt,1.0);
 		while (epicsMessageQueuePending(recDynLinkOutMsgQ) && interruptAccept) {
-			DEBUG(10,"epicsMessageQueuePending(recDynLinkOutMsgQ)=%d\n", 
+			if (recDynLinkDebug > 10) 
+                            printf("epicsMessageQueuePending(recDynLinkOutMsgQ)=%d\n", 
 				epicsMessageQueuePending(recDynLinkOutMsgQ));
 			n = epicsMessageQueueReceive(recDynLinkOutMsgQ, (void *)&cmd,
 				sizeof(msgQCmd));
-			DEBUG(10,"recDynLinkOut: got message of size %d, cmd=%s\n", n, commands[cmd.cmd]); 
+			if (recDynLinkDebug > 10) 
+                            printf("recDynLinkOut: got message of size %d, cmd=%s\n", n, commands[cmd.cmd]); 
 			if (n != s) {
 				printf("recDynLinkOutTask: got %d bytes, expected %d\n", n, s);
 				continue;
@@ -788,13 +788,15 @@ LOCAL void recDynLinkOut(void)
 			}
 			precDynLink = cmd.data.precDynLink;
 			pdynLinkPvt = precDynLink->pdynLinkPvt;
-			DEBUG(10,"recDynLinkOut: precDynLink=%p", precDynLink); 
+			if (recDynLinkDebug > 10) 
+                            printf("recDynLinkOut: precDynLink=%p", precDynLink); 
 			if (pdynLinkPvt==NULL) {
 				printf("\n***ERROR***: pdynLinkPvt=%p\n", pdynLinkPvt);
 				precDynLink->onQueue--;
 				continue;
 			} else {
-				DEBUG(10,", pvname=%s\n", pdynLinkPvt->pvname);
+				if (recDynLinkDebug > 10) 
+                                    printf(", pvname=%s\n", pdynLinkPvt->pvname);
 			}
 			switch (cmd.cmd) {
 			case (cmdSearch):
@@ -831,7 +833,8 @@ LOCAL void recDynLinkOut(void)
 				precDynLink->onQueue--;
 				break;
 			case (cmdGetCallback):
-				DEBUG(5,"recDynLinkOut: GetCallback PV=%s, nRequest=%d\n",
+				if (recDynLinkDebug > 5) 
+                                    printf("recDynLinkOut: GetCallback PV=%s, nRequest=%d\n",
 					pdynLinkPvt->pvname, pdynLinkPvt->nRequest); 
 
 				status = ca_array_get_callback(
