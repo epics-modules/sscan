@@ -176,10 +176,10 @@ void req_infoMacro(REQ_FILE* rf)
 void req_infoSection(REQ_FILE* rf)
 {
   printf("sect_name   = %s\n", rf->sect_name);
-  printf("sect_start  = %d\n", rf->sect_start);
-  printf("sect_end    = %d\n", rf->sect_end);
+  printf("sect_start  = %ld\n", rf->sect_start);
+  printf("sect_end    = %ld\n", rf->sect_end);
   printf("current char= %c\n", rf->cur);
-  printf("current pos = %d\n\n", ftell(rf->fd));
+  printf("current pos = %ld\n\n", ftell(rf->fd));
 }
 
 
