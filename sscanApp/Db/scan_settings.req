@@ -43,7 +43,6 @@ $(P)$(S).P4AR
 $(P)$(S).PDLY
 $(P)$(S).DDLY
 $(P)$(S).REFD
-$(P)$(S).ACQM
 $(P)$(S).D01PV
 $(P)$(S).D02PV
 $(P)$(S).D03PV
