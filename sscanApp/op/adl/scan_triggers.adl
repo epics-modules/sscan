@@ -1,7 +1,7 @@
 
 file {
-	name="C:\Program Files\EPICS WIN32 Extensions\synApps_5_1_adl\scan_triggers.adl"
-	version=020306
+	name="/home/oxygen4/MOONEY/epics/synApps_5_1/support/sscan/cvs/sscanApp/op/adl/scan_triggers.adl"
+	version=030004
 }
 display {
 	object {
@@ -248,7 +248,7 @@ composite {
 		x=301
 		y=102
 		width=20
-		height=20
+		height=18
 	}
 	control {
 		chan="$(P)$(S).AWCT"
@@ -261,7 +261,7 @@ composite {
 text {
 	object {
 		x=220
-		y=109
+		y=104
 		width=80
 		height=10
 	}
@@ -273,7 +273,7 @@ text {
 text {
 	object {
 		x=323
-		y=109
+		y=104
 		width=45
 		height=10
 	}
@@ -627,4 +627,19 @@ composite {
 			}
 		}
 	}
+}
+"related display" {
+	object {
+		x=340
+		y=117
+		width=30
+		height=16
+	}
+	display[0] {
+		label="doc display"
+		name="scan_detector_help.adl"
+	}
+	clr=0
+	bclr=17
+	label="-HELP"
 }
