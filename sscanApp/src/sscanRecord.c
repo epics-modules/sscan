@@ -230,10 +230,10 @@
  *                      changing dstate after queuing recDynLinkGetCallback() requests, so nobody
  *                      knew to wait for the callbacks; packData() wasn't looking for any change in
  *                      dstate after calling arrayRead(), so it didn't wait for callbacks.
- * 
+ * 5.24 11-08-04  tmm   Abort no longer clears PAUS.
  */
 
-#define VERSION 5.23
+#define VERSION 5.24
 
 
 #include <stddef.h>
@@ -975,7 +975,7 @@ process(sscanRecord *psscan)
 			if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
 			if (psscan->wcnt) {psscan->wcnt = 0; POST(&psscan->wcnt);}
 			if (psscan->wtng) {psscan->wtng = 0; POST(&psscan->wtng);}
-			if (psscan->paus) {psscan->paus = 0; POST(&psscan->paus);}
+			/* if (psscan->paus) {psscan->paus = 0; POST(&psscan->paus);} */
 			printf("%s:process: Scan aborted by operator\n", psscan->name);
 			endScan(psscan);
 		}
