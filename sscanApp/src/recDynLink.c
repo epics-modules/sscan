@@ -105,6 +105,7 @@ epicsMessageQueueId	recDynLinkInpMsgQ = NULL;
 epicsMessageQueueId	recDynLinkOutMsgQ = NULL;
 
 typedef enum{cmdSearch,cmdClear,cmdPut,cmdPutCallback,cmdGetCallback} cmdType;
+char commands[5][15] = {"Search","Clear","Put","PutCallback","GetCallback"};
 typedef enum{ioInput,ioOutput} ioType;
 typedef enum{stateStarting,stateSearching,stateGetting,stateConnected} stateType;
 
@@ -334,7 +335,7 @@ long epicsShareAPI recDynLinkGet(recDynLink *precDynLink,void *pbuffer,size_t *n
 	TS_STAMP *timestamp,short *status,short *severity)
 {
 	dynLinkPvt	*pdynLinkPvt;
-	long		caStatus;
+	long		caStatus, save_nRequest = *nRequest;
 
 	if (precDynLink == NULL) return(-1);
 	precDynLink->status = 0;
@@ -348,7 +349,9 @@ long epicsShareAPI recDynLinkGet(recDynLink *precDynLink,void *pbuffer,size_t *n
 	epicsMutexMustLock(pdynLinkPvt->lock);
 	memcpy(pbuffer,pdynLinkPvt->pbuffer,
 		(*nRequest * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
-	if (timestamp) *timestamp = pdynLinkPvt->timestamp; /*array copy*/
+	DEBUG(5,"recDynLinkGet: PV=%s, user asked for=%ld, got %ld\n", pdynLinkPvt->pvname,
+		save_nRequest, *nRequest);
+ 	if (timestamp) *timestamp = pdynLinkPvt->timestamp; /*array copy*/
 	if (status) *status = pdynLinkPvt->status;
 	if (severity) *severity = pdynLinkPvt->severity;
 	epicsMutexUnlock(pdynLinkPvt->lock);
@@ -382,6 +385,8 @@ long epicsShareAPI recDynLinkGetCallback(recDynLink *precDynLink, size_t *nReque
 	cmd.data.precDynLink = precDynLink;
 	cmd.cmd = cmdGetCallback;
 	precDynLink->onQueue++;
+	DEBUG(5,"recDynLinkGetCallback: PV=%s, nRequest=%d\n", pdynLinkPvt->pvname,
+		pdynLinkPvt->nRequest); 
 	if (epicsMessageQueueTrySend(recDynLinkOutMsgQ, (void *)&cmd, sizeof(cmd))) {
 		errMessage(0,"recDynLinkGetCallback: epicsMessageQueueTrySend error");
 		status = RINGBUFF_PUT_ERROR;
@@ -508,6 +513,8 @@ LOCAL void getCallback(struct event_handler_args eha)
 		pdynLinkPvt->nRequest = 1;
 	} else {
 		pdynLinkPvt->nRequest = ca_element_count(pdynLinkPvt->chid);
+		if (recDynLinkDebug >= 5)
+			printf("recDynLink:getCallback: array of %d elements\n", pdynLinkPvt->nRequest);
 	}
 	nRequest = pdynLinkPvt->nRequest;
 	pdynLinkPvt->pbuffer = calloc(nRequest,
@@ -533,10 +540,19 @@ LOCAL void monitorCallback(struct event_handler_args eha)
 	struct dbr_time_string	*pdbr_time_string;
 	void		*pdata;
 	short		timeType;
+	char		*pchar;
+	short		*pshort;
+	long		*plong;
+	float		*pfloat;
+	double		*pdouble;
     
 	precDynLink = (recDynLink *)ca_puser(eha.chid);
 	if (!precDynLink) return;
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
+	if (recDynLinkDebug >= 5) {
+		printf("recDynLink:monitorCallback:  PV=%s, nRequest=%d\n",
+			pdynLinkPvt->pvname, pdynLinkPvt->nRequest);
+	}
 	if (pdynLinkPvt->pbuffer) {
 		epicsMutexMustLock(pdynLinkPvt->lock);
 		if (count>=pdynLinkPvt->nRequest) count = pdynLinkPvt->nRequest;
@@ -549,6 +565,35 @@ LOCAL void monitorCallback(struct event_handler_args eha)
 		memcpy(pdynLinkPvt->pbuffer,pdata,
 			(count * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
 		epicsMutexUnlock(pdynLinkPvt->lock);
+		if ((count > 1) && (recDynLinkDebug >= 5)) {
+			printf("recDynLink:monitorCallback: array of %d elements\n", pdynLinkPvt->nRequest);
+			switch (mapNewToOld[pdynLinkPvt->dbrType]) {
+			case DBF_STRING: case DBF_CHAR:
+				pchar = (char *)pdata;
+				printf("...char/string: %c, %c, %c...\n", pchar[0], pchar[1], pchar[2]);
+				break;
+			case DBF_SHORT: case DBF_ENUM:
+				pshort = (short *)pdata;
+				printf("...short: %d, %d, %d...\n", pshort[0], pshort[1], pshort[2]);
+				break;
+			case DBF_LONG:
+				plong = (long *)pdata;
+				printf("...long: %ld, %ld, %ld...\n", plong[0], plong[1], plong[2]);
+				break;
+			case DBF_FLOAT:
+				pfloat = (float *)pdata;
+				printf("...float: %f, %f, %f...\n", pfloat[0], pfloat[1], pfloat[2]);
+				break;
+			case DBF_DOUBLE:
+				pdouble = (double *)pdata;
+				printf("...double: %f, %f, %f...\n", pdouble[0], pdouble[1], pdouble[2]);
+				break;
+			default:
+				pchar = (char *)pdata;
+				printf("...unknown type: %x, %x, %x...\n", pchar[0], pchar[1], pchar[2]);
+				break;
+			}
+		}
 	}
 	if (pdynLinkPvt->monitorCallback)
 		(*pdynLinkPvt->monitorCallback)(precDynLink);
@@ -567,6 +612,10 @@ LOCAL void userGetCallback(struct event_handler_args eha)
 	precDynLink = (recDynLink *)ca_puser(eha.chid);
 	if (!precDynLink) return;
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
+	if (recDynLinkDebug >= 5) {
+		printf("recDynLink:userGetCallback:  PV=%s, nRequest=%d\n",
+			pdynLinkPvt->pvname, pdynLinkPvt->nRequest);
+	}
 	if (pdynLinkPvt->pbuffer) {
 		epicsMutexMustLock(pdynLinkPvt->lock);
 		if (count>=pdynLinkPvt->nRequest) count = pdynLinkPvt->nRequest;
@@ -654,7 +703,7 @@ LOCAL void recDynLinkInp(void)
 					pdynLinkPvt->nRequest,pdynLinkPvt->chid, userGetCallback, precDynLink);
 				if (status!=ECA_NORMAL) {
 					epicsPrintf("recDynLinkTask pv=%s CA Error %s\n",
-					pdynLinkPvt->pvname,ca_message(status));
+						pdynLinkPvt->pvname,ca_message(status));
 					/* error indicates user won't get a callback, so we do it */
 					precDynLink->status = FATAL_ERROR;
 					(pdynLinkPvt->userGetCallback)(precDynLink);
@@ -700,11 +749,11 @@ LOCAL void recDynLinkOut(void)
 	while(TRUE) {
 		epicsEventWaitWithTimeout(wakeUpEvt,1.0);
 		while (epicsMessageQueuePending(recDynLinkOutMsgQ) && interruptAccept) {
-			DEBUG(5,"epicsMessageQueuePending(recDynLinkOutMsgQ)=%d\n", 
+			DEBUG(10,"epicsMessageQueuePending(recDynLinkOutMsgQ)=%d\n", 
 				epicsMessageQueuePending(recDynLinkOutMsgQ));
 			n = epicsMessageQueueReceive(recDynLinkOutMsgQ, (void *)&cmd,
 				sizeof(msgQCmd));
-			DEBUG(5,"recDynLinkOut: got message of size %d, cmd=%d\n", n, cmd.cmd); 
+			DEBUG(10,"recDynLinkOut: got message of size %d, cmd=%s\n", n, commands[cmd.cmd]); 
 			if (n != s) {
 				printf("recDynLinkOutTask: got %d bytes, expected %d\n", n, s);
 				continue;
@@ -721,13 +770,13 @@ LOCAL void recDynLinkOut(void)
 			}
 			precDynLink = cmd.data.precDynLink;
 			pdynLinkPvt = precDynLink->pdynLinkPvt;
-			DEBUG(5,"recDynLinkOut: precDynLink=%p", precDynLink); 
+			DEBUG(10,"recDynLinkOut: precDynLink=%p", precDynLink); 
 			if (pdynLinkPvt==NULL) {
 				printf("\n***ERROR***: pdynLinkPvt=%p\n", pdynLinkPvt);
 				precDynLink->onQueue--;
 				continue;
 			} else {
-				DEBUG(5,", pvname=%s\n", pdynLinkPvt->pvname);
+				DEBUG(10,", pvname=%s\n", pdynLinkPvt->pvname);
 			}
 			switch (cmd.cmd) {
 			case (cmdSearch):
@@ -743,7 +792,7 @@ LOCAL void recDynLinkOut(void)
 					pdynLinkPvt->pbuffer);
 				if (caStatus!=ECA_NORMAL) {
 					epicsPrintf("recDynLinkTask pv=%s CA Error %s\n",
-					pdynLinkPvt->pvname,ca_message(caStatus));
+						pdynLinkPvt->pvname,ca_message(caStatus));
 				}
 				precDynLink->onQueue--;
 				break;
@@ -755,7 +804,7 @@ LOCAL void recDynLinkOut(void)
 					pdynLinkPvt->pbuffer, notifyCallback, precDynLink);
 				if (caStatus!=ECA_NORMAL) {
 					epicsPrintf("recDynLinkTask pv=%s CA Error %s\n",
-					pdynLinkPvt->pvname,ca_message(caStatus));
+						pdynLinkPvt->pvname,ca_message(caStatus));
 					/* error indicates user won't get a callback, so we do it */
 					pdynLinkPvt->notifyInProgress = 0;
 					precDynLink->status = FATAL_ERROR;
@@ -764,12 +813,15 @@ LOCAL void recDynLinkOut(void)
 				precDynLink->onQueue--;
 				break;
 			case (cmdGetCallback):
+				DEBUG(5,"recDynLinkOut: GetCallback PV=%s, nRequest=%d\n",
+					pdynLinkPvt->pvname, pdynLinkPvt->nRequest); 
+
 				status = ca_array_get_callback(
 					dbf_type_to_DBR_TIME(mapNewToOld[pdynLinkPvt->dbrType]),
 					pdynLinkPvt->nRequest,pdynLinkPvt->chid, userGetCallback, precDynLink);
 				if (status!=ECA_NORMAL) {
 					epicsPrintf("recDynLinkTask pv=%s CA Error %s\n",
-					pdynLinkPvt->pvname,ca_message(status));
+						pdynLinkPvt->pvname,ca_message(status));
 					/* error indicates user won't get a callback, so we do it */
 					precDynLink->status = FATAL_ERROR;
 					(pdynLinkPvt->userGetCallback)(precDynLink);
