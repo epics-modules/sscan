@@ -235,15 +235,17 @@
  *                      data-storage client even if it doesn't wait for anything else, to
  *                      abandon even that caution if user insists, and to show user where it
  *                      is in the process.
- * 5.26 02-25-05  tmm   Before-scan link didn't work right in NoWait case.
- * 5.27 03-11-05  tmm   ExportAddress for volatile variables.  Check for npts <=0 in
+ * 5.25a 02-25-05  tmm  Before-scan link didn't work right in NoWait case.
+ * 5.25b 03-11-05  tmm  ExportAddress for volatile variables.  Check for npts <=0 in
  *                      init_record.  Reject illegal npts in special().  ajdLinParms() now
  *                      checks that step-increment agrees with overall scan direction.
  *                      Freeze flags for start, end, and width are ignored in this check.
  *                      Probably should consider deleting all the freeze-flag stuff.
+ * 5.26 03-16-05  tmm   Allow before-scan and after-scan links to write to
+ *                      their own sscan record.
  */
 
-#define VERSION 5.25
+#define VERSION 5.26
 
 
 #include <stddef.h>
@@ -1081,29 +1083,29 @@ special(struct dbAddr *paddr, int after)
 		precPvt->pffo = psscan->ffo;	/* save previous ffo flag */
 		/* Forbid certain changes while scan is in progress. */
 		if (psscan->busy) {
-			switch (special_type) {
-			case (SPC_MOD):
-				if ((fieldIndex == sscanRecordACQM) || (fieldIndex == sscanRecordACQT))
-					return(-1);
-				if ((fieldIndex >= sscanRecordP1PV) &&
-						(fieldIndex <= sscanRecordASPV)) {
+			if ((fieldIndex == sscanRecordACQM) || (fieldIndex == sscanRecordACQT)) {
+				return(-1);
+			} else if ((fieldIndex >= sscanRecordP1PV) && (fieldIndex <= sscanRecordASPV)) {
+				return(-1);
+			} else if ((psscan->faze > sscanFAZE_BEFORE_SCAN_WAIT) &&
+					   (psscan->faze < sscanFAZE_AFTER_SCAN_DO)) {
+				/* We're in the scan loop; almost nothing is permitted now */
+				switch (fieldIndex) {
+				case (sscanRecordCMND):
+					return (psscan->cmnd == CLEAR_MSG) ? 0 : -1;
+				case (sscanRecordEXSC):
+				case (sscanRecordPAUS):
+				case (sscanRecordWAIT):
+				case (sscanRecordAWCT):
+				case (sscanRecordAWAIT):
+					return(0);
+				default:
 					return(-1);
 				}
-				break;
-			case (SPC_SC_MO):	/* step mode */
-			case (SPC_SC_S):	/* start */
-			case (SPC_SC_I):	/* step increment */
-			case (SPC_SC_E):	/* end */
-			case (SPC_SC_C):	/* center */
-			case (SPC_SC_W):	/* width */
-			case (SPC_SC_N):	/* npts */
-				return(-1);
-				break;
-			default:
-				break;
 			}
-		} else if (special_type == SPC_SC_N) {
-			/* Reject illegal npts values */
+		}
+		/* Reject illegal npts values */
+		if (special_type == SPC_SC_N) {
 			if ((psscan->npts > psscan->mpts) || (psscan->npts < 1)) {
 				return(-1);
 			}
@@ -2585,6 +2587,7 @@ initScan(sscanRecord *psscan)
 		/* psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze); */
 		return (status);
 	}
+
 	/* Then calculate the starting position */
 	precPvt->onTheFly = precPvt->flying = 0;	/* clear onTheFly flag */
 	pPvStat = &psscan->p1nv;
