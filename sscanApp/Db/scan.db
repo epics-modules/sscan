@@ -159,8 +159,6 @@ grecord(sscan,"$(P)scan1") {
 	field(P3PR,"5")
 	field(P4HR,"1")
 	field(P4PR,"5")
-	field(T1CD,"1")
-	field(T2CD,"1")
 }
 grecord(sscan,"$(P)scan2") {
 	field(DESC,"Scan 2")
@@ -179,8 +177,6 @@ grecord(sscan,"$(P)scan2") {
 	field(P3PR,"5")
 	field(P4HR,"1")
 	field(P4PR,"5")
-	field(T1CD,"1")
-	field(T2CD,"1")
 }
 grecord(sscan,"$(P)scan3") {
 	field(DESC,"Scan 3")
@@ -199,8 +195,6 @@ grecord(sscan,"$(P)scan3") {
 	field(P3PR,"5")
 	field(P4HR,"1")
 	field(P4PR,"5")
-	field(T1CD,"1")
-	field(T2CD,"1")
 }
 grecord(sscan,"$(P)scan4") {
 	field(DESC,"Scan 4")
@@ -219,8 +213,6 @@ grecord(sscan,"$(P)scan4") {
 	field(P3PR,"5")
 	field(P4HR,"1")
 	field(P4PR,"5")
-	field(T1CD,"1")
-	field(T2CD,"1")
 }
 grecord(sscan,"$(P)scanH") {
 	field(DESC,"Scan H")
@@ -238,8 +230,6 @@ grecord(sscan,"$(P)scanH") {
 	field(P3PR,"5")
 	field(P4HR,"1")
 	field(P4PR,"5")
-	field(T1CD,"1")
-	field(T2CD,"1")
 	field(ACQT,"1D ARRAY")
 }
 grecord(scalcout,"$(P)ScanDimH1") {
