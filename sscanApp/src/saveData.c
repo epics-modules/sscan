@@ -786,7 +786,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.11 2004-02-25 19:50:06 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.12 2004-02-25 22:26:46 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -1009,7 +1009,7 @@ LOCAL int connectScan(char* name, char* handShake)
   }
   
   /* get the max number of points of the scan to allocate the buffers	*/
-  if(ca_array_get(DBR_SHORT, 1, pscan->cmpts, &(pscan->mpts))!=ECA_NORMAL) {
+  if(ca_array_get(DBR_LONG, 1, pscan->cmpts, &(pscan->mpts))!=ECA_NORMAL) {
     if(ca_pend_io(5.0)==ECA_TIMEOUT) {
       printf("saveData: %s: Unable to read MPTS. Aborting connection", pscan->name);
       deconnectScan(pscan);
@@ -1020,13 +1020,19 @@ LOCAL int connectScan(char* name, char* handShake)
 
   /* Try to allocate memory for the buffers				*/
   ok= 1;
+  Debug2(1, "connectScan(%s): allocating %ld pts for positioners\n", name, pscan->mpts);
   for(i=0; ok && i<SCAN_NBP; i++) {
+    Debug3(3, "connectScan(%s): allocating %ld pts for positioner %d\n",
+		name, pscan->mpts, i);
     if(pscan->cpxra[i]!=NULL) {
       ok= (pscan->pxra[i]= (double*) calloc(pscan->mpts, sizeof(double)))!= NULL;
     }
   }
 
+  Debug2(1, "connectScan(%s): allocating %ld pts for detectors\n", name, pscan->mpts);
   for(i=0; ok && i<SCAN_NBD; i++) {
+    Debug3(3, "connectScan(%s): allocating %ld pts for detector %d\n",
+		name, pscan->mpts, i);
     if(pscan->cdxda[i]!=NULL) {
       ok= (pscan->dxda[i]= (float*) calloc(pscan->mpts, sizeof(float)))!= NULL;
     }
@@ -1245,7 +1251,7 @@ LOCAL void updateScan(SCAN* pscan)
     }
   } else {
     if(pscan->cpt_monitored==FALSE) {
-      ca_add_event(DBR_SHORT, pscan->ccpt, cptMonitor, NULL, &pscan->cpt_evid);
+      ca_add_event(DBR_LONG, pscan->ccpt, cptMonitor, NULL, &pscan->cpt_evid);
       pscan->cpt_monitored=TRUE;
       pscan->all_pts= FALSE;
     }
