@@ -283,7 +283,7 @@ typedef struct scan {
   long	       counter;		/* current scan				*/
   long	       dims_offset;
   long	       regular_offset;
-  short	       old_npts;
+  long	       old_npts;
 
   /*=======================SCAN RECORD FIELDS ==========================*/
   short    data;       	/* scan execution				*/
@@ -291,11 +291,11 @@ typedef struct scan {
   char     stamp[40];	/* scan's start time stamp			*/
   long	   time_fpos;
   
-  short	  mpts;		/* max # of points				*/
+  long	  mpts;		/* max # of points				*/
   chid    cmpts;
-  short	  npts;		/* # of points					*/
+  long	  npts;		/* # of points					*/
   chid    cnpts;
-  short   cpt;		/* current point				*/
+  long    cpt;		/* current point				*/
   chid    ccpt;
   long    cpt_fpos;	/* where to store data of the current point	*/
   epicsTimeStamp  cpt_time;	/* time of the last cpt monitor		*/
@@ -437,6 +437,30 @@ typedef struct scan_ts_short_msg {
     epicsTimeGetCurrent(&(msg.time)); \
     epicsMessageQueueSend(msg_queue, (void *)&msg, \
 	     SCAN_TS_SHORT_SIZE); }
+
+typedef struct scan_long_msg {
+  int   type;
+  epicsTimeStamp time;
+  SCAN* pscan;
+  long val;
+} SCAN_LONG_MSG;
+
+#define SCAN_LONG_SIZE (sizeof(SCAN_LONG_MSG)<MAX_SIZE? \
+			 sizeof(SCAN_LONG_MSG):MAX_SIZE)
+
+#define sendScanLongMsg(t, s, v) { \
+    SCAN_LONG_MSG msg; \
+    msg.type= t; msg.pscan=s; msg.val= v;\
+    epicsTimeGetCurrent(&(msg.time)); \
+    epicsMessageQueueTrySend(msg_queue, (void *)&msg, \
+	     SCAN_LONG_SIZE); }
+
+#define sendScanLongMsgWait(t, s, v) { \
+    SCAN_LONG_MSG msg; \
+    msg.type= t; msg.pscan=s; msg.val= v;\
+    epicsTimeGetCurrent(&(msg.time)); \
+    epicsMessageQueueSend(msg_queue, (void *)&msg, \
+	     SCAN_LONG_SIZE); }
 
 typedef struct scan_index_msg {
   int   type;
@@ -762,7 +786,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.10 2004-02-13 17:15:46 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.11 2004-02-25 19:50:06 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -1133,7 +1157,7 @@ LOCAL int monitorScan(SCAN* pscan)
 
   Debug1(1, "monitorScan(%s)...\n", pscan->name);
 
-  if(ca_add_event(DBR_SHORT, pscan->cnpts, 
+  if(ca_add_event(DBR_LONG, pscan->cnpts, 
                   nptsMonitor, (void*)NULL, 0)!=ECA_NORMAL) {
     Debug1(2, "Unable to post monitor on %s\n", ca_name(pscan->cnpts));
     return -1;
@@ -1298,11 +1322,11 @@ LOCAL void infoScan(SCAN* pscan)
 
   printf("%s.DATA[%s]= %d\n", pscan->name, 
          cs[ca_state(pscan->cdata)], pscan->data);
-  printf("%s.MPTS[%s]= %d\n", pscan->name,
+  printf("%s.MPTS[%s]= %ld\n", pscan->name,
          cs[ca_state(pscan->cmpts)], pscan->mpts);
-  printf("%s.NPTS[%s]= %d\n", pscan->name,
+  printf("%s.NPTS[%s]= %ld\n", pscan->name,
          cs[ca_state(pscan->cnpts)], pscan->npts);
-  printf("%s.CPT [%s]= %d\n", pscan->name,
+  printf("%s.CPT [%s]= %ld\n", pscan->name,
          cs[ca_state(pscan->ccpt)], pscan->cpt);
    
   for(i=0; i<SCAN_NBP; i++)
@@ -1424,7 +1448,7 @@ LOCAL void dataMonitor(struct event_handler_args eha)
 /*                                                			*/
 LOCAL void nptsMonitor(struct event_handler_args eha)
 {
-    sendScanShortMsgWait(MSG_SCAN_NPTS, (SCAN *) ca_puser(eha.chid), *((short *) eha.dbr));
+    sendScanLongMsgWait(MSG_SCAN_NPTS, (SCAN *) ca_puser(eha.chid), *((long *) eha.dbr));
 }
 
 /*----------------------------------------------------------------------*/
@@ -1437,17 +1461,17 @@ LOCAL void cptMonitor(struct event_handler_args eha)
 
   switch(saveData_MessagePolicy) {
   case 0:
-    sendScanShortMsgWait(MSG_SCAN_CPT, (SCAN *) ca_puser(eha.chid), *((short *) eha.dbr));
+    sendScanLongMsgWait(MSG_SCAN_CPT, (SCAN *) ca_puser(eha.chid), *((long *) eha.dbr));
     break;
   case 1:
-    sendScanShortMsg(MSG_SCAN_CPT, (SCAN *) ca_puser(eha.chid), *((short *) eha.dbr));
+    sendScanLongMsg(MSG_SCAN_CPT, (SCAN *) ca_puser(eha.chid), *((long *) eha.dbr));
     break;
   case 2:
     pscan = (SCAN *) ca_puser(eha.chid);
     (void)epicsTimeGetCurrent(&currentTime);
     if (epicsTimeDiffInSeconds(&currentTime, &(pscan->cpt_time)) >= cpt_wait_time) {
       pscan->cpt_time = currentTime;
-      sendScanShortMsg(MSG_SCAN_CPT, (SCAN *) ca_puser(eha.chid), *((short *) eha.dbr));
+      sendScanLongMsg(MSG_SCAN_CPT, (SCAN *) ca_puser(eha.chid), *((long *) eha.dbr));
     }
     break;
   case 3:
@@ -1455,7 +1479,7 @@ LOCAL void cptMonitor(struct event_handler_args eha)
     (void)epicsTimeGetCurrent(&currentTime);
     if (epicsTimeDiffInSeconds(&currentTime, &(pscan->cpt_time)) >= cpt_wait_time) {
       pscan->cpt_time = currentTime;
-      sendScanShortMsgWait(MSG_SCAN_CPT, (SCAN *) ca_puser(eha.chid), *((short *) eha.dbr));
+      sendScanLongMsgWait(MSG_SCAN_CPT, (SCAN *) ca_puser(eha.chid), *((long *) eha.dbr));
     }
     break;
   }
@@ -2268,11 +2292,11 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
     /* Scan header								*/
     Debug0(3, "Writing per-scan header\n");
     xdr_short(&xdrs, &pscan->scan_dim);	/* scan dimension		*/
-    ival= (int)pscan->npts;
-    xdr_int(&xdrs, &ival);		/* # of pts			*/
+    lval= pscan->npts;
+    xdr_long(&xdrs, &lval);		/* # of pts			*/
     pscan->cpt_fpos= xdr_getpos(&xdrs);
-    ival= (int)pscan->cpt;		/* last valid point		*/
-    xdr_int(&xdrs, &ival);    
+    lval= pscan->cpt;		/* last valid point		*/
+    xdr_long(&xdrs, &lval);    
       
     if(pscan->scan_dim>1) {			/* index of lower scans		*/
       lval= xdr_getpos(&xdrs);
@@ -2374,8 +2398,8 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
       
     if(pscan->old_npts < pscan->npts) {
       xdr_setpos(&xdrs, pscan->dims_offset);
-      ival= (int)pscan->npts;
-      xdr_int(&xdrs, &ival);
+      lval= pscan->npts;
+      xdr_long(&xdrs, &lval);
     }
 
     if(pscan->old_npts!=-1 && pscan->old_npts!=pscan->npts) {
@@ -2424,7 +2448,7 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
       Debug2(3, "writing %s to %s\n", pscan->name, pscan->fname);
 
       /* get the current point */
-      ca_array_get(DBR_SHORT, 1, pscan->ccpt, &pscan->cpt);
+      ca_array_get(DBR_LONG, 1, pscan->ccpt, &pscan->cpt);
       if(ca_pend_io(0.1)!=ECA_NORMAL) {
         pscan->cpt= pscan->npts;
       }
@@ -2457,8 +2481,8 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
 
       /* current point */
       xdr_setpos(&xdrs, pscan->cpt_fpos);
-      ival= (int)pscan->cpt;
-      xdr_int(&xdrs, &ival);
+      lval= pscan->cpt;
+      xdr_long(&xdrs, &lval);
       /*--------------------------------------------------------------*/
       /* Save the positioners arrays				  */
       if(pscan->nb_pos) {
@@ -2484,8 +2508,8 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
     } else {
       /* current point */
       xdr_setpos(&xdrs, pscan->cpt_fpos);
-      ival= (int)pscan->cpt;
-      xdr_int(&xdrs, &ival); 
+      lval= pscan->cpt;
+      xdr_long(&xdrs, &lval); 
     }
 
     if(pscan->first_scan) {
@@ -2536,7 +2560,7 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
   }
 }
 
-LOCAL void proc_scan_npts(SCAN_SHORT_MSG* pmsg)
+LOCAL void proc_scan_npts(SCAN_LONG_MSG* pmsg)
 {
   SCAN* pscan;
   epicsTimeStamp now;
@@ -2544,13 +2568,14 @@ LOCAL void proc_scan_npts(SCAN_SHORT_MSG* pmsg)
   pscan= pmsg->pscan;
   pscan->npts= pmsg->val;
   epicsTimeGetCurrent(&now);
-  DebugMsg3(2, "%s MSG_SCAN_NPTS(%d)= %f\n", pscan->name, pscan->npts, 
+  DebugMsg3(2, "%s MSG_SCAN_NPTS(%ld)= %f\n", pscan->name, pscan->npts, 
             (float)epicsTimeDiffInSeconds(&now, &pmsg->time));
 }
 
-LOCAL void proc_scan_cpt(SCAN_SHORT_MSG* pmsg)
+LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
 {
-  int   i, ival;
+  int   i;
+  long  lval;
   SCAN* pscan;
   FILE* fd;
   XDR   xdrs;
@@ -2572,7 +2597,7 @@ LOCAL void proc_scan_cpt(SCAN_SHORT_MSG* pmsg)
   /* is the scan running ? */
   if((pscan->data!=0) || (pscan->cpt==0)) return;
 
-  Debug3(2, "saving %s[%d] to %s\n", pscan->name, pscan->cpt-1, pscan->fname);
+  Debug3(2, "saving %s[%ld] to %s\n", pscan->name, pscan->cpt-1, pscan->fname);
     
   for(i=0; i<SCAN_NBP; i++) {
     if((pscan->rxnv[i]==XXNV_OK) || (pscan->pxnv[i]==XXNV_OK))
@@ -2593,8 +2618,8 @@ LOCAL void proc_scan_cpt(SCAN_SHORT_MSG* pmsg)
       
     /* point number		*/
     xdr_setpos(&xdrs, pscan->cpt_fpos);
-    ival= (int)pscan->cpt;
-    xdr_int(&xdrs, &ival);
+    lval= pscan->cpt;
+    xdr_long(&xdrs, &lval);
     /* positioners and detectors values */
     if(pscan->nb_pos)
       for(i=0; i<SCAN_NBP; i++) {
@@ -2619,7 +2644,7 @@ LOCAL void proc_scan_cpt(SCAN_SHORT_MSG* pmsg)
   }
 
     epicsTimeGetCurrent(&now);
-  DebugMsg3(2, "%s MSG_SCAN_CPT(%d)= %f\n", pscan->name, pscan->cpt, 
+  DebugMsg3(2, "%s MSG_SCAN_CPT(%ld)= %f\n", pscan->name, pscan->cpt, 
             (float)epicsTimeDiffInSeconds(&now, &pmsg->time));
 }
 
@@ -3134,12 +3159,12 @@ LOCAL int saveDataTask(void *parm)
       /*--------------------------------------------------------------*/
       /* NPTS has changed						*/
     case MSG_SCAN_NPTS:
-      proc_scan_npts((SCAN_SHORT_MSG*)pmsg);
+      proc_scan_npts((SCAN_LONG_MSG*)pmsg);
       break;
       /*--------------------------------------------------------------*/
       /* CPT has changed						*/
     case MSG_SCAN_CPT:
-      proc_scan_cpt((SCAN_SHORT_MSG*)pmsg);
+      proc_scan_cpt((SCAN_LONG_MSG*)pmsg);
       break;
       /*--------------------------------------------------------------*/
       /* PxNV has changed						*/

@@ -546,7 +546,7 @@ static int isBlank(char *name)
 	int i;
 
 	for(i=0; name[i]; i++) {
-		if (!(isspace(name[i]))) return(0);
+		if (!(isspace((int)name[i]))) return(0);
 	}
 	return((i>0));
 }
@@ -2340,7 +2340,8 @@ contScan(sscanRecord *psscan)
 	epicsTimeStamp  currentTime;
 	unsigned short *pPvStat;
 	unsigned short *pPvStatPos;
-	unsigned short  i, j, addToPrev;
+	unsigned short  i, addToPrev;
+	long			j;
 	long            status, nReq = 1;
 	size_t          nRequest = 1;
 	double			oldPos;
@@ -2355,7 +2356,7 @@ contScan(sscanRecord *psscan)
 
 	case sscanFAZE_CHECK_MOTORS:
 		if (sscanRecordDebug >= 5) {
-			printf("%s:CHECK_MOTORS  - Point %d\n", psscan->name, psscan->cpt);
+			printf("%s:CHECK_MOTORS  - Point %ld\n", psscan->name, (long)psscan->cpt);
 		}
 		/* check if a readback PV and a delta are specified */
 		pPvStat = &psscan->r1nv;
@@ -2439,7 +2440,7 @@ contScan(sscanRecord *psscan)
 	case sscanFAZE_READ_DETCTRS:
 		/*** Read positioner and detector data into arrays. ***/
 		if (sscanRecordDebug >= 5) {
-			printf("%s:READ_DETCTRS - Point %d\n", psscan->name, psscan->cpt);
+			printf("%s:READ_DETCTRS - Point %ld\n", psscan->name, (long)psscan->cpt);
 		}
 
 		/* Store the appropriate value into the positioner readback array */
@@ -2655,7 +2656,7 @@ packData(sscanRecord *psscan)
 {
 
 	recPvtStruct	*precPvt = (recPvtStruct *) psscan->rpvt;
-	int				i, j, markIndex;
+	long			i, j, markIndex;
 	double			highVal, lowVal, aveDiff;
 	int 			highIndex, lowIndex;
 	detFields		*pDet;
@@ -2691,8 +2692,8 @@ packData(sscanRecord *psscan)
 	}
 
 	if ((psscan->cpt > 1) && (psscan->pasm >= sscanPASM_Peak_Pos)) {
-		if (sscanRecordDebug >= 5) printf("%s:packData cpt=%d,pasm=%d\n",
-			psscan->name, psscan->cpt, psscan->pasm);
+		if (sscanRecordDebug >= 5) printf("%s:packData cpt=%ld,pasm=%d\n",
+			psscan->name, (long)psscan->cpt, psscan->pasm);
 		/* Find peak/valley/edge in reference detector data array and go to it. */
 		markIndex = -1;
 
@@ -2963,7 +2964,7 @@ doPuts(precPvt)
 
 	case sscanFAZE_TRIG_DETCTRS:
 		if (sscanRecordDebug >= 5) {
-			printf("%s:TRIG_DETCTRS - Point %d\n", psscan->name, psscan->cpt);
+			printf("%s:TRIG_DETCTRS - Point %ld\n", psscan->name, (long)psscan->cpt);
 		}
 		psscan->faze = precPvt->onTheFly ? sscanFAZE_CHECK_MOTORS : sscanFAZE_READ_DETCTRS;
 		POST(&psscan->faze);
@@ -3717,7 +3718,7 @@ checkScanLimits(psscan)
 	/* for each valid positioner, fetch control limits */
 	long            status = 0;
 	size_t          nRequest = 1;
-	int             i, j;
+	long            i, j;
 	double          value;
 
 	if (sscanRecordDebug) {
@@ -3750,7 +3751,7 @@ checkScanLimits(psscan)
 			}
 			POST(&pPos->p_pp);
 			if (sscanRecordDebug)
-				printf("%s:checkScanLimits: P%1d pp=%f (status=%ld)\n",
+				printf("%s:checkScanLimits: P%1ld pp=%f (status=%ld)\n",
 					psscan->name, j, pPos->p_pp, status);
 			if (status) {
 				printf("%s:checkScanLimits: could not get current value\n", psscan->name);
@@ -3772,7 +3773,7 @@ checkScanLimits(psscan)
 		if ((*pPvStat == PV_OK) &&
 		    (pPos->p_sm == sscanP1SM_Table) &&
 		    (precPvt->tablePts[i] < psscan->npts)) {
-			sprintf(psscan->smsg, "Pts in P%d Table < # of Steps", i + 1);
+			sprintf(psscan->smsg, "Pts in P%ld Table < # of Steps", i + 1);
 			POST(&psscan->smsg);
 			if (!psscan->alrt) {psscan->alrt = 1; POST(&psscan->alrt);}
 			return (ERROR);
@@ -3825,11 +3826,11 @@ checkScanLimits(psscan)
 				}
 
 				if ((pPos->p_lr != 0) && (value < pPos->p_lr)) {
-					sprintf(psscan->smsg, "P%-d Value < LO_Limit @ point %1d", i + 1, j);
+					sprintf(psscan->smsg, "P%-ld Value < LO_Limit @ point %1ld", i + 1, j);
 					psscan->alrt = 1;
 					return (ERROR);
 				} else if ((pPos->p_hr != 0) && (value > pPos->p_hr)) {
-					sprintf(psscan->smsg, "P%-d Value > HI_Limit @ point %1d", i + 1, j);
+					sprintf(psscan->smsg, "P%-ld Value > HI_Limit @ point %1ld", i + 1, j);
 					psscan->alrt = 1;
 					return (ERROR);
 				}
@@ -3865,7 +3866,7 @@ previewScan(psscan)
 	double         *pPosBuf;
 	float          *pDetBuf;
 	float           value;
-	int             i, j;
+	long            i, j;
 	long            status;
 	size_t          nRequest = 1;
 

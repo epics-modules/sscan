@@ -96,7 +96,7 @@ recordtype(sscan) {
 		size(4)
 		extra("void *           rpvt")
 	}
-	field(MPTS,DBF_SHORT) {
+	field(MPTS,DBF_LONG) {
 		prompt("Max # of Points")
 		promptgroup(GUI_LINKS)
 		special(SPC_NOMOD)
@@ -152,7 +152,7 @@ recordtype(sscan) {
 		special(SPC_MOD)
 		initial("1")
 	}
-	field(NPTS,DBF_SHORT) {
+	field(NPTS,DBF_LONG) {
 		prompt("Number of Points")
 		promptgroup(GUI_LINKS)
 		asl(ASL0)
@@ -177,17 +177,17 @@ recordtype(sscan) {
 		interest(1)
 		menu(sscanFFO)
 	}
-	field(CPT,DBF_SHORT) {
+	field(CPT,DBF_LONG) {
 		prompt("Current Point")
 		special(SPC_NOMOD)
 		interest(1)
 	}
-	field(DPT,DBF_SHORT) {
+	field(DPT,DBF_LONG) {
 		prompt("Desired Point")
 		special(119)
 		interest(1)
 	}
-	field(PCPT,DBF_SHORT) {
+	field(PCPT,DBF_LONG) {
 		prompt("Point ofLast Posting")
 		special(SPC_NOMOD)
 		interest(1)
