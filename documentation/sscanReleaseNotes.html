@@ -32,13 +32,24 @@ completion.  Now the user decides, by setting BSWAIT and ASWAIT.
 the scan would appear to complete.
 <li>new medm displays for scans are simpler, less cluttered, and have
 documentation callups.
-<li>Added scanparm support for one-dimensional, two-positioner scans.
 <li>In saveData.req (the file in the ioc directory that tells saveData what
 scans to monitor, etc), the handshake PV is now ignored.  saveData now
 uses scanX.AWAIT to handshake with scanX.
 <li>saveData no longer allocates local storage for unused sscan-record 
 detectors.  Once a sscan-detector PV is specified, storage is allocated
 and never released.
+<li>Modified the scanparm record to support multi-dimensional, multiple-
+positioner scans: Added two output links to the scanparmRecord: OLOAD, and OGO.  If LOAD
+is nonzero, it's written to OLOAD; if GO is nonzero, it's written to OGO.
+Added scanParms2Pos.db, scanParms2Pos.adl -- scan parameters for a 1D
+scan with two positioners.
+The scanparm record now uses long int, rather than short int, for the
+number of data points (fields MP and NP).
+sscanRecord.dbd and scanparmRecord.dbd now include sscanMenu.dbd, to ensure
+that menus are consistent.  Sometime in the past, the scanparm record wasn't
+updated when sscanRecord menu fields were modified.  In particular, scanParm*.db
+used to specify "Relative" positioning, while the sscan record accepted
+only "RELATIVE" or "ABSOLUTE".
 <ul>
 
 <h2 align="center">Release 2-3</h2>
