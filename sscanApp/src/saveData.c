@@ -762,7 +762,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.9 2004-02-04 17:39:27 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.10 2004-02-13 17:15:46 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -3251,7 +3251,7 @@ static const iocshFuncDef saveData_Info_FuncDef = {"saveData_Info", 0, NULL};
 static void saveData_Info_CallFunc(const iocshArgBuf *args) {saveData_Info();}
 
 /* collect all functions */
-void saveDataRegister(void)
+void saveDataRegistrar(void)
 {
     iocshRegister(&saveData_Init_FuncDef, saveData_Init_CallFunc);
     iocshRegister(&saveData_PrintScanInfo_FuncDef, saveData_PrintScanInfo_CallFunc);
@@ -3262,4 +3262,4 @@ void saveDataRegister(void)
     iocshRegister(&saveData_Info_FuncDef, saveData_Info_CallFunc);
 }
 
-epicsExportRegistrar(saveDataRegister);
+epicsExportRegistrar(saveDataRegistrar);
