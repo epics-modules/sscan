@@ -32,11 +32,14 @@
  *
  * Modification Log:
  * -----------------
- * .01  02-21-96  xli initial development
- * .02  06-06-96  tmm continued initial development
- * .03  08-16-96  tmm v2.0: conversion to EPICS 3.13
- * .04  06-11-99  tmm v2.1: clear load and go always; debug output
- * .05  06-12-00  tmm v3.0: add det PV support
+ * 02-21-96  xli initial development
+ * 06-06-96  tmm continued initial development
+ * 08-16-96  tmm v2.0: conversion to EPICS 3.13
+ * 06-11-99  tmm v2.1: clear load and go always; debug output
+ * 06-12-00  tmm v3.0: add det PV support
+ * 09-21-04  tmm v3.1: call dbPutLink only if link exists and contains
+ *           a pv_name.  New fields OLOAD, OGO are output links for LOAD and GO.
+ *           NP and MP are now DBF_LONG
  */
 
 #define VERSION 3.0
@@ -138,7 +141,7 @@ scanparmRecord *psr;
 	if (scanparmRecordDebug) printf("scanparm(%s):process:act=%d\n",
 		psr->name, psr->act);
 
-	status = dbGetLink(&(psr->imp), DBR_SHORT, &(psr->mp), NULL, NULL);
+	status = dbGetLink(&(psr->imp), DBR_LONG, &(psr->mp), NULL, NULL);
 	if (scanparmRecordDebug) printf("scanparm(%s):process:mp=%d\n", psr->name, psr->mp);
 	if (status) return(status);
 
@@ -146,7 +149,7 @@ scanparmRecord *psr;
 		psr->np = psr->mp;
 		db_post_events(psr, &psr->np, DBE_VALUE);
 	}
-	else if (psr->np < 2){
+	if (psr->np < 2){
 		psr->np = 2;
 		db_post_events(psr, &psr->np, DBE_VALUE);
 	}
@@ -155,36 +158,81 @@ scanparmRecord *psr;
 
 	if (!(psr->act)) {
 		if (psr->load || psr->go) {
-			status = dbPutLink(&(psr->opre), DBR_SHORT, &(psr->pre), 1);
-			status = dbPutLink(&(psr->oppv), DBR_STRING, &(psr->ppv), 1);
-			status = dbPutLink(&(psr->orpv), DBR_STRING, &(psr->rpv), 1);
-			status = dbPutLink(&(psr->otpv), DBR_STRING, &(psr->tpv), 1);
-			status = dbPutLink(&(psr->odpv), DBR_STRING, &(psr->dpv), 1);
-			status = dbPutLink(&(psr->osm), DBR_ENUM, &(psr->sm), 1);
-			status = dbPutLink(&(psr->osp), DBR_DOUBLE, &(psr->sp), 1);
-			status = dbPutLink(&(psr->oep), DBR_DOUBLE, &(psr->ep), 1);
-			status = dbPutLink(&(psr->onp), DBR_SHORT, &(psr->np), 1);
-			status = dbPutLink(&(psr->oar), DBR_ENUM, &(psr->ar), 1);
-			status = dbPutLink(&(psr->oaft), DBR_ENUM, &(psr->aft), 1);
+			if (psr->opre.value.pv_link.pvname && 
+				psr->opre.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->opre), DBR_SHORT, &(psr->pre), 1);
+
+			if (psr->oppv.value.pv_link.pvname && 
+				psr->oppv.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->oppv), DBR_STRING, &(psr->ppv), 1);
+
+			if (psr->orpv.value.pv_link.pvname && 
+				psr->orpv.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->orpv), DBR_STRING, &(psr->rpv), 1);
+
+			if (psr->otpv.value.pv_link.pvname && 
+				psr->otpv.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->otpv), DBR_STRING, &(psr->tpv), 1);
+
+			if (psr->odpv.value.pv_link.pvname && 
+				psr->odpv.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->odpv), DBR_STRING, &(psr->dpv), 1);
+
+			if (psr->osm.value.pv_link.pvname && 
+				psr->osm.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->osm), DBR_ENUM, &(psr->sm), 1);
+
+			if (psr->osp.value.pv_link.pvname && 
+				psr->osp.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->osp), DBR_DOUBLE, &(psr->sp), 1);
+
+			if (psr->oep.value.pv_link.pvname && 
+				psr->oep.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->oep), DBR_DOUBLE, &(psr->ep), 1);
+
+			if (psr->onp.value.pv_link.pvname && 
+				psr->onp.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->onp), DBR_LONG, &(psr->np), 1);
+
+			if (psr->oar.value.pv_link.pvname && 
+				psr->oar.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->oar), DBR_ENUM, &(psr->ar), 1);
+
+			if (psr->oaft.value.pv_link.pvname && 
+				psr->oaft.value.pv_link.pvname[0])
+				status = dbPutLink(&(psr->oaft), DBR_ENUM, &(psr->aft), 1);
+				
 			if (status) return(status);
 
 			if (psr->go) {
 				if (scanparmRecordDebug) {
 					printf("scanparm(%s):process:starting scan\n", psr->name);
 				}
-				status = dbPutLink(&(psr->oaqt), DBR_DOUBLE, &(psr->aqt), 1);
-				status = dbPutLink(&(psr->osc), DBR_SHORT, &(psr->sc), 1);
+
+				if (psr->oaqt.value.pv_link.pvname && 
+					psr->oaqt.value.pv_link.pvname[0])
+					status = dbPutLink(&(psr->oaqt), DBR_DOUBLE, &(psr->aqt), 1);
+
+				if (psr->osc.value.pv_link.pvname && 
+					psr->osc.value.pv_link.pvname[0])
+					status = dbPutLink(&(psr->osc), DBR_SHORT, &(psr->sc), 1);
 				if (status) return(status);
 			}
 		}
 	}
 
 	if (psr->go) {
+		if (psr->ogo.value.pv_link.pvname && 
+			psr->ogo.value.pv_link.pvname[0])
+			status = dbPutLink(&(psr->ogo), DBR_SHORT, &(psr->go), 1);
 		psr->go = 0;
 		db_post_events(psr, &psr->go, DBE_VALUE);
 	}
 
 	if (psr->load) {
+		if (psr->oload.value.pv_link.pvname && 
+			psr->oload.value.pv_link.pvname[0])
+			status = dbPutLink(&(psr->oload), DBR_SHORT, &(psr->load), 1);
 		psr->load = 0;
 		db_post_events(psr, &psr->load, DBE_VALUE);
 	}
