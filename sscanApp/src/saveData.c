@@ -115,6 +115,12 @@
 #include <usrLib.h>
 #include <ioLib.h>
 #include <nfsDrv.h>
+#else
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#define OK 0
+#define ERROR -1
 #endif
 
 #include <stdio.h>
@@ -132,7 +138,9 @@
 
 #include "req_file.h"
 #include "xdr_lib.h"
+#ifdef vxWorks
 #include "xdr_stdio.h"
+#endif
 
 /************************************************************************/
 /*                           MACROS                                     */
@@ -790,7 +798,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.14 2004-12-14 17:26:10 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.15 2005-02-16 22:01:23 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -1248,26 +1256,44 @@ LOCAL void updateScan(SCAN* pscan)
   int i;
 
   if ((pscan == NULL) || (pscan->name[0] == 0)) return;
+  Debug1(2, "updateScan:entry for '%s'\n", pscan->name);
   pscan->nxt=0;
   for(i=0; i<SCAN_NBT; i++) {
     if(pscan->txsc[i]==0 && pscan->txcd[i]!=0) {
+      Debug2(2, "updateScan:%s: calling searchScan(%s)\n",
+        pscan->name, pscan->txpvRec[i]);
       pscan->nxt= searchScan(pscan->txpvRec[i]);
       if(pscan->nxt) break;
     }
   }
   if(!(pscan->nxt) && (realTime1D==0)) {
     if(pscan->cpt_monitored==TRUE) {
-      ca_clear_event(pscan->cpt_evid);
+      Debug2(2, "updateScan:%s: clear .CPT subscription (cpt_evid = 0x%x)\n", pscan->name, (int)pscan->cpt_evid);
+#if 0
+      if (pscan->cpt_evid) ca_clear_event(pscan->cpt_evid);
+#else
+      if (pscan->cpt_evid) ca_clear_subscription(pscan->cpt_evid);
+#endif
       pscan->cpt_monitored= FALSE;
       pscan->all_pts= FALSE;
     }
   } else {
     if(pscan->cpt_monitored==FALSE) {
-      ca_add_event(DBR_LONG, pscan->ccpt, cptMonitor, NULL, &pscan->cpt_evid);
-      pscan->cpt_monitored=TRUE;
-      pscan->all_pts= FALSE;
+      Debug1(2, "updateScan:%s: subscribe to .CPT\n", pscan->name);
+#if 0
+      if (ca_add_event(DBR_LONG, pscan->ccpt, cptMonitor, NULL, &pscan->cpt_evid) == ECA_NORMAL) {
+#else
+      if (ca_create_subscription(DBR_LONG, 1, pscan->ccpt, DBE_VALUE, cptMonitor, NULL, &pscan->cpt_evid) == ECA_NORMAL) {
+#endif
+        Debug2(2, "updateScan:%s: cpt_evid=%x\n", pscan->name, (int)pscan->cpt_evid);
+        pscan->cpt_monitored=TRUE;
+        pscan->all_pts= FALSE;
+      } else {
+        Debug1(2, "Unable to post monitor on %s\n", ca_name(pscan->ccpt));
+      }
     }
   }
+  Debug1(2, "updateScan:exit cpt_monitored = %d\n", pscan->cpt_monitored);
 }
 
 LOCAL void updateScans()
@@ -1305,6 +1331,7 @@ LOCAL SCAN* searchScan(char* name)
 {
   SCAN_NODE* current;
 
+  Debug1(2,"searchScan '%s'\n", name);
   current= list_scan;
   while(current) {
     if(strcmp(current->scan.name, name)==0) {
@@ -1458,6 +1485,7 @@ LOCAL void cptMonitor(struct event_handler_args eha)
   SCAN* pscan;
   epicsTimeStamp currentTime;
 
+  Debug0(2,"cptMonitor:entry\n");
   switch(saveData_MessagePolicy) {
   case 0:
     sendScanLongMsgWait(MSG_SCAN_CPT, (SCAN *) ca_puser(eha.chid), *((long *) eha.dbr));
@@ -2116,7 +2144,7 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
   pscan= pmsg->pscan;  
 
   if (pscan->data ==-1) {
-    /* this should never happen */
+    /* this should happen only once, at init */
     pscan->data = pmsg->val;
     Debug1(2,"!!!%s pscan->data == -1!!!\n", pscan->name);
     return;
@@ -2201,7 +2229,11 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
 
       /* Make file name */
       sprintf(pscan->fname, "%s%.4d.mda", ioc_prefix, (int)pscan->counter);
+#ifdef vxWorks
       sprintf(pscan->ffname, "%s%s", local_pathname, pscan->fname);
+#else
+      sprintf(pscan->ffname, "%s%s", server_pathname, pscan->fname);
+#endif
       cptr= &pscan->ffname[strlen(pscan->ffname)];
       duplicate_scan_number = 0;
       while(fileStatus(pscan->ffname)==OK) {
@@ -2994,16 +3026,22 @@ LOCAL void proc_egu(STRING_MSG* pmsg)
 LOCAL void proc_file_system(STRING_MSG* pmsg)
 {
   char  msg[40];
-  char  hostname[40];
   char  *filesystem;
-  char* cout;
   epicsTimeStamp now;
+  char *path = local_pathname;
+  
+#ifdef vxWorks
+  char  hostname[40];
+  char* cout;
+#endif
 
   /* make sure string is null terminated */
   pmsg->string[39]='\0';
 
+#ifdef vxWorks
   /* unmount previous data directory */
   nfsUnmount("/data");
+#endif
 
   file_system_state= FS_NOT_MOUNTED;
   save_status= STATUS_ACTIVE_FS_ERROR;
@@ -3017,7 +3055,10 @@ LOCAL void proc_file_system(STRING_MSG* pmsg)
   server_subdir= server_pathname;
 
   filesystem= pmsg->string;
-  if((*(filesystem++)!='/') || (*(filesystem++)!='/')) {
+
+#ifdef vxWorks
+
+  if ((*(filesystem++)!='/') || (*(filesystem++)!='/')) {
     strcpy(msg, "Invalid file system !!!");
   } else {
     /* extract the host name */
@@ -3030,18 +3071,28 @@ LOCAL void proc_file_system(STRING_MSG* pmsg)
     if(nfsMount(hostname, filesystem, "/data")==ERROR) {
       strcpy(msg, "Unable to mount file system !!!!");
     } else {
-      strcpy(server_pathname, pmsg->string);
-      strcat(server_pathname, "/");
-      server_subdir= &server_pathname[strlen(server_pathname)];
-      
       file_system_state= FS_MOUNTED;
+      path = local_pathname;
+    }
+  }
 
-      if(checkRWpermission(local_pathname)!=OK) {
-        strcpy(msg, "RW permission denied !!!");
-      } else {
-        strcpy(msg, "saveData OK");
-        save_status= STATUS_ACTIVE_OK;
-      }
+#else
+
+  file_system_state= FS_MOUNTED;
+  path = server_pathname;
+  
+#endif
+
+  if (file_system_state == FS_MOUNTED) {
+    strcpy(server_pathname, pmsg->string);
+    strcat(server_pathname, "/");
+    server_subdir= &server_pathname[strlen(server_pathname)];  
+
+    if(checkRWpermission(path)!=OK) {
+      strcpy(msg, "RW permission denied !!!");
+    } else {
+      strcpy(msg, "saveData OK");
+      save_status= STATUS_ACTIVE_OK;
     }
   }
 
@@ -3060,11 +3111,14 @@ LOCAL void proc_file_system(STRING_MSG* pmsg)
 LOCAL void proc_file_subdir(STRING_MSG* pmsg)
 {
   char msg[40];
-  int fd;
   char* cin;
   char* server;
   char* local;
   epicsTimeStamp now;
+  char *path = local_pathname;
+#ifdef vxWorks
+  int fd;
+#endif
 
   if(file_system_state==FS_MOUNTED) {
 
@@ -3094,18 +3148,24 @@ LOCAL void proc_file_subdir(STRING_MSG* pmsg)
       /* skip all trailling '/' */
       while((*cin!='\0') && (*cin=='/')) cin++;
       /* create directory */
+#ifdef vxWorks
+      path = local_pathname;
       fd = open (local_pathname, O_RDWR | O_CREAT, 
                  FSTAT_DIR | DEFAULT_DIR_PERM | 0775);
       if(fd!=ERROR) close(fd);
+#else
+      path = server_pathname;
+      mkdir(server_pathname,0775);
+#endif
       /* append '/' */
       *(server++)= *(local++)= '/';
       *(server)= *(local)= '\0';    
     }
 
-    if(fileStatus(local_pathname)!=OK) {
+    if(fileStatus(path)!=OK) {
       strcpy(msg, "Invalid directory !!!");
       *server_subdir=*local_subdir= '\0';
-    } else if(checkRWpermission(local_pathname)!=OK) {
+    } else if(checkRWpermission(path)!=OK) {
       strcpy(msg, "RW permission denied !!!");
       *server_subdir=*local_subdir= '\0';
     } else {
@@ -3175,8 +3235,9 @@ LOCAL int saveDataTask(void *parm)
   while(1) {
     
     /* waiting for messages						*/
-    if (epicsMessageQueueReceive(msg_queue, pmsg, MAX_SIZE) ==
-		S_objLib_OBJ_DELETED) {
+    if (epicsMessageQueueReceive(msg_queue, pmsg, MAX_SIZE) < 0) {
+      /* no message received */
+	  Debug0(1, "saveDataTask: epicsMessageQueueReceive returned neg. number\n");
       break;
     }
 
