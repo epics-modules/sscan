@@ -819,19 +819,19 @@ process(sscanRecord *psscan)
 		if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
 		if (psscan->wcnt) {psscan->wcnt = 0; POST(&psscan->wcnt);}
 		if (psscan->wtng) {psscan->wtng = 0; POST(&psscan->wtng);}
-		sprintf(psscan->smsg, " ");
 		if (precPvt->numPositionerCallbacks) {
 			sprintf(psscan->smsg, "NOTE: positioner still active");
+			POST(&psscan->smsg);
 		} else if (precPvt->numTriggerCallbacks) {
 			sprintf(psscan->smsg, "NOTE: detector still active");
+			POST(&psscan->smsg);
 		} else if (precPvt->numAReadCallbacks) {
 			sprintf(psscan->smsg, "NOTE: array-read still active");
+			POST(&psscan->smsg);
 		} else if (precPvt->numGetCallbacks) {
 			sprintf(psscan->smsg, "NOTE: array-read still active");
-		} else {
-			sprintf(psscan->smsg, " ");
+			POST(&psscan->smsg);
 		}
-		POST(&psscan->smsg);
 		psscan->alrt = 0; POST(&psscan->alrt);
 		precPvt->numPositionerCallbacks = 0;
 		precPvt->numTriggerCallbacks = 0;
@@ -860,6 +860,16 @@ process(sscanRecord *psscan)
 				 */
 				psscan->dstate = sscanDSTATE_SAVE_DATA_WAIT;
 				POST(&psscan->dstate);
+			} else if ((psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) && (psscan->kill > 2)) {
+				/*
+				 * If data-storage client is able to write scan data, we should never
+				 * get to this point.  User evidently wants to abort without waiting for
+				 * data storage.
+				 */
+				 psscan->dstate = sscanDSTATE_PACKED; POST(&psscan->dstate);
+				 psscan->await = 0; POST(&psscan->await);
+				 sprintf(psscan->smsg, "Abandoning unsaved scan data"); POST(&psscan->smsg);
+				 printf("%s:process(): Abandoning unsaved scan data\n", psscan->name);
 			}
 			packData(psscan);
 			checkMonitors(psscan);
@@ -1099,9 +1109,18 @@ special(struct dbAddr *paddr, int after)
 					sprintf(psscan->smsg, "Scan is paused"); POST(&psscan->smsg);
 					if (!psscan->xsc) {psscan->exsc = 0; POST(&psscan->exsc);}
 					return(-1);
-				} else if (psscan->xsc || psscan->busy) {
+				} else if (psscan->xsc) {
 					/* redundant request to start scan */
 					sprintf(psscan->smsg, "Already scanning"); POST(&psscan->smsg);
+					return(-1);
+				} else if (psscan->busy) {
+					/* Not scanning, but not done either (saveData wait?) */
+					if (psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) {
+						sprintf(psscan->smsg, "Waiting for saveData");
+					} else {
+						sprintf(psscan->smsg, "Waiting for callback");
+					}
+					db_post_events(psscan, &psscan->smsg, DBE_VAL_LOG);
 					return(-1);
 				} else {
 					/* New scan.  Renew old positioner links so we get current limits data */
@@ -1151,18 +1170,22 @@ special(struct dbAddr *paddr, int after)
 				/* EXSC == 0 */
 				if (psscan->xsc) {
 					psscan->xsc = 0; POST(&psscan->xsc);
-					sprintf(psscan->smsg, "Abort in progress..."); POST(&psscan->smsg);
+					sprintf(psscan->smsg, "Aborting scan");
+					db_post_events(psscan, &psscan->smsg, DBE_VAL_LOG);
 					return(0);
 				} else if (psscan->faze != sscanFAZE_IDLE) {
 					/* The first abort didn't succeed, or is taking too long */
-					printf("%s:special(),killing scan.\n", psscan->name);
-					psscan->kill = 1;
+					psscan->kill++;
+					printf("%s:special(): Killing scan (kill=%1d/3).\n", psscan->name, psscan->kill);
+					sprintf(psscan->smsg, "Killing scan (kill=%1d/3)", psscan->kill);
+					db_post_events(psscan, &psscan->smsg, DBE_VAL_LOG);
 					/* Cancel any outstanding active timer */
 					if (precPvt->dlyCallback.timer) epicsTimerCancel(precPvt->dlyCallback.timer);
 					return(0);
 				} else {
 					/* request to abort scan that is not active */
-					sprintf(psscan->smsg, " "); POST(&psscan->smsg);
+					sprintf(psscan->smsg, "Scan record is idle");
+					db_post_events(psscan, &psscan->smsg, DBE_VAL_LOG);
 					return(-1);
 				}
 			}
@@ -2011,7 +2034,7 @@ notifyCallback(recDynLink * precDynLink)
 
 	if (psscan->faze == sscanFAZE_IDLE) {
 		/* we must have been aborted */
-		sprintf(psscan->smsg, " ");
+		sprintf(psscan->smsg, "callback while can record is idle");
 		POST(&psscan->smsg);
 		return;
 	}
