@@ -44,6 +44,7 @@ sscan_SRCS += saveData.c
 sscan_SRCS += req_file.c
 sscan_SRCS_vxWorks += xdr_stdio.c
 
+sscan_SYS_LIBS_cygwin32 += rpc
 sscan_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 include $(TOP)/configure/RULES
