@@ -261,7 +261,9 @@ long epicsShareAPI recDynLinkConnectionStatus(recDynLink *precDynLink)
 	dynLinkPvt	*pdynLinkPvt;
 	long		status;
 
+	if (precDynLink == NULL) return(-1);
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
+	if ((pdynLinkPvt == NULL) || (pdynLinkPvt->chid == NULL)) return(-1);
 	status = (ca_state(pdynLinkPvt->chid)==cs_conn) ? 0 : -1;
 	return(status);
 }
@@ -270,7 +272,9 @@ long epicsShareAPI recDynLinkGetNelem(recDynLink *precDynLink,size_t *nelem)
 {
 	dynLinkPvt  *pdynLinkPvt;
 
+	if (precDynLink == NULL) return(-1);
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
+	if ((pdynLinkPvt == NULL) || (pdynLinkPvt->chid == NULL)) return(-1);
 	if (ca_state(pdynLinkPvt->chid)!=cs_conn) return(-1);
 	*nelem = ca_element_count(pdynLinkPvt->chid);
 	return(0);
@@ -330,8 +334,10 @@ long epicsShareAPI recDynLinkGet(recDynLink *precDynLink,void *pbuffer,size_t *n
 	dynLinkPvt	*pdynLinkPvt;
 	long		caStatus;
 
+	if (precDynLink == NULL) return(-1);
 	precDynLink->status = 0;
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
+	if ((pdynLinkPvt == NULL) || (pdynLinkPvt->chid == NULL)) return(-1);
 	caStatus = (ca_state(pdynLinkPvt->chid)==cs_conn) ? 0 : -1;
 	if (caStatus) goto all_done;
 	if (*nRequest > pdynLinkPvt->nRequest) {
@@ -362,11 +368,14 @@ long epicsShareAPI recDynLinkPutCallback(recDynLink *precDynLink,void *pbuffer,s
 	long		status;
 	msgQCmd	cmd;
 
+	if (precDynLink == NULL) return(-1);
 	precDynLink->status = 0;
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
+	if (pdynLinkPvt == NULL) return(-1);
 	if (pdynLinkPvt->io!=ioOutput || pdynLinkPvt->state!=stateConnected) {
 		status = -1;
 	} else {
+		if (pdynLinkPvt->chid == NULL) return(-1);
 		status = (ca_state(pdynLinkPvt->chid)==cs_conn) ? 0 : -1;
 	}
 	if (status) goto all_done;
@@ -434,7 +443,8 @@ LOCAL void connectCallback(struct connection_handler_args cha)
 	precDynLink = (recDynLink *)ca_puser(cha.chid);
 	if (!precDynLink) return;
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
-	if (ca_state(chid) == cs_conn) {
+	if (pdynLinkPvt == NULL) return;
+	if (chid && (ca_state(chid) == cs_conn)) {
 		pdynLinkPvt->state = stateGetting;
 		SEVCHK(ca_get_callback(DBR_CTRL_DOUBLE,chid,getCallback,precDynLink),
 			"ca_get_callback");
