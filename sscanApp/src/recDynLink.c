@@ -454,7 +454,7 @@ LOCAL void recDynLinkStartTasks(void)
 		exit(1);
 	}
 	inpTaskId = epicsThreadCreate("recDynInp",epicsThreadPriorityCAServerHigh+3,
-		20000, (EPICSTHREADFUNC)recDynLinkInp,0);
+		epicsThreadGetStackSize(epicsThreadStackBig), (EPICSTHREADFUNC)recDynLinkInp,0);
 	if (inpTaskId==NULL) {
 		errMessage(0,"recDynLinkStartTasks: taskSpawn Failure\n");
 	}
@@ -467,7 +467,7 @@ LOCAL void recDynLinkStartTasks(void)
 		exit(1);
 	}
 	outTaskId = epicsThreadCreate("recDynOut",epicsThreadPriorityCAServerHigh+3,
-		20000, (EPICSTHREADFUNC)recDynLinkOut,0);
+		epicsThreadGetStackSize(epicsThreadStackBig), (EPICSTHREADFUNC)recDynLinkOut,0);
 	if (outTaskId == NULL) {
 		errMessage(0,"recDynLinkStartTasks: taskSpawn Failure\n");
 	}
