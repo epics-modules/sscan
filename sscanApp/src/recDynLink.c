@@ -651,7 +651,7 @@ LOCAL void notifyCallback(struct event_handler_args eha)
 static struct ca_client_context *pCaInputContext = NULL;
 LOCAL void recDynLinkInp(void)
 {
-	int			status, n, s = sizeof(msgQCmd);
+	int			status, n, s = sizeof(msgQCmd), retried = 0;
 	recDynLink	*precDynLink;
 	dynLinkPvt	*pdynLinkPvt;
 	msgQCmd		cmd;
@@ -660,6 +660,15 @@ LOCAL void recDynLinkInp(void)
 	taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
 	SEVCHK(ca_context_create(ca_enable_preemptive_callback),"ca_context_create");
 	pCaInputContext = ca_current_context();
+	while (pCaInputContext == NULL) {
+		if (!retried) {
+			printf("recDynLinkInp: ca_current_context() returned NULL\n");
+			retried = 1;
+		}
+		taskDelay(1);
+		pCaInputContext = ca_current_context();
+	}
+	if (retried) printf("recDynLinkInp: ca_current_context() returned non-NULL\n");
 	while(TRUE) {
 		didGetCallback = 0;
 		while (epicsMessageQueuePending(recDynLinkInpMsgQ) && interruptAccept) {
@@ -737,7 +746,7 @@ LOCAL void recDynLinkInp(void)
  */
 LOCAL void recDynLinkOut(void)
 {
-	int			status, n, s = sizeof(msgQCmd);
+	int			status, n, s = sizeof(msgQCmd), retried = 0;
 	recDynLink	*precDynLink;
 	dynLinkPvt	*pdynLinkPvt;
 	msgQCmd		cmd;
@@ -745,6 +754,14 @@ LOCAL void recDynLinkOut(void)
 	
 	taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
 	/* SEVCHK(ca_context_create(ca_enable_preemptive_callback),"ca_context_create"); */
+	while (pCaInputContext == NULL) {
+		if (!retried) {
+			printf("recDynLinkOut: waiting for CA context\n");
+			retried = 1;
+		}
+		taskDelay(1);
+	}
+	if (retried) printf("recDynLinkOut: got CA context\n");
 	SEVCHK(ca_attach_context(pCaInputContext), "ca_attach_context");
 	while(TRUE) {
 		epicsEventWaitWithTimeout(wakeUpEvt,1.0);
