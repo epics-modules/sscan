@@ -684,6 +684,9 @@ init_record(sscanRecord *psscan, int pass)
 
 		return (0);
 	}
+	/* Make sure npts <= mpts */
+	if (psscan->npts > psscan->mpts) psscan->npts = psscan->mpts;
+	
 	callbackSetCallback(doPuts, &precPvt->doPutsCallback);
 	callbackSetPriority(psscan->prio, &precPvt->doPutsCallback);
 
