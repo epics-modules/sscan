@@ -748,8 +748,9 @@ void saveData_Init(char* fname, char* macros)
     }
     printf("saveData: message queue created\n");
 
-	threadId = epicsThreadCreate("saveDataTask", PRIORITY, 10000, (EPICSTHREADFUNC)saveDataTask,
-		(void *)epicsThreadGetIdSelf());
+	threadId = epicsThreadCreate("saveDataTask", PRIORITY,
+		epicsThreadGetStackSize(epicsThreadStackMedium),
+		(EPICSTHREADFUNC)saveDataTask, (void *)epicsThreadGetIdSelf());
 
     if (threadId==NULL) {
       Debug0(1, "Unable to create saveDataTask\n");
@@ -789,7 +790,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.13 2004-07-12 17:03:00 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.14 2004-12-14 17:26:10 mooney Exp $\n");
 }
 
 void saveData_Info() {
