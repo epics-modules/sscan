@@ -19,37 +19,50 @@ This version is intended to build with EPICS base 3.14.7.
 <li>The sscan record and saveData now take advantage of the sscan record's
 double buffered data arrays, and allow a scan to proceed while the previous
 scan's data is being written to disk. (AWAIT, AAWAIT fields)
+
+<li>saveData now runs on Solaris and Linux ioc's.
+
 <li>Array valued detectors are now supported in all scan modes.  Arrays
 are read at the end of the scan.  If processing is required to get array
 PV's ready, the sscan record can trigger that processing with the A1PV,
 A1CD fields (just like detector triggers, but executed after the scan is
 done, and just before array PV's are acquired).
+
 <li>The new field DSTATE shows the state of the sscan record's data arrays.
 When DSTATE==POSTED, the sscan record can begin a new scan.
+
 <li>Previously, the before-scan and after-scan links always waited for
 completion.  Now the user decides, by setting BSWAIT and ASWAIT.
+
 <li>If scan fails limit checks, the scan hangs until user aborts.  Previously,
 the scan would appear to complete.
+
 <li>new medm displays for scans are simpler, less cluttered, and have
 documentation callups.
+
 <li>In saveData.req (the file in the ioc directory that tells saveData what
 scans to monitor, etc), the handshake PV is now ignored.  saveData now
 uses scanX.AWAIT to handshake with scanX.
+
 <li>saveData no longer allocates local storage for unused sscan-record 
 detectors.  Once a sscan-detector PV is specified, storage is allocated
 and never released.
+
 <li>Modified the scanparm record to support multi-dimensional, multiple-
 positioner scans: Added two output links to the scanparmRecord: OLOAD, and OGO.  If LOAD
 is nonzero, it's written to OLOAD; if GO is nonzero, it's written to OGO.
-Added scanParms2Pos.db, scanParms2Pos.adl -- scan parameters for a 1D
+
+<li>Added scanParms2Pos.db, scanParms2Pos.adl -- scan parameters for a 1D
 scan with two positioners.
-The scanparm record now uses long int, rather than short int, for the
+
+<li>The scanparm record now uses long int, rather than short int, for the
 number of data points (fields MP and NP).
-sscanRecord.dbd and scanparmRecord.dbd now include sscanMenu.dbd, to ensure
+
+<li>sscanRecord.dbd and scanparmRecord.dbd now include sscanMenu.dbd, to ensure
 that menus are consistent.  Sometime in the past, the scanparm record wasn't
-updated when sscanRecord menu fields were modified.  In particular, scanParm*.db
-used to specify "Relative" positioning, while the sscan record accepted
-only "RELATIVE" or "ABSOLUTE".
+updated when sscanRecord menu fields were modified.  In particular,
+scanParm*.db and alignParms.db used to specify "Relative" positioning, while
+the sscan record accepted only "RELATIVE" or "ABSOLUTE".
 
 <li>Added recDynLinkGetCallback() to recDynLink library.  Also fixed some bugs.  
 

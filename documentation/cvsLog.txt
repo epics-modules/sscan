@@ -34,6 +34,11 @@ support/sscan/sscanApp/Db/scan.db
 don't specify TnCD=1, since this is already in the .dbd file
 =============================================================================
 
+support/sscan/sscanApp/Db/alignParms.db
+
+AR field is now all uppercase
+=============================================================================
+
 support/sscan/sscanApp/Db/scanParms.db
 
 AR field is now all uppercase
@@ -128,6 +133,8 @@ mostly cosmetic; added doc displays; await
 
 support/sscan/sscanApp/src/Makefile
 
+saveData now runs on solaris and linux
+
 publish sscanMenu.dbd
 =============================================================================
 
@@ -191,6 +198,8 @@ define our own max FILENAME_LENGTH
 =============================================================================
 
 support/sscan/sscanApp/src/saveData.c
+
+Many changes; saveData now runs on solaris and linux
 
 Use epicsThreadGetStackSize(epicsThreadStackMedium) instead of hard-coded
 (10000) stack size
