@@ -203,10 +203,15 @@
  *                      a new field ACQT specifies scalar/array.  Improved move-to-peak and related
  *                      algorithms.
  * 5.18 04-07-03  tmm   Converted to 3.14.  Deleted D1*-Df* detectors
+ * 5.18a 05-21-04 tmm   Added AWAIT handshake with data-storage client.
+ *                      If not in array mode, and array-valued detectors have been specified,
+ *                      trigger array-read link (new field) and read them when the callback comes in.
  * 5.19 07-10-03  rls   Bug fix for NUM_DET not matching 70 detectors in *.dbd file.
+ * 5.20 07-08-04  tmm   Merged 3.13.x-compatible 5.18, with AWAIT and array read,
+ *                      with 3.14.x-compatible 5.19, into 3.14.6-compatible 5.20
  */
 
-#define VERSION 5.19
+#define VERSION 5.20
 
 
 
@@ -214,29 +219,29 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <float.h>
-#include <ctype.h>
+#include	<string.h>
+#include	<math.h>
+#include	<float.h>
+#include	<ctype.h>
 
-#include <alarm.h>
-#include <dbDefs.h>
-#include <dbAccess.h>
-#include <dbEvent.h>
-#include <dbScan.h>
-#include <dbDefs.h>
-#include <dbFldTypes.h>
-#include <devSup.h>
-#include <errMdef.h>
-#include <recSup.h>
+#include	<alarm.h>
+#include	<dbDefs.h>
+#include	<dbAccess.h>
+#include	<dbEvent.h>
+#include	<dbScan.h>
+#include	<dbDefs.h>
+#include	<dbFldTypes.h>
+#include	<devSup.h>
+#include	<errMdef.h>
+#include	<recSup.h>
 #include <recGbl.h>
-#include <special.h>
-#include <callback.h>
-#include <taskwd.h>
+#include	<special.h>
+#include	<callback.h>
+#include	<taskwd.h>
 #include <epicsMutex.h>	/* semaphore */
 #include <epicsTimer.h>	/* access to timers for delayed callbacks */
 
-#include "recDynLink.h"
+#include	"recDynLink.h"
 #include "epicsExport.h"
 
 #define GEN_SIZE_OFFSET
@@ -274,30 +279,32 @@
 #define DEF_WF_SIZE     10
 #define PVN_SIZE        40
 
+/* linkType */
 #define POSITIONER      0	/* positioner inlink, sometimes this serves for both in and out */
-#define READBACK        1
-#define DETECTOR        2
-#define TRIGGER         3
-#define BS_AS_LINK      4
+#define READBACK        1	/* input from a positioner's readback */
+#define DETECTOR        2	/* input from a detector */
+#define TRIGGER         3	/* cause detectors to acquire */
+#define BS_AS_LINK      4	/* cause before-scan or after-scan action */
 #define POSITIONER_OUT  5	/* positioner outlink */
+#define READ_ARRAY_TRIG	6  	/* cause array-valued detectors to read already acquired data */
 
 #define NUM_POS         4
 #define NUM_RDKS        4
 #define NUM_DET         70
 #define NUM_TRGS        4
+#define NUM_ATRGS       1
 #define NUM_MISC        2	/* Before Scan PV, After Scan PV */
-#define NUM_PVS         (NUM_POS + NUM_RDKS + NUM_DET + NUM_TRGS + NUM_MISC)
+#define NUM_PVS         (NUM_POS + NUM_RDKS + NUM_DET + NUM_TRGS + NUM_ATRGS + NUM_MISC)
 /* Determine total # of dynLinks (each positioner requires two: IN & OUT */
 #define NUM_LINKS       (NUM_PVS + NUM_POS)
 
-/* Predefine some index numbers */
+/* linkIndex */
 #define P1_IN       0
 #define R1_IN       (NUM_POS)
 #define D1_IN       (NUM_POS + NUM_RDKS)
-
 #define T1_OUT      (D1_IN + NUM_DET)
-
-#define BS_OUT      (T1_OUT + NUM_TRGS)
+#define A1_OUT      (T1_OUT + NUM_TRGS)
+#define BS_OUT      (A1_OUT + NUM_ATRGS)
 #define AS_OUT      (BS_OUT + 1)
 
 /* Added four recDynLinks at the end of PV's for positioner outs */
@@ -316,6 +323,7 @@
 #define A_BUFFER        0
 #define B_BUFFER        1
 
+/* CMND field */
 #define CLEAR_MSG           	0
 #define CHECK_LIMITS        	1
 #define PREVIEW_SCAN        	2	/* Preview the SCAN positions */
@@ -375,8 +383,6 @@ typedef struct recDynLinkPvt {
 	long				dbAddrNv;	/* Zero if dbNameToAddr succeeded */
 	unsigned long		nelem;		/* # of elements for this PV  */
 	unsigned short		ts;			/* if 1, use timestamp as value */
-	short				fldOffset;	/* For arrays, offset from psscan used for
-									   get_array_info, cvt_dbaddr */
 	short				useDynLinkAlways;
 	epicsTimeStamp      lookupTime;	/* used to determine time of last lookupPv */
 } recDynLinkPvt;
@@ -405,8 +411,6 @@ typedef struct detBuffers {
 	float          *pFill;
 	float          *pBufA;
 	float          *pBufB;
-	int             size;
-	short           vector; /* not used -- what was this for? */
 } detBuffers;
 
 
@@ -459,16 +463,10 @@ typedef struct detFields {
 } detFields;
 #define NUM_DET_FIELDS 8
 
-/* defines for dataState */
-#define DS_UNPACKED	0
-#define DS_PACKED	1
-#define DS_POSTED	2
-
 typedef struct recPvtStruct {
 	/* THE CODE ASSUMES doPutsCallback is THE FIRST THING IN THIS STRUCTURE! */
 	CALLBACK        doPutsCallback;	/* do output links callback structure */
 	CALLBACK        dlyCallback;	/* implement delays callback structure */
-	sscanRecord    *psscan;			/* ptr to record which needs work done */
 	short           validBuf;		/* which data array buffer is valid */
 	recDynLink      caLinkStruct[NUM_LINKS];	/* req'd for recDynLink */
 	posBuffers      posBufPtr[NUM_POS];
@@ -477,6 +475,7 @@ typedef struct recPvtStruct {
 	unsigned short  valRdbkPvs;		/* # of valid Readbacks   */
 	unsigned short  valDetPvs;		/* # of valid Detectors */
 	unsigned short  valTrigPvs;		/* # of valid Det Triggers  */
+	unsigned short  valATrigPvs;	/* # of valid array-read triggers  */
 	unsigned short  acqDet[NUM_DET];	/* which detectors to acquire */
 	dynLinkInfo    *pDynLinkInfo;
 	short           pffo;			/* previous state of ffo */
@@ -489,8 +488,6 @@ typedef struct recPvtStruct {
 	float          *nullArray;
 	float          *nullArray2;
 	epicsTimeStamp  timeStart;			/* used to time the scan */
-	char            movPos[NUM_POS];	/* used to indicate
-						 * interactive move */
 	unsigned char   scanErr;
 	unsigned char   badOutputPv;	/* positioner, detector trig, readbk */
 	unsigned char   badInputPv;		/* detector BAD_PV */
@@ -499,28 +496,30 @@ typedef struct recPvtStruct {
 					 * Positioners */
 	short           numPositionerCallbacks;	/* count positioner callbacks */
 	short           numTriggerCallbacks;	/* count trigger callbacks */
+	short           numAReadCallbacks;		/* count array-read callbacks */
 	short			prevACQM;
-	short			dataState;	/* DS_UNPACKED, DS_PACKED, DS_POSTED */
 	long			prevNumPts;
 	short			scanBySearchCallback;
 	epicsMutexId	pvStatSem;
 	double			*dataBuffer;
+	short			userSetAWAIT;
 } recPvtStruct;
 
 /*  forward declarations */
-static void		checkMonitors();
-static long		initScan();
-static void		contScan();
-static void		endScan();
+static void		checkMonitors(sscanRecord *psscan);
+static long		initScan(sscanRecord *psscan);
+static void		contScan(sscanRecord *psscan);
+static void		endScan(sscanRecord *psscan);
+static void 	readArrays(sscanRecord *psscan);
 static void		packData(sscanRecord *psscan);
-static void		afterScan();
-static void		doPuts();
-static void		adjLinParms();
-static void		changedNpts();
-static long		checkScanLimits();
-static void		saveFrzFlags();
-static void		resetFrzFlags();
-static void		restoreFrzFlags();
+static void		afterScan(sscanRecord *psscan);
+static void		doPuts(CALLBACK *pCB);
+static void		adjLinParms(struct dbAddr *paddr);
+static void		changedNpts(sscanRecord *psscan);
+static long		checkScanLimits(sscanRecord *psscan);
+static void		saveFrzFlags(sscanRecord *psscan);
+static void		resetFrzFlags(sscanRecord *psscan);
+static void		restoreFrzFlags(sscanRecord *psscan);
 
 static void		previewScan(sscanRecord * psscan);
 
@@ -529,7 +528,7 @@ static void		checkConnections(sscanRecord * psscan);
 static void		pvSearchCallback(recDynLink * precDynLink);
 static void		posMonCallback(recDynLink * precDynLink);
 static void		notifyCallback(recDynLink * precDynLink);
-static void		delayCallback(CALLBACK * pCB);
+static void		delayCallback(CALLBACK *pCB);
 static void		restorePosParms(sscanRecord * psscan, unsigned short i);
 static void		savePosParms(sscanRecord * psscan, unsigned short i);
 static void		zeroPosParms(sscanRecord * psscan, unsigned short i);
@@ -545,7 +544,7 @@ static int isBlank(char *name)
 {
 	int i;
 
-	for(i=0; name[i]; i++) {
+	for (i=0; name[i]; i++) {
 		if (!(isspace((int)name[i]))) return(0);
 	}
 	return((i>0));
@@ -555,7 +554,9 @@ static int isBlank(char *name)
 static void safeDoubleToFloat(double *pd,float *pf)
 {
     double abs = fabs(*pd);
-    if(abs>=FLT_MAX) {
+    if (*pd==0.0) {
+        *pf = 0.0;
+    } else if(abs>=FLT_MAX) {
         if(*pd>0.0) *pf = FLT_MAX; else *pf = -FLT_MAX;
     } else if(abs<=FLT_MIN) {
         if(*pd>0.0) *pf = FLT_MIN; else *pf = -FLT_MIN;
@@ -590,13 +591,13 @@ init_record(sscanRecord *psscan, int pass)
 		psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
 		precPvt->numPositionerCallbacks = 0;
 		precPvt->numTriggerCallbacks = 0;
+		precPvt->numAReadCallbacks = 0;
+		precPvt->userSetAWAIT = 0;
 
 		precPvt->prevSm[0] = psscan->p1sm;
 		precPvt->prevSm[1] = psscan->p2sm;
 		precPvt->prevSm[2] = psscan->p3sm;
 		precPvt->prevSm[3] = psscan->p4sm;
-
-		precPvt->psscan = psscan;
 
 		precPvt->pDynLinkInfo = (dynLinkInfo *) calloc(1, sizeof(dynLinkInfo));
 
@@ -619,8 +620,12 @@ init_record(sscanRecord *psscan, int pass)
 			else if (i < T1_OUT) {
 				puserPvt->linkType = DETECTOR;
 			}
-			else if (i < BS_OUT) {
+			else if (i < A1_OUT) {
 				puserPvt->linkType = TRIGGER;
+				puserPvt->useDynLinkAlways = 1;
+			}
+			else if (i < BS_OUT) {
+				puserPvt->linkType = READ_ARRAY_TRIG;
 				puserPvt->useDynLinkAlways = 1;
 			}
 			else if (i < P1_OUT) {
@@ -689,10 +694,11 @@ init_record(sscanRecord *psscan, int pass)
 	
 	callbackSetCallback(doPuts, &precPvt->doPutsCallback);
 	callbackSetPriority(psscan->prio, &precPvt->doPutsCallback);
+	callbackSetUser((void *)psscan, &precPvt->doPutsCallback);
 
 	callbackSetCallback(delayCallback, &precPvt->dlyCallback);
 	callbackSetPriority(psscan->prio, &precPvt->dlyCallback);
-	callbackSetUser((void *) psscan, &precPvt->dlyCallback);
+	callbackSetUser((void *)psscan, &precPvt->dlyCallback);
 
 	/* initialize all linear scan fields */
 	precPvt->nptsCause = -1;/* resolve all positioner parameters */
@@ -718,7 +724,7 @@ init_record(sscanRecord *psscan, int pass)
 			POST(ppvn);
 			*pPvStat = NO_PV;
 		} else {
-			if (ppvn[0] != 0) {
+			if (ppvn[0] != NULL) {
 				*pPvStat = PV_NC;
 				lookupPV(psscan, i);
 			} else {
@@ -727,7 +733,7 @@ init_record(sscanRecord *psscan, int pass)
 		}
 	}
 
-	precPvt->dataState = DS_UNPACKED;
+	psscan->dstate = sscanDSTATE_UNPACKED; POST(&psscan->dstate);
 
 	return (0);
 }
@@ -739,10 +745,10 @@ process(sscanRecord *psscan)
 	long            status = 0;
 	epicsTimeStamp	timeCurrent;
 
-	if (sscanRecordDebug) {
-		printf("%s:process:entry:faze=%d, nPCBs=%d, nTCBs=%d, xsc=%d, pxsc=%d\n",
+	if (sscanRecordDebug >= 2) {
+		printf("%s:process:entry:faze=%d, nPCBs=%d, nTCBs=%d, nRCBs=%d, xsc=%d, pxsc=%d\n",
 			psscan->name, (int)psscan->faze, precPvt->numPositionerCallbacks,
-			precPvt->numTriggerCallbacks, psscan->xsc, psscan->pxsc);
+			precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, psscan->xsc, psscan->pxsc);
 	}
 
 	if (psscan->kill) {
@@ -755,6 +761,8 @@ process(sscanRecord *psscan)
 			sprintf(psscan->smsg, "NOTE: positioner still active");
 		} else if (precPvt->numTriggerCallbacks) {
 			sprintf(psscan->smsg, "NOTE: detector still active");
+		} else if (precPvt->numAReadCallbacks) {
+			sprintf(psscan->smsg, "NOTE: array-read still active");
 		} else {
 			sprintf(psscan->smsg, " ");
 		}
@@ -762,12 +770,38 @@ process(sscanRecord *psscan)
 		psscan->alrt = 0; POST(&psscan->alrt);
 		precPvt->numPositionerCallbacks = 0;
 		precPvt->numTriggerCallbacks = 0;
-		psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
-		psscan->busy = 0; POST(&psscan->busy);
-		if (precPvt->dataState == DS_UNPACKED) {
+		precPvt->numAReadCallbacks = 0;
+		if (psscan->dstate <= sscanDSTATE_PACKED) {
+			if (psscan->await && !(precPvt->userSetAWAIT)) {
+				/*
+				 * We set await after posting last scan's data.  Since data-storage
+				 * client did not set AWAIT, it's possible the data-storage client isn't
+				 * running, or for some other reason is not going to reset await.  Since
+				 * this is a kill, we reset it.
+				 */
+				 psscan->await = 0; POST(&psscan->await);
+			}
+			/*
+			 * we're killing: we can bypass everything to do with this scan,
+			 * but we can't pull data buffers (last scan's data) out from under 
+			 * data-storage client.
+			 */
+			if (psscan->dstate == sscanDSTATE_ARRAY_READ_WAIT) {
+				/*
+				 * we've already triggered array read, and user apparently
+				 * doesn't want to wait for it to complete.  Now we wait for
+				 * data-storage client to finish writing last scan's data.
+				 */
+				psscan->dstate = sscanDSTATE_SAVE_DATA_WAIT;
+				POST(&psscan->dstate);
+			}
 			packData(psscan);
 			checkMonitors(psscan);
 		}
+		if (psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) return(status);
+
+		psscan->busy = 0; POST(&psscan->busy);
+		psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
 		recGblFwdLink(psscan);
 		psscan->pxsc = psscan->xsc;
 		recGblResetAlarms(psscan);
@@ -806,7 +840,7 @@ process(sscanRecord *psscan)
 		 * sets precPvt->scanBySearchCallback, and we check for an unneeded
 		 * call to process.
 		 */
-		if (sscanRecordDebug) printf("%s:process: processed by pvSearchCallback\n", psscan->name);
+		if (sscanRecordDebug >= 2) printf("%s:process: processed by pvSearchCallback\n", psscan->name);
 		precPvt->scanBySearchCallback = 0;
 		if (psscan->faze != sscanFAZE_SCAN_PENDING) return(status);
 	}
@@ -816,14 +850,14 @@ process(sscanRecord *psscan)
 		if (!psscan->xsc || precPvt->badOutputPv || precPvt->badInputPv) {
 			return (status);
 		} else {
-			if (sscanRecordDebug) printf("%s:process: unpending scan\n", psscan->name);
+			if (sscanRecordDebug >= 2) printf("%s:process: unpending scan\n", psscan->name);
 			psscan->alrt = 0; POST(&psscan->alrt);
 		}
 	}
 
 	if (psscan->busy && psscan->xsc &&
-			(precPvt->numPositionerCallbacks || precPvt->numTriggerCallbacks)) {
-		if (sscanRecordDebug>=5) printf("%s:process: already busy\n", psscan->name);
+			(precPvt->numPositionerCallbacks || precPvt->numTriggerCallbacks || precPvt->numAReadCallbacks)) {
+		if (sscanRecordDebug >= 5) printf("%s:process: already busy\n", psscan->name);
 		sprintf(psscan->smsg, psscan->paus ? "Scan is paused" : "Already busy!");
 		POST(&psscan->smsg);
 		return(0);
@@ -834,27 +868,31 @@ process(sscanRecord *psscan)
 		if (psscan->busy) {return (status);}
 		/* use TimeStamp to record beginning of scan */
 		recGblGetTimeStamp(psscan);
-		precPvt->dataState = DS_UNPACKED;
+		psscan->dstate = sscanDSTATE_UNPACKED; POST(&psscan->dstate);
 		psscan->data = 0; POST(&psscan->data);
-		if (sscanRecordDebug>=5) printf("%s:process: new sscan\n", psscan->name);
+		if (sscanRecordDebug >= 5) printf("%s:process: new sscan\n", psscan->name);
 		if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
 		if (psscan->wcnt) {psscan->wcnt = 0; POST(&psscan->wcnt);}
 		if (psscan->wtng) {psscan->wtng = 0; POST(&psscan->wtng);}
 		precPvt->numPositionerCallbacks = 0;
 		precPvt->numTriggerCallbacks = 0;
+		precPvt->numAReadCallbacks = 0;
 		psscan->faze = sscanFAZE_INIT_SCAN; POST(&psscan->faze);
 		psscan->busy = 1; POST(&psscan->busy);
-		initScan(psscan);
+		status = initScan(psscan);
 	} else if ((psscan->pxsc == 1) && (psscan->xsc == 0)) {
 		/* Operator abort */
 		if (precPvt->numPositionerCallbacks || precPvt->numTriggerCallbacks) {
 			/*
-			 * Don't actually have to wait for callbacks unless nPCBs>0 and psscan->pasm:
+			 * Don't actually have to wait for numTriggerCallbacks==0.
+			 * Don't actually have to wait for numPositionerCallbacks==0 unless psscan->pasm:
 			 * if psscan->pasm, endScan() will do a positioner move, which will fail
 			 * if a positioner is still moving as the result of a ca_put_callback.
-			 * But we want to wait for callbacks so they don't come during the next sscan.
+			 * But we want to wait for callbacks so they don't come during the next scan.
+			 * If user aborts again, special() will set .KILL, and then we can be more
+			 * aggressive about getting the scan over with.
 			 */
-			if (precPvt->dataState == DS_UNPACKED) {
+			if (psscan->dstate < sscanDSTATE_PACKED) {
 				packData(psscan);
 				checkMonitors(psscan);
 			}
@@ -873,9 +911,10 @@ process(sscanRecord *psscan)
 		}
 	} else if (psscan->faze == sscanFAZE_BEFORE_SCAN_WAIT) {
 		/* Before Scan Fwd Link is complete, initScan again */
-		initScan(psscan);
+		status = initScan(psscan);
 	} else if (psscan->xsc == 1) {
-		if (sscanRecordDebug>=5) printf("%s:process: continuing sscan\n", psscan->name);
+		/* Still executing scan; data has not been packed. (putNotify callbacks normally land here.) */
+		if (sscanRecordDebug >= 5) printf("%s:process: continuing scan\n", psscan->name);
 		if (precPvt->badOutputPv) {
 			psscan->alrt = 1; POST(&psscan->alrt);
 			sprintf(psscan->smsg, "Lost connection to Control PV");
@@ -884,24 +923,34 @@ process(sscanRecord *psscan)
 			psscan->xsc = 0; POST(&psscan->xsc);
 			printf("%s:process: Lost connection to Control PV\n", psscan->name);
 			endScan(psscan);
+		} else if ((psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) ||
+				(psscan->dstate == sscanDSTATE_ARRAY_READ_WAIT)) {
+				/* endScan is waiting for something to complete */
+			endScan(psscan);
 		} else {
 			contScan(psscan);
 		}
 	} else if (psscan->busy) {
+		/* Scan is essentially finished (since xsc==0), but may still have some after-scan business */
+		if (psscan->dstate < sscanDSTATE_PACKED) {
+			packData(psscan);
+			if (psscan->dstate < sscanDSTATE_PACKED) return(status);
+		}
 		if (psscan->faze == sscanFAZE_RETRACE_WAIT) {
 			afterScan(psscan);
 		} else if ((psscan->faze == sscanFAZE_AFTER_SCAN_WAIT) ||
 			   (psscan->faze == sscanFAZE_SCAN_DONE)) {
 			psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze);
 		} else {
-			printf("%s:process: How did I get here? (faze=%d)\n",
-				psscan->name, (int)psscan->faze);
+			printf("%s:process: How did I get here? (faze=%d, dstate=%d)\n",
+				psscan->name, (int)psscan->faze, psscan->dstate);
 		}
 	}
 	checkMonitors(psscan);
 
 	/* do forward link on last scan aquisition */
-	if ((psscan->faze == sscanFAZE_SCAN_DONE) && psscan->busy) {
+	if (psscan->busy && (psscan->faze == sscanFAZE_SCAN_DONE) &&
+			(status || (psscan->dstate == sscanDSTATE_POSTED))) {
 		psscan->busy = 0; POST(&psscan->busy);
 		psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
 		recGblFwdLink(psscan);
@@ -940,7 +989,8 @@ special(struct dbAddr *paddr, int after)
 		if (psscan->busy) {
 			switch (special_type) {
 			case (SPC_MOD):
-				if (fieldIndex == sscanRecordACQM) return(-1);
+				if ((fieldIndex == sscanRecordACQM) || (fieldIndex == sscanRecordACQT))
+					return(-1);
 				if ((fieldIndex >= sscanRecordP1PV) &&
 						(fieldIndex <= sscanRecordASPV)) {
 					return(-1);
@@ -986,14 +1036,14 @@ special(struct dbAddr *paddr, int after)
 				} else {
 					/* New scan.  Renew old positioner links so we get current limits data */
 					if ((psscan->faze != sscanFAZE_IDLE) && (psscan->faze != sscanFAZE_PREVIEW)) {
-						printf("Starting new scan with unexpected scan phase.\n");
+						printf("Starting new scan with unexpected scan phase (%d).\n", psscan->faze);
 					}
 					for (i=0; i<NUM_POS; i++) {
 						puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i].puserPvt;
 						epicsTimeGetCurrent(&timeCurrent);
 						if (epicsTimeDiffInSeconds(&timeCurrent, &puserPvt->lookupTime) >= sscanRecordLookupTime) {
 							ppvn = &psscan->p1pv[0] + (i * PVN_SIZE);
-							if (ppvn[0] != 0) {
+							if (ppvn[0] != NULL) {
 								if (sscanRecordDebug > 5)
 									printf("%s:special: renewing link %d\n", psscan->name, i);
 								/* force flags to indicate PV_NC until callback happens */
@@ -1016,7 +1066,7 @@ special(struct dbAddr *paddr, int after)
 					psscan->xsc = 1; POST(&psscan->xsc);
 					checkConnections(psscan);
 					if (precPvt->badOutputPv || precPvt->badInputPv) {
-						if (sscanRecordDebug)
+						if (sscanRecordDebug >= 2)
 							printf("%s:special:scan pending PV connection.\n", psscan->name);
 						psscan->alrt = 1; POST(&psscan->alrt);
 						strcpy(psscan->smsg, "Waiting for PV's to connect"); POST(&psscan->smsg);
@@ -1067,11 +1117,12 @@ special(struct dbAddr *paddr, int after)
 					sprintf(psscan->smsg, "Scan pause rescinded");
 					POST(&psscan->smsg);
 					if ((precPvt->numTriggerCallbacks == 0) &&
-						(precPvt->numPositionerCallbacks == 0)) {
-						/* The P or T callback that would have sent us to the next scan
-						 * phase came in while we were paused.
+						(precPvt->numPositionerCallbacks == 0) &&
+						(precPvt->numAReadCallbacks == 0)) {
+						/* The P, T, or R callback that would have sent us to the next scan
+						 * phase came in while we were paused, so we must get the record processed.
 						 */
-						if (psscan->wtng) {
+						if (psscan->wtng || psscan->await) {
 							sprintf(psscan->smsg, "Waiting for client");
 							POST(&psscan->smsg);
 						} else {
@@ -1140,7 +1191,7 @@ special(struct dbAddr *paddr, int after)
 						pPvStat = &psscan->p1nv + i;	/* pointer arithmetic */
 						oldStat = *pPvStat;
 						ppvn = &psscan->p1pv[0] + (i * PVN_SIZE);
-						ppvn[0] = 0; POST(ppvn);
+						ppvn[0] = NULL; POST(ppvn);
 						if (*pPvStat != NO_PV) {
 							/* PV is now NULL but didn't used to be */
 							*pPvStat = NO_PV;
@@ -1194,6 +1245,10 @@ special(struct dbAddr *paddr, int after)
 				}
 			}
 			break;
+		case sscanRecordAWAIT:
+			if (psscan->await) precPvt->userSetAWAIT = 1;
+			break;
+
 		case sscanRecordACQM:
 			precPvt->prevACQM = sscanACQM_NORMAL;
 			break;
@@ -1220,7 +1275,7 @@ special(struct dbAddr *paddr, int after)
 					ppvn[0] = '\0';
 					POST(ppvn);
 				} 
-				if (ppvn[0] != 0) {
+				if (ppvn[0] != NULL) {
 					if (sscanRecordDebug > 5)
 						printf("%s:Search during special \n", psscan->name);
 					*pPvStat = PV_NC;
@@ -1366,6 +1421,8 @@ cvt_dbaddr(struct dbAddr *paddr)
 	detFields	*pDet = (detFields *) & psscan->d01hr;
     int			i, fieldIndex = dbGetFieldIndex(paddr);
 
+	if (sscanRecordDebug > 5)
+		printf("sscanRecord:cvt_dbaddr: fieldIndex=%d\n", fieldIndex);
 	i = (fieldIndex - sscanRecordD01HR) / NUM_DET_FIELDS;
 	if ((i >= 0) && (i < NUM_DET)) {
 		pDet += i;
@@ -1374,6 +1431,8 @@ cvt_dbaddr(struct dbAddr *paddr)
 		paddr->field_type = DBF_FLOAT;
 		paddr->field_size = sizeof(float);
 		paddr->dbr_field_type = DBF_FLOAT;
+		if (sscanRecordDebug > 5)
+			printf("sscanRecord:cvt_dbaddr: field_type=%d\n", paddr->field_type);
 		return (0);
 	}
 
@@ -1401,7 +1460,7 @@ cvt_dbaddr(struct dbAddr *paddr)
 static long 
 get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 {
-	sscanRecord    *psscan = (sscanRecord *) paddr->precord;
+	sscanRecord *psscan = (sscanRecord *) paddr->precord;
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	detFields      *pDet = (detFields *) & psscan->d01hr;
 	posFields      *pPos = (posFields *) & psscan->p1pp;
@@ -1458,7 +1517,7 @@ get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 static long 
 put_array_info(struct dbAddr *paddr, long nNew)
 {
-	sscanRecord    *psscan = (sscanRecord *) paddr->precord;
+	sscanRecord *psscan = (sscanRecord *) paddr->precord;
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	posFields      *pPos = (posFields *) & psscan->p1pp;
 	short           fieldOffset;
@@ -1656,7 +1715,7 @@ checkMonitors(sscanRecord *psscan)
 	epicsTimeStamp  timeCurrent;
 	int             i;
 
-	if (precPvt->dataState == DS_POSTED) return;
+	if (psscan->dstate == sscanDSTATE_POSTED) return;
 	/*
 	 * If last posting time is > MIN_MON, check to see if any dynamic
 	 * fields have changed (also post monitors on end of sscan)
@@ -1695,8 +1754,8 @@ checkMonitors(sscanRecord *psscan)
 	}
 	/* if this is the end of a sscan, post data arrays */
 	/* post these with DBE_LOG option for archiver    */
-	if (precPvt->dataState == DS_PACKED) {
-		precPvt->dataState = DS_POSTED;
+	if (psscan->dstate == sscanDSTATE_PACKED) {
+		psscan->dstate = sscanDSTATE_POSTED; POST(&psscan->dstate);
 
 		/* Must post events on both pointers, since toggle */
 		for (i = 0; i < NUM_POS; i++) {
@@ -1725,6 +1784,10 @@ checkMonitors(sscanRecord *psscan)
 		}
 
 		psscan->data = 1; POST(&psscan->data);
+		if (psscan->aawait == sscanNOYES_YES) {
+			psscan->await = 1;
+			POST(&psscan->await);
+		}
 	}
 }
 
@@ -1787,8 +1850,9 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 	}
 	/* See if it's a local PV */
 	puserPvt->dbAddrNv = dbNameToAddr(ppvn, puserPvt->pAddr);
-	if (sscanRecordDebug) {
-		printf("%s:PV: '%s' ,dbNameToAddr returned %lx\n", psscan->name, ppvn, puserPvt->dbAddrNv);
+	if (sscanRecordDebug >= 2) {
+		printf("%s:lookupPV: dbNameToAddr('%s') returned %lx (%s)\n",
+			psscan->name, ppvn, puserPvt->dbAddrNv, puserPvt->dbAddrNv?"failure":"success");
 	}
 	switch (puserPvt->linkType) {
 	case POSITIONER:	/* setup both inlink and outlink */
@@ -1828,6 +1892,7 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 		break;
 
 	case TRIGGER:
+	case READ_ARRAY_TRIG:
 	case BS_AS_LINK:
 		recDynLinkAddOutput(&precPvt->caLinkStruct[i], ppvn,
 			      DBR_FLOAT, rdlSCALAR, pvSearchCallback);
@@ -1864,8 +1929,8 @@ notifyCallback(recDynLink * precDynLink)
 	recPvtStruct  *precPvt = (recPvtStruct *) psscan->rpvt;
 
 	if (sscanRecordDebug >= 10)
-		printf("%s: notifyCallback: num{P,T}Callbacks = %d, %d\n", psscan->name, 
-		       precPvt->numPositionerCallbacks, precPvt->numTriggerCallbacks);
+		printf("%s: notifyCallback: num{P,T,R}Callbacks = %d, %d, %d\n", psscan->name, 
+		       precPvt->numPositionerCallbacks, precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks);
 
 	if (psscan->faze == sscanFAZE_IDLE) {
 		/* we must have been aborted */
@@ -1897,7 +1962,17 @@ notifyCallback(recDynLink * precDynLink)
 				callbackRequestDelayed(&precPvt->dlyCallback, psscan->ddly);
 			}
 		}
-	} else {		/* positioner, before-scan, or after-scan */
+	} else if (puserPvt->linkType == READ_ARRAY_TRIG) {
+		if (precPvt->numAReadCallbacks &&
+		    (--(precPvt->numAReadCallbacks) == 0)) {
+			if (psscan->paus) {
+				sprintf(psscan->smsg, "Scan paused by operator");
+				POST(&psscan->smsg);
+				return;
+			}
+			scanOnce((void *)psscan);
+		}
+	} else {	/* POSITIONER_OUT, BS_AS_LINK */
 		if (precPvt->numPositionerCallbacks &&
 		    (--(precPvt->numPositionerCallbacks) == 0)) {
 			if (psscan->paus) {
@@ -1911,7 +1986,7 @@ notifyCallback(recDynLink * precDynLink)
 				callbackRequestDelayed(&precPvt->dlyCallback, psscan->pdly);
 			}
 		}
-	}
+	} 
 }
 
 LOCAL void 
@@ -1944,7 +2019,7 @@ pvSearchCallback(recDynLink * precDynLink)
 
 	if ((puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
 			recDynLinkConnectionStatus(precDynLink)) {
-		if (sscanRecordDebug) printf("%s:Search Callback: FAILURE: link %d.\n",
+		if (sscanRecordDebug >= 2) printf("%s:pvSearchCallback: FAILURE: link %d.\n",
 				psscan->name, linkIndex);
 		switch (puserPvt->linkType) {
 		case POSITIONER:
@@ -1960,7 +2035,7 @@ pvSearchCallback(recDynLink * precDynLink)
 			break;
 		}
 	} else {
-		if (sscanRecordDebug) printf("%s:Search Callback: Success: link %d.\n",
+		if (sscanRecordDebug >= 2) printf("%s:pvSearchCallback: Success: link %d.\n",
 				psscan->name, linkIndex);
 		switch (puserPvt->linkType) {
 		case POSITIONER:
@@ -2073,10 +2148,7 @@ pvSearchCallback(recDynLink * precDynLink)
 		}
 		break;
 
-	case TRIGGER:
-	case BS_AS_LINK:
-	case POSITIONER_OUT:
-	case READBACK:
+	default:
 		break;
 	}
 
@@ -2097,7 +2169,7 @@ pvSearchCallback(recDynLink * precDynLink)
 		if (precPvt->badOutputPv || precPvt->badInputPv) {
 			return;
 		} else if (!psscan->xsc) {
-			if (sscanRecordDebug) printf("%s:pvSearchCallback: pending scan was aborted\n",
+			if (sscanRecordDebug >= 2) printf("%s:pvSearchCallback: pending scan was aborted\n",
 					psscan->name);
 			psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
 		} else {
@@ -2105,14 +2177,15 @@ pvSearchCallback(recDynLink * precDynLink)
 			pPvStat = &psscan->p1nv;
 			pPos = (posFields *) &psscan->p1pp;
 			for (i = 1; i <= NUM_POS; i++, pPvStat++, pPos++) {
-				if (sscanRecordDebug) printf("%s:pvSearchCallback: pPvStat[%d]=%d, pPos[%d].p_cv=%g\n",
-					psscan->name, i, i, *pPvStat, pPos->p_cv);
+				if (sscanRecordDebug >= 2)
+					printf("%s:pvSearchCallback: pPvStat[%d]=%d, pPos[%d].p_cv=%g\n",
+						psscan->name, i, i, *pPvStat, pPos->p_cv);
 				if ((*pPvStat == PV_OK) && (pPos->p_cv == -HUGE_VAL)) {
 					/* Haven't received the first monitor callback yet.  Wait for it. */
 					return;
 				}
 			}
-			if (sscanRecordDebug) printf("%s:pvSearchCallback: scan pending - call scanOnce()\n",
+			if (sscanRecordDebug >= 2) printf("%s:pvSearchCallback: scan pending - call scanOnce()\n",
 					psscan->name);
 			precPvt->scanBySearchCallback = 1;
 			scanOnce(psscan);
@@ -2135,7 +2208,7 @@ posMonCallback(recDynLink * precDynLink)
 	size_t          nRequest = 1;
 	unsigned short *pPvStat = &psscan->p1nv + pvIndex;
 
-	if (sscanRecordDebug) printf("%s:posMonCallback: link %d.\n", psscan->name, linkIndex);
+	if (sscanRecordDebug >= 20) printf("%s:posMonCallback: link %d.\n", psscan->name, linkIndex);
 
 	/* After a link has been cleared and targeted at a new PV, we might still get a late monitor
 	 * callback from the old PV.  If we copy the value to p_cv, it will look like the new link has
@@ -2170,7 +2243,7 @@ posMonCallback(recDynLink * precDynLink)
 			return;
 		}
 		if (!psscan->xsc) {
-			if (sscanRecordDebug) printf("%s:posMonCallback: pending scan was aborted\n",
+			if (sscanRecordDebug >= 2) printf("%s:posMonCallback: pending scan was aborted\n",
 					psscan->name);
 			psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
 			return;
@@ -2185,7 +2258,7 @@ posMonCallback(recDynLink * precDynLink)
 				return;
 			}
 		}
-		if (sscanRecordDebug) printf("%s:posMonCallback: scan pending - call scanOnce()\n",
+		if (sscanRecordDebug >= 2) printf("%s:posMonCallback: scan pending - call scanOnce()\n",
 				psscan->name);
 		precPvt->scanBySearchCallback = 1;
 		scanOnce(psscan);
@@ -2219,7 +2292,14 @@ checkConnections(sscanRecord * psscan)
 	for (i = 1; i <= NUM_TRGS; i++, pPvStat++) {
 		if (*pPvStat & PV_NC) badOutputPv = 1;
 	}
-
+	/* let pPvStat continue to increment into Array-read triggers */
+	for (i = 1; i <= NUM_ATRGS; i++, pPvStat++) {
+		if (*pPvStat & PV_NC) badOutputPv = 1;
+	}
+	/* let pPvStat continue to increment into before/after-scan links */
+	for (i = 1; i <= NUM_MISC; i++, pPvStat++) {
+		if (*pPvStat & PV_NC) badOutputPv = 1;
+	}
 	precPvt->badOutputPv = badOutputPv;
 	precPvt->badInputPv = badInputPv;
 }
@@ -2254,6 +2334,7 @@ initScan(sscanRecord *psscan)
 	precPvt->valRdbkPvs = 0;
 	precPvt->valDetPvs = 0;
 	precPvt->valTrigPvs = 0;
+	precPvt->valATrigPvs = 0;
 	pPvStat = &psscan->p1nv;
 
 	for (i = 1; i <= NUM_POS; i++, pPvStat++) {
@@ -2277,12 +2358,16 @@ initScan(sscanRecord *psscan)
 	for (i = 1; i <= NUM_TRGS; i++, pPvStat++) {
 		if (*pPvStat == PV_OK) precPvt->valTrigPvs = i;
 	}
-
+	/* let pPvStat continue to increment into Array-read triggers */
+	for (i = 1; i <= NUM_ATRGS; i++, pPvStat++) {
+		if (*pPvStat == PV_OK) precPvt->valATrigPvs = i;
+	}
 	if (sscanRecordDebug > 10) {
-		printf("%s:Positioners  : %u\n", psscan->name, precPvt->valPosPvs);
-		printf("%s:Readbacks    : %u\n", psscan->name, precPvt->valRdbkPvs);
-		printf("%s:Detectors    : %u\n", psscan->name, precPvt->valDetPvs);
-		printf("%s:Triggers     : %u\n", psscan->name, precPvt->valTrigPvs);
+		printf("%s:Positioners      : %u\n", psscan->name, precPvt->valPosPvs);
+		printf("%s:Readbacks        : %u\n", psscan->name, precPvt->valRdbkPvs);
+		printf("%s:Detectors        : %u\n", psscan->name, precPvt->valDetPvs);
+		printf("%s:Triggers         : %u\n", psscan->name, precPvt->valTrigPvs);
+		printf("%s:Array-read Trigs : %u\n", psscan->name, precPvt->valATrigPvs);
 	}
 	/*
 	 * checkScanLimits must be called to update the current value of each
@@ -2343,13 +2428,10 @@ contScan(sscanRecord *psscan)
 	epicsTimeStamp  currentTime;
 	unsigned short *pPvStat;
 	unsigned short *pPvStatPos;
-	unsigned short  i, addToPrev;
-	long			j;
-	long            status, nReq = 1;
+	unsigned short  i;
+	long			status;
 	size_t          nRequest = 1;
 	double			oldPos;
-	double			*pDbuff;
-	float			*pFbuff, *pf;
 
 	switch ((int)psscan->faze) {
 	case sscanFAZE_TRIG_DETCTRS:
@@ -2445,145 +2527,72 @@ contScan(sscanRecord *psscan)
 		if (sscanRecordDebug >= 5) {
 			printf("%s:READ_DETCTRS - Point %ld\n", psscan->name, (long)psscan->cpt);
 		}
-
 		/* Store the appropriate value into the positioner readback array */
 		/* from RxCV or PxDV or TIME */
 		pPvStat = &psscan->r1nv;
 		pPvStatPos = &psscan->p1nv;
 		pPos = (posFields *) & psscan->p1pp;
 		for (i = 0; i < NUM_POS; i++, pPos++, pPvStatPos++, pPvStat++) {
-			pDbuff = precPvt->posBufPtr[i].pFill;
 			/* if readback PV is OK, use that value */
 			puserPvt = precPvt->caLinkStruct[i + NUM_POS].puserPvt;
-			if (psscan->acqt == sscanACQT_1D_ARRAY) {
-
-				/*** scan record just grabs arrays acquired by somebody else, perhaps hardware ***/
-				nRequest = nReq = psscan->npts;
-				if (*pPvStat == PV_OK) {
-					if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
-						status = recDynLinkGet(&precPvt->caLinkStruct[i + NUM_POS],
-								       pDbuff, &nRequest, 0, 0, 0);
-						if (nRequest < psscan->npts)
-							for (j = nRequest; j < psscan->npts; j++) pDbuff[j] = 0;
-					} else {
-						status = dbGet(puserPvt->pAddr, DBR_DOUBLE, pDbuff,
-							       0, &nReq, NULL);
-						if (nReq < psscan->npts)
-							for (j = nReq; j < psscan->npts; j++) pDbuff[j] = 0;
-					}
-				} else if (*pPvStatPos == PV_OK) {
-					/* stuff array with desired value */
-					for (j = 0; j < psscan->npts; j++) pDbuff[j] = pPos->p_sp + j * pPos->p_si;
+			if (*pPvStat == PV_OK) {
+				if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+					status = recDynLinkGet(&precPvt->caLinkStruct[i + NUM_POS],
+							       &pPos->r_cv, &nRequest, 0, 0, 0);
 				} else {
-					/* Neither PV is valid, store array of point numbers */
-					for (j = 0; j < psscan->npts; j++) pDbuff[j] = j;
+					status = dbGet(puserPvt->pAddr, DBR_DOUBLE, &pPos->r_cv,
+						       0, 0, NULL);
 				}
-
-			} else {
-
-				/*** normal point-by-point data acquisition ***/
-				if (*pPvStat == PV_OK) {
-					if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
-						status = recDynLinkGet(&precPvt->caLinkStruct[i + NUM_POS],
-								       &pPos->r_cv, &nRequest, 0, 0, 0);
-					} else {
-						status = dbGet(puserPvt->pAddr, DBR_DOUBLE, &pPos->r_cv,
-							       0, 0, NULL);
-					}
-				}
-				/* Does the readback PV = "time" ? */
-				else if (puserPvt->ts) {
+			}
+			/* Does the readback PV = "time" ? */
+			else if (puserPvt->ts) {
 					epicsTimeGetCurrent(&currentTime);
 					pPos->r_cv = epicsTimeDiffInSeconds(&currentTime, &psscan->time);
-				}
-				/* Is the positioner PV valid ? */
-				else if (*pPvStatPos == PV_OK) {
-					/* stuff array with desired value */
-					/* If onTheFly and flying, add the step increment to the previous */
-					if ((pPos->p_sm != sscanP1SM_On_The_Fly) || !precPvt->flying) {
-						pPos->r_cv = pPos->p_dv;
-					} else {
-						pPos->r_cv = pDbuff[psscan->cpt - 1] + pPos->p_si;
-					}
-				} else {
-					/* Neither PV is valid, store a 0 */
-					pPos->r_cv = 0;
-				}
-				pDbuff[psscan->cpt] = pPos->r_cv;
 			}
+			/* Is the positioner PV valid ? */
+			else if (*pPvStatPos == PV_OK) {
+				/* stuff array with desired value */
+				/* If onTheFly and flying, add the step increment to the previous */
+				if ((pPos->p_sm != sscanP1SM_On_The_Fly) || !precPvt->flying) {
+					pPos->r_cv = pPos->p_dv;
+				} else {
+					pPos->r_cv = precPvt->posBufPtr[i].pFill[psscan->cpt - 1] + pPos->p_si;
+				}
+			} else {
+				/* Neither PV is valid, store a 0 */
+				pPos->r_cv = 0;
+			}
+			precPvt->posBufPtr[i].pFill[psscan->cpt] = pPos->r_cv;
 		}
 
-		/*
-		 * Read each valid detector PV.  Note that we might be accumulating with the
-		 * previous scan's data, so read into a data buffer first.
-		 */
+		/* read each valid detector PV, place data in buffered array */
 		status = 0;
-		addToPrev = (psscan->acqm == sscanACQM_ADD) ||
-					((psscan->acqm == sscanACQM_ACC) && (precPvt->prevACQM == sscanACQM_ACC));
 		pPvStat = &psscan->d01nv;
 		pDet = (detFields *) & psscan->d01hr;
 		for (i = 0; i < precPvt->valDetPvs; i++, pDet++, pPvStat++) {
-			pFbuff = addToPrev ? (float *)precPvt->dataBuffer : precPvt->detBufPtr[i].pFill;
 			if (precPvt->acqDet[i] && (precPvt->detBufPtr[i].pFill != NULL)) {
-				if (psscan->acqt == sscanACQT_1D_ARRAY) {
-
-					/*** scan record just grabs arrays acquired by somebody else, perhaps hardware ***/
-					nRequest = nReq = psscan->npts;
-					if (*pPvStat == PV_OK) {
-						puserPvt = precPvt->caLinkStruct[i + D1_IN].puserPvt;
-						if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
-							status |= recDynLinkGet(&precPvt->caLinkStruct[i + D1_IN],
-										pFbuff, &nRequest, 0, 0, 0);
-							if (sscanRecordDebug >= 5) {
-								printf("%s:recDynLinkGet returned %ld, nRequest=%d\n",
-									psscan->name, status, (int)nRequest);
-							}
-							if (nRequest < psscan->npts)
-								for (j = nRequest; j < psscan->npts; j++) pFbuff[j] = 0;
-						} else {
-							status |= dbGet(puserPvt->pAddr, DBR_FLOAT, pFbuff,
-									0, &nReq, NULL);
-							if (nReq < psscan->npts)
-								for (j = nReq; j < psscan->npts; j++) pFbuff[j] = 0;
-						}
+				if (*pPvStat == PV_OK) {
+					puserPvt = precPvt->caLinkStruct[i + D1_IN].puserPvt;
+					if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+						status |= recDynLinkGet(&precPvt->caLinkStruct[i + D1_IN],
+									&pDet->d_cv, &nRequest, 0, 0, 0);
 					} else {
-						for (j = 0; j < psscan->npts; j++) pFbuff[j] = 0;
+						status |= dbGet(puserPvt->pAddr, DBR_FLOAT, &pDet->d_cv,
+								0, 0, NULL);
 					}
-					if (addToPrev) {
-						/* validBuf indicates where previous sscan's data are stored */
-						pf = (precPvt->validBuf == A_BUFFER) ? precPvt->detBufPtr[i].pBufA : 
-							precPvt->detBufPtr[i].pBufB;
-						for (j = 0; j < psscan->npts; j++) {
-							precPvt->detBufPtr[i].pFill[j] = pFbuff[j] + pf[j];
-						}
-					}
-					/* use last point for current value */
-					pDet->d_cv = pFbuff[psscan->npts - 1];
-
 				} else {
-
-					/*** normal point-by-point data acquisition ***/
-					if (*pPvStat == PV_OK) {
-						puserPvt = precPvt->caLinkStruct[i + D1_IN].puserPvt;
-						if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
-							status |= recDynLinkGet(&precPvt->caLinkStruct[i + D1_IN],
-										&pDet->d_cv, &nRequest, 0, 0, 0);
-						} else {
-							status |= dbGet(puserPvt->pAddr, DBR_FLOAT, &pDet->d_cv,
-									0, 0, NULL);
-						}
-					} else {
-						pDet->d_cv = 0.;
-					}
-					if (addToPrev && (precPvt->prevNumPts > psscan->cpt)) {
-						/* validBuf indicates where previous sscan's data are stored */
-						pf = (precPvt->validBuf == A_BUFFER) ? precPvt->detBufPtr[i].pBufA : 
-							precPvt->detBufPtr[i].pBufB;
-						pDet->d_cv += pf[psscan->cpt];
-					}
-					precPvt->detBufPtr[i].pFill[psscan->cpt] = pDet->d_cv;
-
+					pDet->d_cv = 0.;
 				}
+				if ((precPvt->prevNumPts > psscan->cpt) && ((psscan->acqm == sscanACQM_ADD) ||
+						((psscan->acqm == sscanACQM_ACC) && (precPvt->prevACQM == sscanACQM_ACC)))) {
+					/* validBuf indicates where previous sscan's data are stored */
+					if (precPvt->validBuf == A_BUFFER) {
+						pDet->d_cv += precPvt->detBufPtr[i].pBufA[psscan->cpt];
+					} else {
+						pDet->d_cv += precPvt->detBufPtr[i].pBufB[psscan->cpt];
+					}
+				}
+				precPvt->detBufPtr[i].pFill[psscan->cpt] = pDet->d_cv;
 			}
 		}
 
@@ -2636,7 +2645,13 @@ endScan(sscanRecord *psscan)
 {
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 
-	if (precPvt->dataState == DS_UNPACKED) packData(psscan);
+	if (psscan->dstate == sscanDSTATE_UNPACKED) packData(psscan);
+	if (psscan->dstate == sscanDSTATE_UNPACKED) {
+		/* packData didn't finish; probably waiting for previous scan's data to be written.
+		 * For now, don't try to do after-scan stuff until packData finishes
+		 */
+		return;
+	}
 
 	psscan->xsc = 0;	/* done with scan */
 
@@ -2650,6 +2665,112 @@ endScan(sscanRecord *psscan)
 	return;
 }
 
+
+static void 
+readArrays(sscanRecord *psscan)
+{
+	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
+	posFields      *pPos = (posFields *) & psscan->p1pp;
+	detFields      *pDet = (detFields *) & psscan->d01hr;
+	recDynLinkPvt  *puserPvt;
+	unsigned short *pPvStat;
+	unsigned short *pPvStatPos;
+	unsigned short  i, addToPrev;
+	long			j;
+	long            status, nReq = 1;
+	size_t          nRequest = 1;
+	double			*pDbuff;
+	float			*pFbuff, *pf;
+
+	/*** Read positioner and detector data into arrays. ***/
+	if (sscanRecordDebug >= 5) {
+		printf("%s:readArrays - Point %ld\n", psscan->name, (long)psscan->cpt);
+	}
+
+	/* Read array-values positioner readbacks, if any */
+	pPvStat = &psscan->r1nv;
+	pPvStatPos = &psscan->p1nv;
+	pPos = (posFields *) & psscan->p1pp;
+	for (i = 0; i < NUM_POS; i++, pPos++, pPvStatPos++, pPvStat++) {
+		pDbuff = precPvt->posBufPtr[i].pFill;
+		/* if readback PV is OK, use that value */
+		puserPvt = precPvt->caLinkStruct[i + NUM_POS].puserPvt;
+		if (puserPvt->pAddr->no_elements > 1) {
+			nRequest = nReq = psscan->npts;
+			if (*pPvStat == PV_OK) {
+				if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+					status = recDynLinkGet(&precPvt->caLinkStruct[i + NUM_POS],
+							       pDbuff, &nRequest, 0, 0, 0);
+					if (nRequest < psscan->npts)
+						for (j = nRequest; j < psscan->npts; j++) pDbuff[j] = 0;
+				} else {
+					status = dbGet(puserPvt->pAddr, DBR_DOUBLE, pDbuff,
+						       0, &nReq, NULL);
+					if (nReq < psscan->npts)
+						for (j = nReq; j < psscan->npts; j++) pDbuff[j] = 0;
+				}
+			} else if (*pPvStatPos == PV_OK) {
+				/* stuff array with desired value */
+				for (j = 0; j < psscan->npts; j++) pDbuff[j] = pPos->p_sp + j * pPos->p_si;
+			} else {
+				/* Neither PV is valid, store array of point numbers */
+				for (j = 0; j < psscan->npts; j++) pDbuff[j] = j;
+			}
+		}
+	}
+
+	/*
+	 * Read array-valued detectors, if any.  Note that we might be accumulating with the
+	 * previous scan's data, so read into a buffer first.
+	 */
+	status = 0;
+	addToPrev = (psscan->acqm == sscanACQM_ADD) ||
+				((psscan->acqm == sscanACQM_ACC) && (precPvt->prevACQM == sscanACQM_ACC));
+	pPvStat = &psscan->d01nv;
+	pDet = (detFields *) & psscan->d01hr;
+	for (i = 0; i < precPvt->valDetPvs; i++, pDet++, pPvStat++) {
+		pFbuff = addToPrev ? (float *)precPvt->dataBuffer : precPvt->detBufPtr[i].pFill;
+		if (precPvt->acqDet[i] && (precPvt->detBufPtr[i].pFill != NULL)) {
+			puserPvt = precPvt->caLinkStruct[i + D1_IN].puserPvt;
+			if (puserPvt->pAddr->no_elements > 1) {
+				nRequest = nReq = psscan->npts;
+				if (*pPvStat == PV_OK) {
+					if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+						status |= recDynLinkGet(&precPvt->caLinkStruct[i + D1_IN],
+									pFbuff, &nRequest, 0, 0, 0);
+						if (sscanRecordDebug >= 5) {
+							printf("%s:recDynLinkGet returned %ld, nRequest=%d\n",
+								psscan->name, status, (int)nRequest);
+						}
+						if (nRequest < psscan->npts)
+							for (j = nRequest; j < psscan->npts; j++) pFbuff[j] = 0;
+					} else {
+						status |= dbGet(puserPvt->pAddr, DBR_FLOAT, pFbuff,
+								0, &nReq, NULL);
+						if (nReq < psscan->npts)
+							for (j = nReq; j < psscan->npts; j++) pFbuff[j] = 0;
+					}
+				} else {
+					for (j = 0; j < psscan->npts; j++) pFbuff[j] = 0;
+				}
+				if (addToPrev) {
+					/* validBuf indicates where previous sscan's data are stored */
+					pf = (precPvt->validBuf == A_BUFFER) ? precPvt->detBufPtr[i].pBufA : 
+						precPvt->detBufPtr[i].pBufB;
+					for (j = 0; j < psscan->npts; j++) {
+						precPvt->detBufPtr[i].pFill[j] = pFbuff[j] + pf[j];
+					}
+				}
+			}
+		}
+	}
+
+	psscan->udf = 0;
+	if (psscan->acqt == sscanACQT_1D_ARRAY) {
+		/*** scan record gets all points in one pass ***/
+		psscan->cpt = psscan->npts;
+}
+}
 
 volatile int sscan_fit_smooth = 3;
 volatile int sscan_test_fit = 0;
@@ -2668,9 +2789,43 @@ packData(sscanRecord *psscan)
 	float			*pDBuf, *pf, *pf1, *pf2;
 	unsigned short	*pPvStat;
 
-	if (sscanRecordDebug >= 5) printf("%s:packData\n", psscan->name);
-	if (precPvt->dataState == DS_PACKED) return;
-	precPvt->dataState = DS_PACKED;
+	if (sscanRecordDebug >= 1) printf("%s:packData, faze=%d, data_state=%d\n",
+		psscan->name, psscan->faze, psscan->dstate);
+
+	if (psscan->dstate == sscanDSTATE_PACKED) return;
+
+	switch ((int)psscan->dstate) {
+	case sscanDSTATE_UNPACKED:
+		/* scan completed or aborted; haven't triggered array read yet */
+		if (precPvt->valATrigPvs) {
+			psscan->dstate = sscanDSTATE_TRIG_ARRAY_READ; POST(&psscan->dstate);
+			callbackRequest(&precPvt->doPutsCallback);
+			return;
+		}
+		/* fall through; we don't have to wait for anyone to read arrays */
+	case sscanDSTATE_ARRAY_READ_WAIT:
+		/* we've triggered array read; this must be the callback */
+		readArrays(psscan);
+		if (psscan->await) {
+			/* can't pack; saveData's still using last scan's data buffers */
+			psscan->dstate = sscanDSTATE_SAVE_DATA_WAIT; POST(&psscan->dstate);
+			/* wait for saveData to write to AWAIT */
+			return;
+		}
+		/* fall through; data-storage client is done with last scan's buffers */
+	case sscanDSTATE_SAVE_DATA_WAIT:
+		if (psscan->await) {
+			/* wait for saveData to write to AWAIT */
+			return;
+		}
+		/* saveData's done, we can pack the data now */
+		break;
+	default:
+		printf("%s:packData: unexpected dstate (%d)\n", psscan->name, psscan->dstate);
+		break;
+	}
+
+	psscan->dstate = sscanDSTATE_PACKED; POST(&psscan->dstate);
 	/*
 	 * It turns out that medm plots the whole array, so for it to look
 	 * right the remainder of the arrays will be filled with the last
@@ -2856,7 +3011,6 @@ packData(sscanRecord *psscan)
 			precPvt->detBufPtr[i].pFill = precPvt->detBufPtr[i].pBufB;
 		}
 	}
-
 	/* save acquisition mode so we know whether to add next sscan's data to this scan */
 	precPvt->prevACQM = psscan->acqm;
 	precPvt->prevNumPts = psscan->cpt;
@@ -2894,20 +3048,22 @@ afterScan(psscan)
  *
  ***************************************************************************/
 void 
-doPuts(precPvt)
-	recPvtStruct   *precPvt;
+doPuts(CALLBACK *pCB)
 {
-	sscanRecord *psscan = precPvt->psscan;
-	recDynLinkPvt  *puserPvt;
-	posFields      *pPos;
-	unsigned short *pPvStat;
+	sscanRecord		*psscan;
+	recPvtStruct	*precPvt;
+	posFields		*pPos;
+	unsigned short	*pPvStat;
 	int             i;
-	long            status;
+	long			status;
 	double			oldPos;
 	float			*tcd;
 	int				linkIndex;
 
-	if (sscanRecordDebug)
+	callbackGetUser(psscan, pCB);
+	precPvt = psscan->rpvt;
+
+	if (sscanRecordDebug >= 2)
 		printf("%s:doPuts:entry:phase=%d\n", psscan->name, (int)psscan->faze);
 
 	if (psscan->paus) {
@@ -2916,12 +3072,47 @@ doPuts(precPvt)
 		return;
 	}
 
+	/* We don't want TRIG_ARRAY_READ to be a scan->faze item, because that
+	 * would close off the possibility of doing array read and retrace at
+	 * the same time.
+	 */
+	if (psscan->dstate == sscanDSTATE_TRIG_ARRAY_READ) {
+		if (sscanRecordDebug >= 5) {
+			printf("%s:TRIG_ARRAY_READ - Point %ld\n", psscan->name, (long)psscan->cpt);
+		}
+		psscan->dstate = sscanDSTATE_ARRAY_READ_WAIT; POST(&psscan->dstate);
+
+		/* for each valid array-read trigger, write the desired value */
+		tcd = &psscan->a1cd;	/* value to write */
+		pPvStat = &psscan->a1nv;	/* link status */
+		linkIndex = A1_OUT;
+		for (i=0; i<NUM_ATRGS; i++, tcd++, pPvStat++, linkIndex++) {
+			if (*pPvStat == 0) {
+				precPvt->numAReadCallbacks++;
+				status = recDynLinkPutCallback(&precPvt->caLinkStruct[linkIndex],
+						tcd, 1, notifyCallback);
+				if (status) precPvt->numAReadCallbacks--;
+				if (status == NOTIFY_IN_PROGRESS) {
+					precPvt->numAReadCallbacks--;
+					if (sscanRecordDebug >= 5) {
+						printf("%s:...TRIG_ARRAY_READ: notify in progress\n", psscan->name);
+					}
+					psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
+					sprintf(psscan->smsg, "Array-read trigger %d is busy", i+1);
+					POST(&psscan->smsg);
+				}
+			}
+		}
+		return;
+	}
+
+
 	switch ((int)psscan->faze) {
 
 	case sscanFAZE_START_FLY:
 	case sscanFAZE_MOVE_MOTORS:
 		if (sscanRecordDebug >= 5) {
-			printf("%s:MOVE_MOTORS  - Point %d\n", psscan->name, psscan->cpt);
+			printf("%s:MOVE_MOTORS  - Point %ld\n", psscan->name, (long)psscan->cpt);
 		}
 
 		pPos = (posFields *) & psscan->p1pp;
@@ -2933,9 +3124,8 @@ doPuts(precPvt)
 		 */
 		for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
 			if ((*pPvStat == PV_OK) && ((pPos->p_sm != sscanP1SM_On_The_Fly) || (psscan->cpt == 0))) {
-				puserPvt = precPvt->caLinkStruct[i].puserPvt;
 				if ((psscan->faze == sscanFAZE_START_FLY) && (pPos->p_sm == sscanP1SM_On_The_Fly)) {
-					status = recDynLinkPut(&precPvt->caLinkStruct[i + P1_OUT], &pPos->p_dv, 1);
+					status = recDynLinkPut(&precPvt->caLinkStruct[i + P1_OUT], &(pPos->p_dv), 1);
 					if (sscanRecordDebug >= 5)
 						printf("%s:doPuts:start_fly to %f\n", psscan->name, pPos->p_dv);
 					precPvt->flying = 1;
@@ -2943,7 +3133,7 @@ doPuts(precPvt)
 					precPvt->numPositionerCallbacks++;
 					psscan->faze = sscanFAZE_CHECK_MOTORS; /* post when we get out of the loop */
 					status = recDynLinkPutCallback(&precPvt->caLinkStruct[i + P1_OUT],
-						    &pPos->p_dv, 1, notifyCallback);
+						    &(pPos->p_dv), 1, notifyCallback);
 					if (status) precPvt->numPositionerCallbacks--;
 					if (status == NOTIFY_IN_PROGRESS) {
 						psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
@@ -2996,7 +3186,6 @@ doPuts(precPvt)
 		linkIndex = T1_OUT;
 		for (i=0; i<NUM_TRGS; i++, tcd++, pPvStat++, linkIndex++) {
 			if (*pPvStat == 0) {
-				puserPvt = precPvt->caLinkStruct[linkIndex].puserPvt;
 				precPvt->numTriggerCallbacks++;
 				status = recDynLinkPutCallback(&precPvt->caLinkStruct[linkIndex],
 						tcd, 1, notifyCallback);
@@ -3019,11 +3208,11 @@ doPuts(precPvt)
 			printf("%s:BEFORE_SCAN Link\n", psscan->name);
 		if (psscan->bsnv == OK) {
 			psscan->faze = sscanFAZE_BEFORE_SCAN_WAIT; POST(&psscan->faze);
-			puserPvt = precPvt->caLinkStruct[BS_OUT].puserPvt;
-			if (1 /* puserPvt->dbAddrNv || puserPvt->useDynLinkAlways */ ) {
+			if (psscan->bswait == sscanLINKWAIT_YES) {
+				psscan->faze = sscanFAZE_BEFORE_SCAN_WAIT; POST(&psscan->faze);
 				precPvt->numPositionerCallbacks++;
 				status = recDynLinkPutCallback(&precPvt->caLinkStruct[BS_OUT],
-						&psscan->bscd, 1, notifyCallback);
+						&(psscan->bscd), 1, notifyCallback);
 				if (status) precPvt->numPositionerCallbacks--;
 				if (status == NOTIFY_IN_PROGRESS) {
 					psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
@@ -3031,11 +3220,11 @@ doPuts(precPvt)
 					POST(&psscan->smsg);
 				}
 			} else {
-				status = dbPutField(puserPvt->pAddr, DBF_FLOAT,
-						&psscan->bscd, 1);
+				status = recDynLinkPut(&precPvt->caLinkStruct[BS_OUT],
+						&(psscan->bscd), 1);
 			}
 		}
-		/* Leave the phase at BEFORE_SCAN if we didn't do a put. */
+		/* Leave the phase at BEFORE_SCAN if we didn't do a putCallback. */
 		break;
 
 	case sscanFAZE_RETRACE_MOVE:
@@ -3068,20 +3257,14 @@ doPuts(precPvt)
 
 					psscan->faze = sscanFAZE_RETRACE_WAIT; POST(&psscan->faze);
 					/* Command motor */
-					puserPvt = precPvt->caLinkStruct[i].puserPvt;
-					if (1 /* puserPvt->dbAddrNv || puserPvt->useDynLinkAlways */ ) {
-						precPvt->numPositionerCallbacks++;
-						status = recDynLinkPutCallback(&precPvt->caLinkStruct[i + P1_OUT],
-						    &pPos->p_dv, 1, notifyCallback);
-						if (status) precPvt->numPositionerCallbacks--;
-						if (status == NOTIFY_IN_PROGRESS) {
-							psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
-							sprintf(psscan->smsg, "Positioner %1d is busy", i);
-							POST(&psscan->smsg);
-						}
-					} else {
-						status = dbPutField(puserPvt->pAddr, DBF_DOUBLE,
-						    &pPos->p_dv, 1);
+					precPvt->numPositionerCallbacks++;
+					status = recDynLinkPutCallback(&precPvt->caLinkStruct[i + P1_OUT],
+					    &(pPos->p_dv), 1, notifyCallback);
+					if (status) precPvt->numPositionerCallbacks--;
+					if (status == NOTIFY_IN_PROGRESS) {
+						psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
+						sprintf(psscan->smsg, "Positioner %1d is busy", i);
+						POST(&psscan->smsg);
 					}
 				}
 			}
@@ -3096,14 +3279,13 @@ doPuts(precPvt)
 	case sscanFAZE_AFTER_SCAN_DO:
 		/* If an After Scan Link PV is valid, execute it */
 		if (psscan->asnv == PV_OK) {
-			psscan->faze = sscanFAZE_AFTER_SCAN_WAIT; POST(&psscan->faze);
 			if (sscanRecordDebug >= 5)
 				printf("%s:AFTER_SCAN Fwd Lnk\n", psscan->name);
-			puserPvt = precPvt->caLinkStruct[AS_OUT].puserPvt;
-			if (1 /* puserPvt->dbAddrNv || puserPvt->useDynLinkAlways */ ) {
+			if (psscan->aswait == sscanLINKWAIT_YES) {
+				psscan->faze = sscanFAZE_AFTER_SCAN_WAIT; POST(&psscan->faze);
 				precPvt->numPositionerCallbacks++;
 				status = recDynLinkPutCallback(&precPvt->caLinkStruct[AS_OUT],
-						&psscan->ascd, 1, notifyCallback);
+						&(psscan->ascd), 1, notifyCallback);
 				if (status) precPvt->numPositionerCallbacks--;
 				if (status == NOTIFY_IN_PROGRESS) {
 					psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
@@ -3111,12 +3293,12 @@ doPuts(precPvt)
 					POST(&psscan->smsg);
 				}
 			} else {
-				status = dbPutField(puserPvt->pAddr, DBF_FLOAT,
-						&psscan->ascd, 1);
+				status = recDynLinkPut(&precPvt->caLinkStruct[AS_OUT],
+						&(psscan->ascd), 1);
 			}
 		}
 		if (psscan->faze == sscanFAZE_AFTER_SCAN_DO) {
-			/* Didn't have to do anything after all. */
+			/* Don't have to wait for after-scan link callback */
 			psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze);
 			/* Scan must end in the process() routine. */
 			scanOnce(psscan);
@@ -3129,6 +3311,7 @@ doPuts(precPvt)
 		 * This must be a request to move a positioner interactively.
 		 * We don't do this anymore.
 		 */
+
 		break;
 
 	case sscanFAZE_SCAN_PENDING:
@@ -3179,7 +3362,7 @@ adjLinParms(paddr)
 		psscan->alrt = 1;
 		return;
 	}
-	if (sscanRecordDebug)
+	if (sscanRecordDebug >= 2)
 		printf("%s:Positioner %d\n", psscan->name, i);
 	switch (special_type) {
 	case (SPC_SC_S):	/* start position changed */
@@ -3640,7 +3823,7 @@ changedNpts(psscan)
 				(pParms->p_fc << 1) |
 				(pParms->p_fw);
 
-			if (sscanRecordDebug) {
+			if (sscanRecordDebug >= 2) {
 				printf("%s:Freeze State of P%1d = 0x%hx \n", psscan->name, i, freezeState);
 			}
 			/* a table describing what happens is at the end of the file */
@@ -3724,7 +3907,7 @@ checkScanLimits(psscan)
 	long            i, j;
 	double          value;
 
-	if (sscanRecordDebug) {
+	if (sscanRecordDebug >= 2) {
 		if (!psscan->p1nv)
 			printf("%s:P1 Control Limits : %.4f   %.4f\n",
 			       psscan->name, psscan->p1lr, psscan->p1hr);
