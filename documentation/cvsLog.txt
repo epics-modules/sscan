@@ -72,6 +72,8 @@ documentation displays
 
 support/sscan/sscanApp/op/adl/scan.adl
 
+Show dstste (data-state) field
+
 mostly cosmetic changes
 =============================================================================
 
@@ -90,15 +92,21 @@ documentation displays
 
 support/sscan/sscanApp/op/adl/scan_full.adl
 
+Show dstste (data-state) field
+
 mostly cosmetic; added doc displays; await
 =============================================================================
 
 support/sscan/sscanApp/op/adl/scan_help.adl
 
+Add dstste (data-state) field
+
 documentation displays
 =============================================================================
 
 support/sscan/sscanApp/op/adl/scan_more.adl
+
+Show dstste (data-state) field
 
 mostly cosmetic; added doc displays; await
 =============================================================================
@@ -229,6 +237,10 @@ New file, Tim forgot to commit
 =============================================================================
 
 support/sscan/sscanApp/src/sscanRecord.c
+
+Abort and killing scans reworked to allow sscan record to wait for data-storage
+client even if it doesn't wait for anything else, to abandon even that caution
+if user insists, and to show user where it is in the process.
 
 scan abort no longer clears .PAUS
 
