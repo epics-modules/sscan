@@ -142,8 +142,7 @@ typedef struct {
 	cmdType	cmd;
 } msgQCmd;
 
-LOCAL void recDynLinkStartInput(void);
-LOCAL void recDynLinkStartOutput(void);
+LOCAL void recDynLinkStartTasks(void);
 LOCAL void connectCallback(struct connection_handler_args cha);
 LOCAL void getCallback(struct event_handler_args eha);
 LOCAL void monitorCallback(struct event_handler_args eha);
@@ -161,7 +160,7 @@ long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
     
 	DEBUG(10,"recDynLinkAddInput: precDynLink=%p\n", precDynLink); 
 	if (options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr)) return(-1);
-	if (!inpTaskId) recDynLinkStartInput();
+	if (!inpTaskId) recDynLinkStartTasks();
 	if (precDynLink->pdynLinkPvt) {
 		DEBUG(10,"recDynLinkAddInput: clearing old pdynLinkPvt\n"); 
 		recDynLinkClear(precDynLink);
@@ -198,7 +197,7 @@ long epicsShareAPI recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
     
 	DEBUG(10,"recDynLinkAddOutput: precDynLink=%p\n", precDynLink); 
 	if (options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr)) return(-1);
-	if (!outTaskId) recDynLinkStartOutput();
+	if (!outTaskId) recDynLinkStartTasks();
 	if (precDynLink->pdynLinkPvt) {
 		DEBUG(10,"recDynLinkAddOutput: clearing old pdynLinkPvt\n"); 
 		recDynLinkClear(precDynLink);
@@ -442,34 +441,30 @@ all_done:
 	return(status);
 }
 
-LOCAL void recDynLinkStartInput(void)
+LOCAL void recDynLinkStartTasks(void)
 {
 	recDynLinkInpMsgQ = epicsMessageQueueCreate(recDynLinkQsize, sizeof(msgQCmd));
 	if (recDynLinkInpMsgQ == NULL) {
-		errMessage(0,"recDynLinkStart failed");
+		errMessage(0,"recDynLinkStartTasks failed");
 		exit(1);
 	}
-	inpTaskId = epicsThreadCreate("recDynINP",epicsThreadPriorityCAServerHigh+3,
+	inpTaskId = epicsThreadCreate("recDynInp",epicsThreadPriorityCAServerHigh+3,
 		20000, (EPICSTHREADFUNC)recDynLinkInp,0);
 	if (inpTaskId==NULL) {
-		errMessage(0,"recDynLinkStartInput: taskSpawn Failure\n");
+		errMessage(0,"recDynLinkStartTasks: taskSpawn Failure\n");
 	}
-}
-
-LOCAL void recDynLinkStartOutput(void)
-{
 	wakeUpEvt = epicsEventCreate(epicsEventEmpty);
 	if (wakeUpEvt == 0)
 		errMessage(0, "epicsEventCreate failed in recDynLinkStartOutput");
 	recDynLinkOutMsgQ = epicsMessageQueueCreate(recDynLinkQsize, sizeof(msgQCmd));
 	if (recDynLinkOutMsgQ == NULL) {
-		errMessage(0,"recDynLinkStartOutput failed");
+		errMessage(0,"recDynLinkStartTasks failed");
 		exit(1);
 	}
-	outTaskId = epicsThreadCreate("recDynOUT",epicsThreadPriorityCAServerHigh+3,
+	outTaskId = epicsThreadCreate("recDynOut",epicsThreadPriorityCAServerHigh+3,
 		20000, (EPICSTHREADFUNC)recDynLinkOut,0);
 	if (outTaskId == NULL) {
-		errMessage(0,"recDynLinkStart: taskSpawn Failure\n");
+		errMessage(0,"recDynLinkStartTasks: taskSpawn Failure\n");
 	}
 }
 
