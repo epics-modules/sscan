@@ -15,8 +15,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#define MAX_FILENAME_LENGTH  160
-
+#define FILENAME_LENGTH  160
 
 /************************************************************************/
 /* TYPES								*/
@@ -34,7 +33,7 @@ typedef struct macro {
 typedef struct req_file {
   FILE*  fd;
   MACRO* list_macros;
-  char   file_name[MAX_FILENAME_LENGTH];
+  char   file_name[FILENAME_LENGTH];
   char   sect_name[41];
   long   sect_start;
   long   sect_end;
