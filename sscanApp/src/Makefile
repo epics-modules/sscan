@@ -39,10 +39,10 @@ sscan_SRCS += busyRecord.c
 sscan_SRCS += recDynLink.c
 
 # save scan data stuff
+sscan_SRCS += xdr_lib.c
+sscan_SRCS += saveData.c
+sscan_SRCS += req_file.c
 sscan_SRCS_vxWorks += xdr_stdio.c
-sscan_SRCS_vxWorks += xdr_lib.c
-sscan_SRCS_vxWorks += saveData.c
-sscan_SRCS_vxWorks += req_file.c
 
 sscan_LIBS += $(EPICS_BASE_IOC_LIBS)
 
