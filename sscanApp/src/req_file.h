@@ -9,13 +9,12 @@
 #ifndef __REQ_FILE_H__
 #define __REQ_FILE_H__
 
-/* #include <stdioLib.h> */
-/* #include <ioLib.h> */
+#include <stdioLib.h>
+#include <ioLib.h>
 
 
-#include <stdio.h>
-#include <string.h>
-#define MAX_FILENAME_LENGTH  160
+/* #include <stdio.h> */
+/* #define MAX_FILENAME_LENGTH  160 */
 
 
 /************************************************************************/

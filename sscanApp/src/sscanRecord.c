@@ -546,7 +546,7 @@ static int isBlank(char *name)
 	int i;
 
 	for(i=0; name[i]; i++) {
-		if (!(isspace((int)name[i]))) return(0);
+		if (!(isspace(name[i]))) return(0);
 	}
 	return((i>0));
 }
@@ -684,9 +684,6 @@ init_record(sscanRecord *psscan, int pass)
 
 		return (0);
 	}
-	/* Make sure npts <= mpts */
-	if (psscan->npts > psscan->mpts) psscan->npts = psscan->mpts;
-	
 	callbackSetCallback(doPuts, &precPvt->doPutsCallback);
 	callbackSetPriority(psscan->prio, &precPvt->doPutsCallback);
 
@@ -2343,8 +2340,7 @@ contScan(sscanRecord *psscan)
 	epicsTimeStamp  currentTime;
 	unsigned short *pPvStat;
 	unsigned short *pPvStatPos;
-	unsigned short  i, addToPrev;
-	long			j;
+	unsigned short  i, j, addToPrev;
 	long            status, nReq = 1;
 	size_t          nRequest = 1;
 	double			oldPos;
@@ -2359,7 +2355,7 @@ contScan(sscanRecord *psscan)
 
 	case sscanFAZE_CHECK_MOTORS:
 		if (sscanRecordDebug >= 5) {
-			printf("%s:CHECK_MOTORS  - Point %ld\n", psscan->name, (long)psscan->cpt);
+			printf("%s:CHECK_MOTORS  - Point %d\n", psscan->name, psscan->cpt);
 		}
 		/* check if a readback PV and a delta are specified */
 		pPvStat = &psscan->r1nv;
@@ -2443,7 +2439,7 @@ contScan(sscanRecord *psscan)
 	case sscanFAZE_READ_DETCTRS:
 		/*** Read positioner and detector data into arrays. ***/
 		if (sscanRecordDebug >= 5) {
-			printf("%s:READ_DETCTRS - Point %ld\n", psscan->name, (long)psscan->cpt);
+			printf("%s:READ_DETCTRS - Point %d\n", psscan->name, psscan->cpt);
 		}
 
 		/* Store the appropriate value into the positioner readback array */
@@ -2520,10 +2516,10 @@ contScan(sscanRecord *psscan)
 		status = 0;
 		addToPrev = (psscan->acqm == sscanACQM_ADD) ||
 					((psscan->acqm == sscanACQM_ACC) && (precPvt->prevACQM == sscanACQM_ACC));
+		pFbuff = addToPrev ? (float *)precPvt->dataBuffer : precPvt->detBufPtr[i].pFill;
 		pPvStat = &psscan->d01nv;
 		pDet = (detFields *) & psscan->d01hr;
 		for (i = 0; i < precPvt->valDetPvs; i++, pDet++, pPvStat++) {
-			pFbuff = addToPrev ? (float *)precPvt->dataBuffer : precPvt->detBufPtr[i].pFill;
 			if (precPvt->acqDet[i] && (precPvt->detBufPtr[i].pFill != NULL)) {
 				if (psscan->acqt == sscanACQT_1D_ARRAY) {
 
@@ -2659,7 +2655,7 @@ packData(sscanRecord *psscan)
 {
 
 	recPvtStruct	*precPvt = (recPvtStruct *) psscan->rpvt;
-	long			i, j, markIndex;
+	int				i, j, markIndex;
 	double			highVal, lowVal, aveDiff;
 	int 			highIndex, lowIndex;
 	detFields		*pDet;
@@ -2668,7 +2664,6 @@ packData(sscanRecord *psscan)
 	float			*pDBuf, *pf, *pf1, *pf2;
 	unsigned short	*pPvStat;
 
-	if (sscanRecordDebug >= 5) printf("%s:packData\n", psscan->name);
 	if (precPvt->dataState == DS_PACKED) return;
 	precPvt->dataState = DS_PACKED;
 	/*
@@ -2695,8 +2690,6 @@ packData(sscanRecord *psscan)
 	}
 
 	if ((psscan->cpt > 1) && (psscan->pasm >= sscanPASM_Peak_Pos)) {
-		if (sscanRecordDebug >= 5) printf("%s:packData cpt=%ld,pasm=%d\n",
-			psscan->name, (long)psscan->cpt, psscan->pasm);
 		/* Find peak/valley/edge in reference detector data array and go to it. */
 		markIndex = -1;
 
@@ -2967,7 +2960,7 @@ doPuts(precPvt)
 
 	case sscanFAZE_TRIG_DETCTRS:
 		if (sscanRecordDebug >= 5) {
-			printf("%s:TRIG_DETCTRS - Point %ld\n", psscan->name, (long)psscan->cpt);
+			printf("%s:TRIG_DETCTRS - Point %d\n", psscan->name, psscan->cpt);
 		}
 		psscan->faze = precPvt->onTheFly ? sscanFAZE_CHECK_MOTORS : sscanFAZE_READ_DETCTRS;
 		POST(&psscan->faze);
@@ -3721,7 +3714,7 @@ checkScanLimits(psscan)
 	/* for each valid positioner, fetch control limits */
 	long            status = 0;
 	size_t          nRequest = 1;
-	long            i, j;
+	int             i, j;
 	double          value;
 
 	if (sscanRecordDebug) {
@@ -3754,7 +3747,7 @@ checkScanLimits(psscan)
 			}
 			POST(&pPos->p_pp);
 			if (sscanRecordDebug)
-				printf("%s:checkScanLimits: P%1ld pp=%f (status=%ld)\n",
+				printf("%s:checkScanLimits: P%1d pp=%f (status=%ld)\n",
 					psscan->name, j, pPos->p_pp, status);
 			if (status) {
 				printf("%s:checkScanLimits: could not get current value\n", psscan->name);
@@ -3776,7 +3769,7 @@ checkScanLimits(psscan)
 		if ((*pPvStat == PV_OK) &&
 		    (pPos->p_sm == sscanP1SM_Table) &&
 		    (precPvt->tablePts[i] < psscan->npts)) {
-			sprintf(psscan->smsg, "Pts in P%ld Table < # of Steps", i + 1);
+			sprintf(psscan->smsg, "Pts in P%d Table < # of Steps", i + 1);
 			POST(&psscan->smsg);
 			if (!psscan->alrt) {psscan->alrt = 1; POST(&psscan->alrt);}
 			return (ERROR);
@@ -3829,11 +3822,11 @@ checkScanLimits(psscan)
 				}
 
 				if ((pPos->p_lr != 0) && (value < pPos->p_lr)) {
-					sprintf(psscan->smsg, "P%-ld Value < LO_Limit @ point %1ld", i + 1, j);
+					sprintf(psscan->smsg, "P%-d Value < LO_Limit @ point %1d", i + 1, j);
 					psscan->alrt = 1;
 					return (ERROR);
 				} else if ((pPos->p_hr != 0) && (value > pPos->p_hr)) {
-					sprintf(psscan->smsg, "P%-ld Value > HI_Limit @ point %1ld", i + 1, j);
+					sprintf(psscan->smsg, "P%-d Value > HI_Limit @ point %1d", i + 1, j);
 					psscan->alrt = 1;
 					return (ERROR);
 				}
@@ -3869,7 +3862,7 @@ previewScan(psscan)
 	double         *pPosBuf;
 	float          *pDetBuf;
 	float           value;
-	long            i, j;
+	int             i, j;
 	long            status;
 	size_t          nRequest = 1;
 
