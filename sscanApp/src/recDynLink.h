@@ -17,6 +17,7 @@ typedef struct recDynLink{
 	void	*puserPvt;
 	void	*pdynLinkPvt;
 	short	status;
+	short	onQueue;
 } recDynLink;
 typedef void (*recDynCallback)(recDynLink *);
 

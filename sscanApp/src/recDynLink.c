@@ -156,9 +156,13 @@ long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	struct dbAddr	dbaddr;
 	msgQCmd		cmd;
     
+	DEBUG(10,"recDynLinkAddInput: precDynLink=%p\n", precDynLink); 
 	if (options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr)) return(-1);
 	if (!inpTaskId) recDynLinkStartInput();
-	if (precDynLink->pdynLinkPvt) recDynLinkClear(precDynLink);
+	if (precDynLink->pdynLinkPvt) {
+		DEBUG(10,"recDynLinkAddInput: clearing old pdynLinkPvt\n"); 
+		recDynLinkClear(precDynLink);
+	}
 	pdynLinkPvt = (dynLinkPvt *)calloc(1,sizeof(dynLinkPvt));
 	if (!pdynLinkPvt) {
 		printf("recDynLinkAddInput can't allocate storage");
@@ -175,6 +179,7 @@ long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	pdynLinkPvt->state = stateStarting;
 	cmd.data.precDynLink = precDynLink;
 	cmd.cmd = cmdSearch;
+	precDynLink->onQueue++;
 	if (epicsMessageQueueTrySend(recDynLinkInpMsgQ, (void *)&cmd, sizeof(cmd))) {
 		errMessage(0,"recDynLinkAddInput: epicsMessageQueueTrySend error");
 	}
@@ -188,9 +193,13 @@ long epicsShareAPI recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 	struct dbAddr	dbaddr;
 	msgQCmd		cmd;
     
+	DEBUG(10,"recDynLinkAddOutput: precDynLink=%p\n", precDynLink); 
 	if (options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr)) return(-1);
 	if (!outTaskId) recDynLinkStartOutput();
-	if (precDynLink->pdynLinkPvt) recDynLinkClear(precDynLink);
+	if (precDynLink->pdynLinkPvt) {
+		DEBUG(10,"recDynLinkAddOutput: clearing old pdynLinkPvt\n"); 
+		recDynLinkClear(precDynLink);
+	}
 	pdynLinkPvt = (dynLinkPvt *)calloc(1,sizeof(dynLinkPvt));
 	if (!pdynLinkPvt) {
 		printf("recDynLinkAddOutput can't allocate storage");
@@ -206,8 +215,10 @@ long epicsShareAPI recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 	pdynLinkPvt->state = stateStarting;
 	cmd.data.precDynLink = precDynLink;
 	cmd.cmd = cmdSearch;
+	precDynLink->onQueue++;
 	if (epicsMessageQueueTrySend(recDynLinkOutMsgQ, (void *)&cmd, sizeof(cmd))) {
 		errMessage(0,"recDynLinkAddOutput: epicsMessageQueueTrySend error");
+		precDynLink->onQueue--;
 	}
 	epicsEventSignal(wakeUpEvt);
 	return(0);
@@ -218,6 +229,7 @@ long epicsShareAPI recDynLinkClear(recDynLink *precDynLink)
 	dynLinkPvt	*pdynLinkPvt;
 	msgQCmd	cmd;
 
+	DEBUG(10,"recDynLinkAddOutput: precDynLink=%p\n", precDynLink);
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
 	if (!pdynLinkPvt) {
 		printf("recDynLinkClear: recDynLinkSearch was never called\n");
@@ -226,6 +238,10 @@ long epicsShareAPI recDynLinkClear(recDynLink *precDynLink)
 	if (pdynLinkPvt->chid) ca_set_puser(pdynLinkPvt->chid, NULL);
 	cmd.data.pdynLinkPvt = pdynLinkPvt;
 	cmd.cmd = cmdClear;
+	if (precDynLink->onQueue) {
+		DEBUG(1,"recDynLinkClear: waiting for queued action on %s\n", pdynLinkPvt->pvname);
+		while (precDynLink->onQueue) epicsEventSignal(wakeUpEvt);
+	}
 	if (pdynLinkPvt->io==ioInput) {
 		if (epicsMessageQueueTrySend(recDynLinkInpMsgQ, (void *)&cmd, sizeof(cmd))) {
 			errMessage(0,"recDynLinkClear: epicsMessageQueueTrySend error");
@@ -366,9 +382,11 @@ long epicsShareAPI recDynLinkPutCallback(recDynLink *precDynLink,void *pbuffer,s
 		(nRequest * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
 	cmd.data.precDynLink = precDynLink;
 	cmd.cmd = notifyCallback ? cmdPutCallback : cmdPut;
+	precDynLink->onQueue++;
 	if (epicsMessageQueueTrySend(recDynLinkOutMsgQ, (void *)&cmd, sizeof(cmd))) {
 		errMessage(0,"recDynLinkPut: epicsMessageQueueTrySend error");
 		status = RINGBUFF_PUT_ERROR;
+		precDynLink->onQueue--;
 	}
 	epicsEventSignal(wakeUpEvt);
 
@@ -535,14 +553,24 @@ LOCAL void recDynLinkInp(void)
 			}
 			precDynLink = cmd.data.precDynLink;
 			pdynLinkPvt = precDynLink->pdynLinkPvt;
+			DEBUG(5,"recDynLinkInp: precDynLink=%p", precDynLink); 
+			if (pdynLinkPvt==NULL) {
+				printf("\n***ERROR***: pdynLinkPvt=%p\n", pdynLinkPvt);
+				precDynLink->onQueue--;
+				continue;
+			} else {
+				DEBUG(5,", pvname=%s\n", pdynLinkPvt->pvname);
+			}
 			switch (cmd.cmd) {
 			case (cmdSearch) :
 				SEVCHK(ca_create_channel(pdynLinkPvt->pvname,
 					connectCallback,precDynLink, 10 ,&pdynLinkPvt->chid),
 				"ca_create_channel");
+				precDynLink->onQueue--;
 				break;
 			default:
 				epicsPrintf("Logic error statement in recDynLinkTask\n");
+				precDynLink->onQueue--;
 			}
 		}
 		if (recDynINPCallPend) {
@@ -587,17 +615,20 @@ LOCAL void recDynLinkOut(void)
 			}
 			precDynLink = cmd.data.precDynLink;
 			pdynLinkPvt = precDynLink->pdynLinkPvt;
-                        if (pdynLinkPvt==NULL) {
-                           printf("ERROR: recDynLinkOut precDynLink=%p\n", precDynLink);
-                           printf("ERROR:   pdynLinkPvt=%p\n", pdynLinkPvt);
-                           continue;
-                        }
-			DEBUG(5,"recDynLinkOut: pdynLinkPvt->pvname=%s\n", pdynLinkPvt->pvname); 
+			DEBUG(5,"recDynLinkOut: precDynLink=%p", precDynLink); 
+			if (pdynLinkPvt==NULL) {
+				printf("\n***ERROR***: pdynLinkPvt=%p\n", pdynLinkPvt);
+				precDynLink->onQueue--;
+				continue;
+			} else {
+				DEBUG(5,", pvname=%s\n", pdynLinkPvt->pvname);
+			}
 			switch (cmd.cmd) {
 			case (cmdSearch):
 				SEVCHK(ca_create_channel(pdynLinkPvt->pvname,
 					connectCallback,precDynLink, 10 ,&pdynLinkPvt->chid),
 					"ca_create_channel");
+				precDynLink->onQueue--;
 				break;
 			case (cmdPut):
 				caStatus = ca_array_put(
@@ -608,6 +639,7 @@ LOCAL void recDynLinkOut(void)
 					epicsPrintf("recDynLinkTask pv=%s CA Error %s\n",
 					pdynLinkPvt->pvname,ca_message(caStatus));
 				}
+				precDynLink->onQueue--;
 				break;
 			case (cmdPutCallback):
 				pdynLinkPvt->notifyInProgress = 1;
@@ -623,9 +655,11 @@ LOCAL void recDynLinkOut(void)
 					precDynLink->status = FATAL_ERROR;
 					(pdynLinkPvt->notifyCallback)(precDynLink);
 				}
+				precDynLink->onQueue--;
 				break;
 			default:
 				epicsPrintf("Logic error statement in recDynLinkTask\n");
+				precDynLink->onQueue--;
 			}
 		}
 		if (recDynOUTCallFlush) ca_flush_io();
