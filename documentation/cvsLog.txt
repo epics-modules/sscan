@@ -286,4 +286,14 @@ capabilities into 3.14 version
 support/sscan/sscanApp/src/sscanSupport.dbd
 
 Added recDynLinkDebug
+
+added variable() calls for sscan-record volatiles
+
+added registrar and variable statements for saveData
+
 =============================================================================
+
+support/sscan/sscanApp/src/xdr_lib.c
+support/sscan/sscanApp/src/xdr_lib.h
+
+ifdef vxWorks (first time running on Solaris and Linux ioc's)
