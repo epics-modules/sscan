@@ -3099,12 +3099,12 @@ packData(sscanRecord *psscan)
 {
 
 	recPvtStruct	*precPvt = (recPvtStruct *) psscan->rpvt;
-	long			i, j, markIndex;
+	long			i, j, markIndex, found;
 	double			highVal, lowVal, aveDiff;
 	int 			highIndex, lowIndex;
 	detFields		*pDet;
 	posFields		*pPos;
-	double			d, *pPBuf;
+	double			d, *pPBuf, sum1, sum2;
 	float			*pDBuf, *pf, *pf1, *pf2;
 	unsigned short	*pPvStat;
 
@@ -3176,6 +3176,7 @@ packData(sscanRecord *psscan)
 		}
 	}
 
+	/* after-scan move to some feature in reference-detector data */
 	if ((psscan->cpt > 1) && (psscan->pasm >= sscanPASM_Peak_Pos)) {
 		if (sscanRecordDebug >= 5) printf("%s:packData cpt=%ld, pasm='%s'\n",
 			psscan->name, (long)psscan->cpt, sscanPASM_strings[psscan->pasm]);
@@ -3186,7 +3187,6 @@ packData(sscanRecord *psscan)
 		/* First, identify a valid positioner */
 		pPBuf=NULL;
 		pPvStat = &psscan->p1nv;
-		pPos = (posFields *) &psscan->p1pp;
 		for (i=0; i<NUM_POS && pPBuf==NULL; i++, pPvStat++) {
 			if (*pPvStat == PV_OK) pPBuf = precPvt->posBufPtr[i].pFill;
 		}
@@ -3225,6 +3225,7 @@ packData(sscanRecord *psscan)
 			db_post_events(psscan, precPvt->detBufPtr[1].pBufB, DBE_VALUE);
 		}
 
+		found = 0;
 		if (pPBuf && pDBuf) {
 			switch (psscan->pasm) {
 			default:
@@ -3249,7 +3250,6 @@ packData(sscanRecord *psscan)
 					db_post_events(psscan, precPvt->detBufPtr[2].pBufA, DBE_VALUE);
 					db_post_events(psscan, precPvt->detBufPtr[2].pBufB, DBE_VALUE);
 				}
-
 				/* fall through */
 
 			case sscanPASM_Peak_Pos:
@@ -3284,33 +3284,57 @@ packData(sscanRecord *psscan)
 						markIndex = lowIndex;
 					}
 				}
-				break;
-			}
 
+				if ((markIndex >= 0)  && (markIndex < (psscan->cpt))) found = 1;
+
+				pPos = (posFields *) & psscan->p1pp;
+				for (i = 0; i < precPvt->valPosPvs; i++, pPos++) {
+					pPBuf = precPvt->posBufPtr[i].pFill;
+					pPos->p_dv = found ? pPBuf[markIndex] : pPos->p_pp;
+				}
+				break;
+
+			case sscanPASM_COM:
+				/* X value(s) of the 'center of mass' of the curve Y(X) */
+				/* Do for all valid positioners */
+				pPBuf = NULL;
+				pPvStat = &psscan->p1nv;
+				pPos = (posFields *) &psscan->p1pp;
+				for (j=0; j<NUM_POS; j++, pPvStat++, pPos++) {
+					if (*pPvStat == PV_OK) {
+						pPBuf = precPvt->posBufPtr[j].pFill;
+						for (i = 0; i < precPvt->valPosPvs; i++, pPos++) {
+							sum1 = 0;  /* integral{X[1]..X[N]}{ X Y dX } */
+							sum2 = 0;  /* integral{X[1]..X[N]}{ Y dX } */
+							for (i = 1; i < psscan->cpt; i++) {
+								d = pPBuf[i] - pPBuf[i-1];
+								if (fabs(d) < 1.e-6) d = d<0.0 ? -1.0e-6 : 1.0e-6;
+								sum1 += ((pPBuf[i] + pPBuf[i-1])/2) * ((pDBuf[i] + pDBuf[i-1])/2) * d;
+								sum2 += ((pDBuf[i] + pDBuf[i-1])/2) * d;
+							}
+							if (fabs(sum2) > 1.e-6) {
+								found = 1;
+								pPos->p_dv = sum1 / sum2 ;
+							} else {
+								pPos->p_dv = pPos->p_pp;
+							}
+						}
+					}
+				}
+				break;	
+			}
 		}
 
-		/* clean up */
+		/* tell user what happened */
 		for (i=0, pf=precPvt->nullArray; i < psscan->cpt; i++) pf[i] = 0.;
 
-		if ((markIndex >= 0)  && (markIndex < (psscan->cpt))) {
-			/* Optimal value found.  Go to position at which that value was acquired */
-			pPos = (posFields *) & psscan->p1pp;
-			for (i = 0; i < precPvt->valPosPvs; i++, pPos++) {
-				pPBuf = precPvt->posBufPtr[i].pFill;
-				pPos->p_dv = pPBuf[markIndex];
-			}
+		if (found) {
 			sprintf(psscan->smsg, "%s found.", sscanPASM_strings[psscan->pasm]);
 			POST(&psscan->smsg);
 		} else {
-			/* Can't find an optimal value.  Go to prior position. */
-			pPos = (posFields *) & psscan->p1pp;
-			for (i = 0; i < precPvt->valPosPvs; i++, pPos++) {
-				pPos->p_dv = pPos->p_pp;
-			}
 			sprintf(psscan->smsg, "%s NOT found.", sscanPASM_strings[psscan->pasm]);
 			POST(&psscan->smsg);
 			psscan->alrt = 1; POST(&psscan->alrt);
-
 		}
 	}
 
@@ -3572,6 +3596,7 @@ doPuts(CALLBACK *pCB)
 					case sscanPASM_Valley_Pos:
 					case sscanPASM_RisingEdge_Pos:
 					case sscanPASM_FallingEdge_Pos:
+					case sscanPASM_COM:
 						/* packData() has already set pPos->p_dv for us */
 						break;
 					}
