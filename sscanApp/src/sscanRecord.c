@@ -243,9 +243,15 @@
  *                      Probably should consider deleting all the freeze-flag stuff.
  * 5.26 03-16-05  tmm   Allow before-scan and after-scan links to write to
  *                      their own sscan record.
+ * 5.27 11-02-05  tmm   Changed epicsMutexMustLock() to epicsMutexLock() for pvStatSem
+ *                      Set recDynLinkPvt.connectInProgress for each link while it is
+ *                      connecting, and clear when pvConnectCallback is called.  Use this
+ *                      field to deny request to change a link while it's connecting.
+ * 5.28 11-02-05  tmm   Added "Move to center of mass" after-scan option.
+
  */
 
-#define VERSION 5.26
+#define VERSION 5.28
 
 
 #include <stddef.h>
@@ -281,6 +287,8 @@
 #define GEN_SIZE_OFFSET
 #include "sscanRecord.h"
 #undef  GEN_SIZE_OFFSET
+
+#define denyConnectCollision 1
 
 /* The following macro assumes psscan points to an instance of the sscan record */
 #define POST(A) (db_post_events(psscan, (A), DBE_VALUE))
@@ -435,6 +443,8 @@ typedef struct recDynLinkPvt {
 	unsigned short		ts;			/* if 1, use timestamp as value */
 	short				useDynLinkAlways;
 	epicsTimeStamp      lookupTime;	/* used to determine time of last lookupPv */
+	short				connectInProgress;	/* to avoid starting a new connection */
+											/* while a connection is being made */
 } recDynLinkPvt;
 
 /* Note that the following structure must exactly match the data returned by
@@ -790,7 +800,7 @@ init_record(sscanRecord *psscan, int pass)
 			POST(ppvn);
 			*pPvStat = NO_PV;
 		} else {
-			if (ppvn[0] != NULL) {
+			if (ppvn[0] != '\0') {
 				*pPvStat = PV_NC;
 				lookupPV(psscan, i);
 			} else {
@@ -1068,13 +1078,13 @@ special(struct dbAddr *paddr, int after)
 {
 	sscanRecord    *psscan = (sscanRecord *) (paddr->precord);
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	recDynLinkPvt  *puserPvt;
+	recDynLinkPvt  *puserPvt, *pPosOut_userPvt;
 	posFields      *pPos;
 	int             special_type = paddr->special;
 	char           *ppvn;
 	unsigned short *pPvStat;
 	unsigned short  oldStat;
-	short           i = -1;
+	short           i = -1, linkIndex = -1;
 	unsigned char   prevAlrt;
     int             fieldIndex = dbGetFieldIndex(paddr);
 	epicsTimeStamp	timeCurrent;
@@ -1110,6 +1120,27 @@ special(struct dbAddr *paddr, int after)
 				return(-1);
 			}
 		}
+
+#if denyConnectCollision
+		if ((fieldIndex >= sscanRecordP1PV) && (fieldIndex <= sscanRecordASPV)) {
+			linkIndex = fieldIndex - sscanRecordP1PV;
+			puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[linkIndex].puserPvt;
+			if (puserPvt->connectInProgress) {
+				printf("%s:special:connect already in progress for link %s\n",
+					psscan->name, linkNames[puserPvt->linkIndex]);
+				return(-1);
+			}
+			if ((fieldIndex >= sscanRecordP1PV) && (fieldIndex <= sscanRecordP4PV)) {
+				pPosOut_userPvt = (recDynLinkPvt *) precPvt->caLinkStruct[linkIndex + NUM_PVS].puserPvt;
+				if (pPosOut_userPvt->connectInProgress) {
+					printf("%s:special:connect already in progress for link %s\n",
+						psscan->name, linkNames[pPosOut_userPvt->linkIndex]);
+					return(-1);
+				}
+			}
+		}
+#endif
+		
 		return (0);
 	}
 
@@ -1150,12 +1181,18 @@ special(struct dbAddr *paddr, int after)
 						printf("Starting new scan with unexpected faze ('%s').\n",
 							sscanFAZE_strings[psscan->faze]);
 					}
+					/*
+					 * Note 'i' numbering below assumes positioners are elements 0..3 (monitors),
+					 * and NUM_PVS..NUM_PVS+3 (outputs) in the caLinkStruct array.
+					 */
 					for (i=0; i<NUM_POS; i++) {
 						puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i].puserPvt;
+						pPosOut_userPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i + NUM_PVS].puserPvt;
 						epicsTimeGetCurrent(&timeCurrent);
-						if (epicsTimeDiffInSeconds(&timeCurrent, &puserPvt->lookupTime) >= sscanRecordLookupTime) {
+						if ((epicsTimeDiffInSeconds(&timeCurrent, &puserPvt->lookupTime) >= sscanRecordLookupTime) &&
+							 (puserPvt->connectInProgress == 0) && (pPosOut_userPvt->connectInProgress == 0)) {
 							ppvn = &psscan->p1pv[0] + (i * PVN_SIZE);
-							if (ppvn[0] != NULL) {
+							if (ppvn[0] != '\0') {
 								if (sscanRecordDebug > 5)
 									printf("%s:special: renewing link %d\n", psscan->name, i);
 								/* force flags to indicate PV_NC until callback happens */
@@ -1303,11 +1340,11 @@ special(struct dbAddr *paddr, int after)
 					    (((psscan->cmnd == CLEAR_POSITIONERS) || (psscan->cmnd == CLEAR_POSITIONER_PVS)) &&
 						 (puserPvt->linkType == POSITIONER))) {
 						/* clear this PV */
-						epicsMutexMustLock(precPvt->pvStatSem);
+						epicsMutexLock(precPvt->pvStatSem);
 						pPvStat = &psscan->p1nv + i;	/* pointer arithmetic */
 						oldStat = *pPvStat;
 						ppvn = &psscan->p1pv[0] + (i * PVN_SIZE);
-						ppvn[0] = NULL; POST(ppvn);
+						ppvn[0] = '\0'; POST(ppvn);
 						if (*pPvStat != NO_PV) {
 							/* PV is now NULL but didn't used to be */
 							*pPvStat = NO_PV;
@@ -1385,7 +1422,7 @@ special(struct dbAddr *paddr, int after)
 			/* Check for a dynamic link PV change */
 			if ((fieldIndex >= sscanRecordP1PV) &&
 						(fieldIndex <= sscanRecordASPV)) {
-				epicsMutexMustLock(precPvt->pvStatSem);
+				epicsMutexLock(precPvt->pvStatSem);
 				i = fieldIndex - sscanRecordP1PV;
 				puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i].puserPvt;
 				pPvStat = &psscan->p1nv + i;	/* pointer arithmetic */
@@ -1396,7 +1433,7 @@ special(struct dbAddr *paddr, int after)
 					ppvn[0] = '\0';
 					POST(ppvn);
 				} 
-				if (ppvn[0] != NULL) {
+				if (ppvn[0] != '\0') {
 					if (sscanRecordDebug > 5)
 						printf("%s:Search during special \n", psscan->name);
 					*pPvStat = PV_NC;
@@ -1944,7 +1981,7 @@ static void
 lookupPV(sscanRecord * psscan, unsigned short i)
 {
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	recDynLinkPvt  *puserPvt;
+	recDynLinkPvt  *puserPvt, *pPosOut_userPvt;
 	posFields      *pPos;
 	char           *ppvn;
 	char           *pdesc = ".DESC";
@@ -1980,8 +2017,11 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 		/* Init p_cv so we can use it's value to know if the first monitor callback
 		 * has come in. */
 		pPos->p_cv = -HUGE_VAL;
+		pPosOut_userPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i + NUM_PVS].puserPvt;
+		pPosOut_userPvt->connectInProgress = 1;
 		recDynLinkAddOutput(&precPvt->caLinkStruct[i + NUM_PVS], ppvn,
 			  DBR_DOUBLE, rdlSCALAR, pvSearchCallback);
+		puserPvt->connectInProgress = 1;
 		recDynLinkAddInput(&precPvt->caLinkStruct[i], ppvn,
 			   DBR_DOUBLE, rdlSCALAR, pvSearchCallback, posMonCallback);
 		break;
@@ -1996,6 +2036,7 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 			puserPvt->ts = 0;
 		}
 		if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+			puserPvt->connectInProgress = 1;
 			recDynLinkAddInput(&precPvt->caLinkStruct[i], ppvn,
 			     DBR_DOUBLE, rdlSCALAR, pvSearchCallback, NULL);
 		} else {
@@ -2006,6 +2047,7 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 	case DETECTOR:
 		if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
 			/* might be array valued, so don't specify rdlSCALAR */
+			puserPvt->connectInProgress = 1;
 			recDynLinkAddInput(&precPvt->caLinkStruct[i], ppvn,
 			      DBR_FLOAT, 0 /*rdlSCALAR*/, pvSearchCallback, NULL);
 		} else {
@@ -2016,6 +2058,7 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 	case TRIGGER:
 	case READ_ARRAY_TRIG:
 	case BS_AS_LINK:
+		puserPvt->connectInProgress = 1;
 		recDynLinkAddOutput(&precPvt->caLinkStruct[i], ppvn,
 			      DBR_FLOAT, rdlSCALAR, pvSearchCallback);
 		break;
@@ -2198,10 +2241,11 @@ pvSearchCallback(recDynLink * precDynLink)
 	 * Positioner PVs have two links, so we will have two connection callbacks
 	 * competing for access to the shared link-status bitmap *pPvStat.
 	 */
-	epicsMutexMustLock(precPvt->pvStatSem);
+	epicsMutexLock(precPvt->pvStatSem);
 
 	pPvStat = &psscan->p1nv + pvIndex;	/* pointer arithmetic */
 	PvStat = *pPvStat;	/* start with previous status value */
+	puserPvt->connectInProgress = 0;
 
 	if ((puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
 			recDynLinkConnectionStatus(precDynLink)) {

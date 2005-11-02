@@ -37,6 +37,7 @@ menu(sscanPASM) {
 	choice(sscanPASM_Valley_Pos,"VALLEY POS")
 	choice(sscanPASM_RisingEdge_Pos,"+EDGE POS")
 	choice(sscanPASM_FallingEdge_Pos,"-EDGE POS")
+	choice(sscanPASM_COM,"CNTR OF MASS")
 }
 menu(sscanP1AR) {
 	choice(sscanP1AR_Absolute,"ABSOLUTE")
