@@ -25,6 +25,7 @@ DBDINC += busyRecord
 DBD += sscan.dbd
 DBD += sscanSupport.dbd
 DBD += sscanVXSupport.dbd
+DBD += sscanWin32Support.dbd
 DBD += sscanMenu.dbd
 
 INC += recDynLink.h
@@ -37,12 +38,14 @@ sscan_SRCS += sscanRecord.c
 sscan_SRCS += scanparmRecord.c
 sscan_SRCS += busyRecord.c
 sscan_SRCS += recDynLink.c
+sscan_SRCS += req_file.c
 
 # save scan data stuff
+ifneq ($(OS_CLASS), WIN32)
 sscan_SRCS += xdr_lib.c
 sscan_SRCS += saveData.c
-sscan_SRCS += req_file.c
 sscan_SRCS_vxWorks += xdr_stdio.c
+endif
 
 sscan_SYS_LIBS_cygwin32 += rpc
 sscan_LIBS += $(EPICS_BASE_IOC_LIBS)

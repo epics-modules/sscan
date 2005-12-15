@@ -33,13 +33,13 @@ of this distribution.
 #include <taskwd.h>
 #include <dbDefs.h>
 #include <epicsPrint.h>
-#include <epicsExport.h>
 #include <db_access.h>
 #include <db_access_routines.h>
 #include <cadef.h>
 #include <caerr.h>
 #include <caeventmask.h>
 #include <tsDefs.h>
+#include <epicsExport.h>
 #include "recDynLink.h"
 
 volatile int recDynINPCallPendEvent = 1;
