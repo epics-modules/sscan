@@ -41,6 +41,7 @@ sscan_SRCS += recDynLink.c
 sscan_SRCS += req_file.c
 
 # save scan data stuff
+# XDR not available on WIN32
 ifneq ($(OS_CLASS), WIN32)
 sscan_SRCS += xdr_lib.c
 sscan_SRCS += saveData.c
