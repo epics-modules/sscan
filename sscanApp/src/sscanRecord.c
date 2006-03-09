@@ -248,10 +248,11 @@
  *                      connecting, and clear when pvConnectCallback is called.  Use this
  *                      field to deny request to change a link while it's connecting.
  * 5.28 11-02-05  tmm   Added "Move to center of mass" after-scan option.
+ * 5.29 03-07-06  tmm   Check that "Move To ..." can work before trying.
 
  */
 
-#define VERSION 5.28
+#define VERSION 5.29
 
 
 #include <stddef.h>
@@ -3145,7 +3146,7 @@ packData(sscanRecord *psscan)
 	recPvtStruct	*precPvt = (recPvtStruct *) psscan->rpvt;
 	long			i, j, markIndex, found;
 	double			highVal, lowVal, aveDiff;
-	int 			highIndex, lowIndex;
+	int 			highIndex, lowIndex, moveToRef=0;
 	detFields		*pDet;
 	posFields		*pPos;
 	double			d, *pPBuf, sum1, sum2;
@@ -3220,13 +3221,28 @@ packData(sscanRecord *psscan)
 		}
 	}
 
+	/* check after-scan move-to-data-feature before trying to do it */
+	if (psscan->pasm >= sscanPASM_Peak_Pos) {
+		int pos_ok=0;
+		/* Do we have enough information to do this? */
+		pPvStat = &psscan->p1nv;
+		for (i=0; i<NUM_POS && pos_ok==0; i++, pPvStat++) {
+			if (*pPvStat == PV_OK) pos_ok = 1;
+		}
+		moveToRef = pos_ok && (psscan->cpt > 1) && precPvt->acqDet[psscan->refd - 1];
+		if (!moveToRef) {
+			sprintf(psscan->smsg, "Can't move to %s ", sscanPASM_strings[psscan->pasm]);
+			POST(&psscan->smsg);
+			psscan->alrt = 1; POST(&psscan->alrt);
+		}
+	}
+
 	/* after-scan move to some feature in reference-detector data */
-	if ((psscan->cpt > 1) && (psscan->pasm >= sscanPASM_Peak_Pos)) {
+	if (moveToRef) {
 		if (sscanRecordDebug >= 5) printf("%s:packData cpt=%ld, pasm='%s'\n",
 			psscan->name, (long)psscan->cpt, sscanPASM_strings[psscan->pasm]);
 		/* Find peak/valley/edge in reference detector data array and go to it. */
 		markIndex = -1;
-
 
 		/* First, identify a valid positioner */
 		pPBuf=NULL;
@@ -3236,13 +3252,8 @@ packData(sscanRecord *psscan)
 		}
 
 		/* Make sure reference detector is valid */
-		pDBuf = NULL;
-		pDet = (detFields *) &psscan->d01hr;
-		/* Make sure the reference detector PV is actually acquiring data. */
-		if (precPvt->acqDet[psscan->refd - 1]) {
-			pDet += psscan->refd - 1;
-			pDBuf = precPvt->detBufPtr[psscan->refd - 1].pFill;
-		}
+		pDet = ((detFields *) &psscan->d01hr) + (psscan->refd - 1);
+		pDBuf = precPvt->detBufPtr[psscan->refd - 1].pFill;
 
 		/* copy detector data to spare array, and (optionally) smooth it */
 		pf = precPvt->nullArray;
