@@ -289,7 +289,7 @@
 #include "sscanRecord.h"
 #undef  GEN_SIZE_OFFSET
 
-#define denyConnectCollision 1
+#define denyConnectCollision 0
 
 /* The following macro assumes psscan points to an instance of the sscan record */
 #define POST(A) (db_post_events(psscan, (A), DBE_VALUE))
