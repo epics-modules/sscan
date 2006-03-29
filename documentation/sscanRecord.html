@@ -424,11 +424,12 @@ satisfy the completion-callback criterion.
 a record in another crate will silently be converted to a CA link, which will
 not satisfy the completion-callback criterion.  In this case, there are two
 options: the BUSY-record solution, detailed above, and the use of a buffer
-record that can do a ca_put_callback() to make the inter-crate link. 
-Currently, I'm aware of three record types that can do a ca_put_callback(): the
-SSCAN, SWAIT, and SSEQ records.  (The SWAIT and SSEQ records are distributed
-with synApps.  SWAIT is similar to the CALCOUT record; SSEQ is a variant of the
-SEQ record.)
+record that can do a ca_put_callback() to make the inter-crate link.  Currently,
+I'm aware of six record types that can do a ca_put_callback(): the sscan, swait,
+and sseq records; an ai record with soft asynchronous device support; and the
+sCalcout and aCalcout records.  (The sscan, swait, sseq, sCalcout, and aCalcout
+records are distributed with synApps.  swait, sCalcout, and aCalcout are 
+variants of the calcout record; sseq is a variant of the seq record.)
 
 <p><a NAME="HEADING_2"></a>
 
@@ -514,7 +515,7 @@ underway.)</dd>
 <tr>
 <td><tt>NPTS</tt></td>
 <td>Number of Points&nbsp;</td>
-<td>SHORT</td>
+<td>LONG</td>
 <td>Yes</td>
 <td>100</td>
 <td>Yes</td>
@@ -526,7 +527,7 @@ underway.)</dd>
 <tr>
 <td><tt>MPTS</tt></td>
 <td>Maximum Number of Points</td>
-<td>SHORT</td>
+<td>LONG</td>
 <td>Yes</td>
 <td>100</td>
 <td>Yes</td>
@@ -536,7 +537,8 @@ underway.)</dd>
 </tr>
 
 <tr colspan=9><td colspan=9></td></tr>
-
+<tr colspan=9><td colspan=9></td></tr>
+<tr colspan=9><td colspan=9></td></tr>
 <tr>
 <td><tt>PASM</tt></td>
 <td>Positioner After-Scan Mode</td>
@@ -592,7 +594,8 @@ position, else "STAY".
 </tr>
 
 <tr colspan=9><td colspan=9></td></tr>
-
+<tr colspan=9><td colspan=9></td></tr>
+<tr colspan=9><td colspan=9></td></tr>
 <tr>
 <td><tt>BSPV</tt></td>
 <td>Before-Scan Process Variable link</td>
@@ -641,6 +644,24 @@ position, else "STAY".
 <td>No</td>
 </tr>
 
+<tr>
+
+<td colspan=9>BSPV, BSNV, BSCD, and BSWAIT allow the user to specify a PV to be
+written to before every scan starts.  (If the sscan record is part of a
+multidimensional scan, each participating sscan record has its own set of
+before-scan parameters, so you can cause an action to occur before the whole
+scan starts, and before each nested loop starts.)
+
+<P>To specify a before-scan PV write, write the name of the PV to BSPV, and
+the value to be written to BSCD.  If you want the sscan record to wait for
+completion of processing triggered by the write, before going on with the rest
+of the scan, set BSWAIT to "YES" (1).  You can check to status of the link
+by looking at BSNV.  If the link is good, BSNV will be zero.
+</td>
+</tr>
+
+<tr colspan=9><td colspan=9></td></tr>
+<tr colspan=9><td colspan=9></td></tr>
 <tr colspan=9><td colspan=9></td></tr>
 
 <tr>
@@ -691,6 +712,23 @@ position, else "STAY".
 <td>No</td>
 </tr>
 
+<tr>
+
+<td colspan=9>ASPV, ASNV, ASCD, and ASWAIT allow the user to specify a PV to be
+written to after every scan is finished.  (If the sscan record is part of a
+multidimensional scan, each participating sscan record has its own set of
+after-scan parameters, so you can cause an action to occur after the whole
+scan is done, and after each nested loop is done.)
+
+<P>To specify an after-scan PV write, write the name of the PV to ASPV, and
+the value to be written to ASCD.  If you want the sscan record to wait for
+completion of processing triggered by the write, before going on with the rest
+of the scan wrap-up, set ASWAIT to "YES" (1).  You can check to status of the
+link by looking at ASNV.  If the link is good, ASNV will be zero.
+</td>
+</tr>
+<tr colspan=9><td colspan=9></td></tr>
+<tr colspan=9><td colspan=9></td></tr>
 <tr colspan=9><td colspan=9></td></tr>
 
 <tr>
@@ -728,6 +766,22 @@ position, else "STAY".
 <td>No</td>
 <td>No</td>
 </tr>
+
+<tr>
+
+<td colspan=9>A1PV, A1NV, and A1CD allow the user to specify a PV to be
+written to before the sscan record tries to read array-valued data.  (It may be
+necessary, for example, to cause data to be read from hardware into a set of
+EPICS PV's, or to execute some calculation on the data, before the sscan record
+acquires it. The sscan record will wait for processing triggered by this write to
+complete before reading arrays.
+
+<P>To specify an array-preparation PV write, write the name of the PV to A1PV, and
+the value to be written to A1CD.  You can check to status of the link
+by looking at A1NV.  If the link is good, A1NV will be zero.
+</td>
+</tr>
+<tr colspan=9><td colspan=9></td></tr>
 
 </table>
 
@@ -1350,6 +1404,8 @@ by setting the <tt>AAWAIT</tt> field to "1".
 <td>No</td>
 </tr>
 
+<tr colspan=9><td colspan=9></td></tr>
+<tr colspan=9><td colspan=9></td></tr>
 <tr colspan=9><td colspan=9></td></tr>
 
 <tr>
@@ -2050,7 +2106,7 @@ variables. For instance, <tt>P1DB</tt> points to the dbAddr structure of
 <tr>
 <td><tt>CPT</tt></td>
 <td>Current Point</td>
-<td>SHORT</td>
+<td>LONG</td>
 <td>No</td>
 <td>0</td>
 <td>Yes</td>
@@ -2062,7 +2118,7 @@ variables. For instance, <tt>P1DB</tt> points to the dbAddr structure of
 <tr>
 <td><tt>PCPT</tt></td>
 <td>Previous Current Point&nbsp;</td>
-<td>SHORT</td>
+<td>LONG</td>
 <td>No</td>
 <td>0</td>
 <td>Yes</td>
