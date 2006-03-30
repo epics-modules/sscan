@@ -804,7 +804,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.16 2005-02-16 22:09:35 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.17 2006-03-30 00:02:41 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -2141,7 +2141,7 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
   char  cval;
   short sval;
   int   ival, duplicate_scan_number;
-  long  lval;
+  long  lval, j;
   long  scan_offset;
   long  data_size;
   epicsTimeStamp  openTime, now;
@@ -2503,8 +2503,11 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
       if(pscan->nb_pos) {
         for(i=0; i<SCAN_NBP; i++) {
           if((pscan->pxnv[i]==XXNV_OK) || (pscan->rxnv[i]==XXNV_OK)) {
-            ca_array_get(DBR_DOUBLE, pscan->cpt, 
-                         pscan->cpxra[i], pscan->pxra[i]);
+            ca_array_get(DBR_DOUBLE, pscan->cpt, pscan->cpxra[i], pscan->pxra[i]);
+            /* zero unacquired data points */
+            if (pscan->cpt < pscan->npts) {
+              for (j=pscan->cpt; j<pscan->npts; j++) pscan->pxra[i][j] = 0.0;
+            }
           }
         }
       }
@@ -2532,6 +2535,10 @@ LOCAL void proc_scan_data(SCAN_SHORT_MSG* pmsg)
             }
           }
 #endif
+          /* zero unacquired data points */
+          if (pscan->dxda[i] && (pscan->cpt < pscan->npts)) {
+            for (j=pscan->cpt; j<pscan->npts; j++) pscan->dxda[i][j] = 0.0;
+          }
         }
       }
       if(ca_pend_io(1.0)!=ECA_NORMAL) {
