@@ -108,10 +108,11 @@
  *                    we don't do file-system mounting (we let system admin do it)
  *                    This means we always use server path, rather than local path
  *                    relative to a locally defined mount point.
+ *     03-30-06  tmm  v1.22 Clear unused data points before writing
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.21.0"
+#define SAVE_DATA_VERSION   "1.22.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -804,7 +805,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.17 2006-03-30 00:02:41 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.18 2006-03-30 18:54:37 mooney Exp $\n");
 }
 
 void saveData_Info() {
