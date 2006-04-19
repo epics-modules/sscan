@@ -249,10 +249,11 @@
  *                      field to deny request to change a link while it's connecting.
  * 5.28 11-02-05  tmm   Added "Move to center of mass" after-scan option.
  * 5.29 03-07-06  tmm   Check that "Move To ..." can work before trying.
-
+ * 5.29a 03-07-06  tmm  denyConnectCollision set to 0, else bad link can never be fixed.
+ * 5.30 04-17-06  tmm   If recDynLinkPvt.connectInProgress, wait a while.
  */
 
-#define VERSION 5.29
+#define VERSION 5.30
 
 
 #include <stddef.h>
@@ -1090,6 +1091,7 @@ special(struct dbAddr *paddr, int after)
     int             fieldIndex = dbGetFieldIndex(paddr);
 	epicsTimeStamp	timeCurrent;
 
+if (sscanRecordDebug) {printf("%s:special:entry.\n", psscan->name);}
 	if (!after) {
 		precPvt->pffo = psscan->ffo;	/* save previous ffo flag */
 		/* Forbid certain changes while scan is in progress. */
@@ -1122,26 +1124,40 @@ special(struct dbAddr *paddr, int after)
 			}
 		}
 
-#if denyConnectCollision
 		if ((fieldIndex >= sscanRecordP1PV) && (fieldIndex <= sscanRecordASPV)) {
 			linkIndex = fieldIndex - sscanRecordP1PV;
 			puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[linkIndex].puserPvt;
-			if (puserPvt->connectInProgress) {
-				printf("%s:special:connect already in progress for link %s\n",
+	 		if (puserPvt->connectInProgress) {
+				printf("%s:special:connect already in progress for link %s.  Waiting...\n",
 					psscan->name, linkNames[puserPvt->linkIndex]);
+#if denyConnectCollision
 				return(-1);
+#else
+				for (i=0; i<5 && puserPvt->connectInProgress; i++) epicsThreadSleep(1.);
+				if (puserPvt->connectInProgress) {
+					printf("%s:special:connect still in progress for link %s.  Trying new PV name.\n",
+						psscan->name, linkNames[puserPvt->linkIndex]);
+				}
+#endif
 			}
+			/* positioners have a second link */
 			if ((fieldIndex >= sscanRecordP1PV) && (fieldIndex <= sscanRecordP4PV)) {
-				pPosOut_userPvt = (recDynLinkPvt *) precPvt->caLinkStruct[linkIndex + NUM_PVS].puserPvt;
-				if (pPosOut_userPvt->connectInProgress) {
-					printf("%s:special:connect already in progress for link %s\n",
-						psscan->name, linkNames[pPosOut_userPvt->linkIndex]);
+				puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[linkIndex + NUM_PVS].puserPvt;
+				if (puserPvt->connectInProgress) {
+					printf("%s:special:connect already in progress for link %s.  Waiting...\n",
+						psscan->name, linkNames[puserPvt->linkIndex]);
+#if denyConnectCollision
 					return(-1);
+#else
+					for (i=0; i<5 && puserPvt->connectInProgress; i++) epicsThreadSleep(1.);
+					if (puserPvt->connectInProgress) {
+						printf("%s:special:connect still in progress for link %s.  Trying new PV name.\n",
+							psscan->name, linkNames[puserPvt->linkIndex]);
+					}
+#endif
 				}
 			}
 		}
-#endif
-		
 		return (0);
 	}
 
