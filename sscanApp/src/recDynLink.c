@@ -18,6 +18,10 @@ of this distribution.
  *               callback
  * 11/12/03  tmm Fixed mem leak.  (Wasn't calling epicsMutexDestroy.)
  *               Changed ring buffer to message queue.  DEBUG macro.
+ * 04/19/06  tmm If recDynLinkClear found that the PV whose channel it wanted
+ *               to clear had a queued action, it would loop forever waiting for
+ *               the action to be dispatched, because it would not give recDynOut
+ *               any processing time to dispatch the action.
  *
  */
 
@@ -223,6 +227,7 @@ long epicsShareAPI recDynLinkClear(recDynLink *precDynLink)
 {
 	dynLinkPvt	*pdynLinkPvt;
 	msgQCmd	cmd;
+	int i;
 
 	if (recDynLinkDebug > 10) 
             printf("recDynLinkClear: precDynLink=%p\n", precDynLink);
@@ -237,7 +242,11 @@ long epicsShareAPI recDynLinkClear(recDynLink *precDynLink)
 	if (precDynLink->onQueue) {
 		if (recDynLinkDebug > 1) 
                     printf("recDynLinkClear: waiting for queued action on %s\n", pdynLinkPvt->pvname);
-		while (precDynLink->onQueue) epicsEventSignal(wakeUpEvt);
+		for (i=0; i<10 && precDynLink->onQueue; i++) {
+			epicsThreadSleep(epicsThreadSleepQuantum());
+			epicsEventSignal(wakeUpEvt);
+		}
+		if (precDynLink->onQueue) printf("recDynLinkClear: abandoning queued action on %s\n", pdynLinkPvt->pvname);
 	}
 	if (pdynLinkPvt->io==ioInput) {
 		if (epicsMessageQueueTrySend(recDynLinkInpMsgQ, (void *)&cmd, sizeof(cmd))) {
