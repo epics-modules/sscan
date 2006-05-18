@@ -85,3 +85,34 @@ EXTRA PVs
 		xdr_vector(count, xdr_float):	value
 	    DBR_CTRL_DOUBLE:
 		xdr_vector(count, xdr_double):	value
+-----------------------------------------------------------------------
+
+A 1D scan looks like this:
+
+header
+scan1
+extra PV's
+
+A 2D scan looks like this
+
+header
+scan2
+	scan1
+	scan1
+	...
+extra PV's
+
+A 3D scan looks like this
+
+header
+scan3
+	scan2
+		scan1
+		scan1
+		...
+	scan2
+		scan1
+		scan1
+		...
+	...
+extra PV's
