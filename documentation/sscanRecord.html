@@ -542,7 +542,7 @@ underway.)</dd>
 <tr>
 <td><tt>PASM</tt></td>
 <td>Positioner After-Scan Mode</td>
-<td>Menu ("STAY", "START POS", "PRIOR POS", "PEAK POS", "VALLEY POS", "+EDGE POS",  "-EDGE POS")</td>
+<td>Menu ("STAY", "START POS", "PRIOR POS", "PEAK POS", "VALLEY POS", "+EDGE POS",  "-EDGE POS", CNTR OF MASS)</td>
 <td>Yes</td>
 <td>"STAY" (0)</td>
 <td>Yes</td>
@@ -576,6 +576,12 @@ position, else "STAY".
 <dt>"+EDGE POS"<dd>Take the derivative of the REFD data, then do "PEAK POS".
 
 <dt>"-EDGE POS"<dd>Take the derivative of the REFD data, then do "VALLEY POS".
+
+<dt>"CNTR OF MASS"<dd>Like "PEAK POS", but sends positioner(s) the position of
+the center of mass of the data, as calculated with reference to positioner 1.
+Note that the calculated center of mass depends on the distribution of positioner
+data.  If multiple positioners are involved in a scan, they will not, in general,
+have the same center of mass.
 
 </dl> 
 </td>
@@ -657,6 +663,13 @@ the value to be written to BSCD.  If you want the sscan record to wait for
 completion of processing triggered by the write, before going on with the rest
 of the scan, set BSWAIT to "YES" (1).  You can check to status of the link
 by looking at BSNV.  If the link is good, BSNV will be zero.
+
+<P>Note that the before-scan link is permitted to change only selected fields
+of its own sscan record:  it cannot change PV names (i.e., links); and it
+cannot change the acquisition type (ACQT) or mode (ACQM).  If this sscan
+record is part of a multidimensional scan, the before-scan link can change
+any field of a lower-level sscan record (i.e., one that its record it driving),
+and no field of a higher level scan record.
 </td>
 </tr>
 
@@ -725,6 +738,13 @@ the value to be written to ASCD.  If you want the sscan record to wait for
 completion of processing triggered by the write, before going on with the rest
 of the scan wrap-up, set ASWAIT to "YES" (1).  You can check to status of the
 link by looking at ASNV.  If the link is good, ASNV will be zero.
+
+<P>Note that the after-scan link is permitted to change only selected fields
+of its own sscan record:  it cannot change PV names (i.e., links); and it
+cannot change the acquisition type (ACQT) or mode (ACQM).  If this sscan
+record is part of a multidimensional scan, the after-scan link can change
+any field of a lower-level sscan record (i.e., one that its record it driving),
+and no field of a higher level scan record.
 </td>
 </tr>
 <tr colspan=9><td colspan=9></td></tr>
