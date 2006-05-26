@@ -12,16 +12,16 @@ content="text/html; charset=iso-8859-1">
 
 <h2 align="center">Release 2-5-2</h2>
 
-sscanRecord checks parameters more closely, allows before-scan and after-scan
-links to write to selected PV's of their own sscan record
-New after-scan action: Move to center of mass of peak (this choice has
+<P>sscanRecord checks parameters more closely, allows before-scan and after-scan
+links to write to selected PV's of their own sscan record.
+<br>New after-scan action: Move to center of mass of peak (this choice has
 problems with multiple positioners, since they won't, in general, have the
 same peak position).
 
-In previous versions, recDynLink would deadlock if asked to clear the link
+<P>In previous versions, recDynLink would deadlock if asked to clear the link
 to a PV while an action for that PV was still on queue.  This is fixed.
 
-saveData zeros unused points in its XDR buffer, because XDR doesn't manage
+<P>saveData zeros unused points in its XDR buffer, because XDR doesn't manage
 this well.
 
 <h2 align="center">Release 2-4</h2>
