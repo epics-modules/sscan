@@ -109,10 +109,11 @@
  *                    This means we always use server path, rather than local path
  *                    relative to a locally defined mount point.
  *     03-30-06  tmm  v1.22 Clear unused data points before writing
+ *     05-19-06  tmm  v1.23 Changed test filename from "rix:_" to "rix_"
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.22.0"
+#define SAVE_DATA_VERSION   "1.23.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -718,7 +719,7 @@ LOCAL int checkRWpermission(char* path) {
   char tmpfile[100];
 
   strcpy(tmpfile, path);
-  strcat(tmpfile, "/rix:_");
+  strcat(tmpfile, "/rix_");
 
   while(fileStatus(tmpfile)==OK && strlen(tmpfile)<100) {
     strcat(tmpfile, "_");
@@ -805,7 +806,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.18 2006-03-30 18:54:37 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.19 2006-06-09 20:09:05 mooney Exp $\n");
 }
 
 void saveData_Info() {
