@@ -15,7 +15,7 @@ def main():
 
 	d1 = readMDA(file1)
 	d2 = readMDA(file2)
-	s = addMDA(d1,d2)
+	s = opMDA('+',d1,d2)
 	writeMDA(s, sumFile)
 
 if __name__ == "__main__":
