@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-# version 1 Tim Mooney 5/11/2006
+# version 1 Tim Mooney 5/30/2006
 # derived from readMDA.py
-# - supports reading and writing of up to 4D mda files
-# - Collapsed scanClass and scanDim into scanDim
+# - supports reading, writing, and arithmetic operations for up to 4D MDA files
 
 from xdrlib import *
 import tkFileDialog
@@ -11,6 +10,7 @@ import sys
 import os
 import string
 import Tkinter
+import copy
 
 class scanDim:
 	def __init__(self):
@@ -30,9 +30,8 @@ class scanDim:
 
 	def __str__(self):
 		if self.name <> '':
-			s = "%dD data from \"%s\": %d/%d pts; %d pos\'s, %d dets, %d trigs" % (
-				self.dim, self.name, self.curr_pt, self.npts, self.np, self.nd,
-				self.nt)
+			s = "%dD data from \"%s\": %d/%d pts; %d positioners, %d detectors" % (
+				self.dim, self.name, self.curr_pt, self.npts, self.np, self.nd)
 		else:
 			s = "%dD data (not read in)" % (self.dim)
 
@@ -104,6 +103,12 @@ class mdaBuf:
 		self.extraPV = None	# extraPV section
 
 def detName(i):
+	if i < 100:
+		return "D%02d"%(i+1)
+	else:
+		return "?"
+
+def oldDetName(i):
 	if i < 15:
 		return string.upper("D%s"%(hex(i+1)[2]))
 	elif i < 85:
@@ -218,7 +223,7 @@ def readScan(file, v):
 
 	return scan
 
-def readMDA(fname=None, maxdim=2, verbose=0, help=0):
+def readMDA(fname=None, maxdim=4, verbose=0, help=0):
 	dim = []
 
 	if (fname == None):
@@ -245,96 +250,105 @@ def readMDA(fname=None, maxdim=2, verbose=0, help=0):
 	pExtra = u.unpack_int()
 	pmain_scan = file.tell() - (len(buf) - u.get_position())
 
-	for i in range(rank):
-		dim.append(scanDim())
-		dim[i].dim = i+1
-		dim[i].rank = rank-i
-
 	# collect 1D data
 	file.seek(pmain_scan)
-	s0 = readScan(file, max(0,verbose-1))
-	dim[0].npts = s0.npts
-	dim[0].curr_pt = s0.curr_pt
-	dim[0].name = s0.name
-	dim[0].time = s0.time
-	dim[0].np = s0.np
-	for i in range(s0.np): dim[0].p.append(s0.p[i])
-	dim[0].nt = s0.nt
-	for j in range(s0.nt): dim[0].t.append(s0.t[j])
-	dim[0].nd = s0.nd
-	for i in range(s0.nd): dim[0].d.append(s0.d[i])
+	dim.append(readScan(file, max(0,verbose-1)))
+	dim[0].dim = 1
 
 	if ((rank > 1) and (maxdim > 1)):
 		# collect 2D data
-		# Note we're assuming isRegular == 1
-		for i in range(s0.curr_pt):
-			file.seek(s0.plower_scans[i])
-			s = readScan(file, max(0,verbose-1))
-			if i == 0:
-				dim[1].npts = s.npts
-				dim[1].curr_pt = s.curr_pt
-				dim[1].name = s.name
-				dim[1].time = s.time
-				# copy positioner, trigger, detector instances
-				dim[1].np = s.np
-				for j in range(s.np):
-					dim[1].p.append(s.p[j])
-					tmp = s.p[j].data[:]
+		for i in range(dim[0].curr_pt):
+			file.seek(dim[0].plower_scans[i])
+			if (i==0):
+				dim.append(readScan(file, max(0,verbose-1)))
+				dim[1].dim = 2
+				# replace data arrays [1,2,3] with [[1,2,3]]
+				for j in range(dim[1].np):
+					data = dim[1].p[j].data
 					dim[1].p[j].data = []
-					dim[1].p[j].data.append(tmp)
-				dim[1].nt = s.nt
-				for j in range(s.nt): dim[1].t.append(s.t[j])
-				dim[1].nd = s.nd
-				for j in range(s.nd):
-					dim[1].d.append(s.d[j])
-					tmp = s.d[j].data[:]
+					dim[1].p[j].data.append(data)
+				for j in range(dim[1].nd):
+					data = dim[1].d[j].data
 					dim[1].d[j].data = []
-					dim[1].d[j].data.append(tmp)
+					dim[1].d[j].data.append(data)
 			else:
+				s = readScan(file, max(0,verbose-1))
 				# append data arrays
+				# [ [1,2,3], [2,3,4] ] -> [ [1,2,3], [2,3,4], [3,4,5] ]
 				for j in range(s.np): dim[1].p[j].data.append(s.p[j].data)
 				for j in range(s.nd): dim[1].d[j].data.append(s.d[j].data)
 
 	if ((rank > 2) and (maxdim > 2)):
 		# collect 3D data
-		# Note we're assuming isRegular == 1
-		for i in range(s0.curr_pt):
-			file.seek(s0.plower_scans[i])
+		for i in range(dim[0].curr_pt):
+			file.seek(dim[0].plower_scans[i])
 			s1 = readScan(file, max(0,verbose-1))
 			for j in range(s1.curr_pt):
 				file.seek(s1.plower_scans[j])
-				s = readScan(file, max(0,verbose-1))
 				if ((i == 0) and (j == 0)):
-					dim[2].npts = s.npts
-					dim[2].curr_pt = s.curr_pt
-					dim[2].name = s.name
-					dim[2].time = s.time
-					# copy positioner, trigger, detector instances
-					dim[2].np = s.np
-					for k in range(s.np):
-						dim[2].p.append(s.p[k])
-						tmp = s.p[k].data[:]
+					dim.append(readScan(file, max(0,verbose-1)))
+					dim[2].dim = 3
+					# replace data arrays [1,2,3] with [[[1,2,3]]]
+					for k in range(dim[2].np):
+						data = dim[2].p[k].data
 						dim[2].p[k].data = [[]]
-						dim[2].p[k].data[i].append(tmp)
-					dim[2].nt = s.nt
-					for k in range(s.nt): dim[2].t.append(s.t[k])
-					dim[2].nd = s.nd
-					for k in range(s.nd):
-						dim[2].d.append(s.d[k])
-						tmp = s.d[k].data[:]
+						dim[2].p[k].data[0].append(data)
+					for k in range(dim[2].nd):
+						data = dim[2].d[k].data
 						dim[2].d[k].data = [[]]
-						dim[2].d[k].data[i].append(tmp)
-				elif j == 0:
+						dim[2].d[k].data[0].append(data)
+				else:
+					s = readScan(file, max(0,verbose-1))
+					# append data arrays
+					# if j==0: [[[1,2,3], [2,3,4]]] -> [[[1,2,3], [2,3,4]], [[3,4,5]]]
+					# else: [[[1,2,3], [2,3,4]]] -> [[[1,2,3], [2,3,4]], [[3,4,5]]]
 					for k in range(s.np):
-						dim[2].p[k].data.append([])
+						if j==0: dim[2].p[k].data.append([])
 						dim[2].p[k].data[i].append(s.p[k].data)
 					for k in range(s.nd):
-						dim[2].d[k].data.append([])
+						if j==0: dim[2].d[k].data.append([])
 						dim[2].d[k].data[i].append(s.d[k].data)
-				else:
-					# append data arrays
-					for k in range(s.np): dim[2].p[k].data[i].append(s.p[k].data)
-					for k in range(s.nd): dim[2].d[k].data[i].append(s.d[k].data)
+
+	if ((rank > 3) and (maxdim > 3)):
+		# collect 4D data
+		for i in range(dim[0].curr_pt):
+			file.seek(dim[0].plower_scans[i])
+			s1 = readScan(file, max(0,verbose-1))
+			for j in range(s1.curr_pt):
+				file.seek(s1.plower_scans[j])
+				s2 = readScan(file, max(0,verbose-1))
+				for k in range(s2.curr_pt):
+					file.seek(s2.plower_scans[k])
+					if ((i == 0) and (j == 0) and (k == 0)):
+						dim.append(readScan(file, max(0,verbose-1)))
+						dim[3].dim = 4
+						for m in range(dim[3].np):
+							data = dim[3].p[m].data
+							dim[3].p[m].data = [[[]]]
+							dim[3].p[m].data[0][0].append(data)
+						for m in range(dim[3].nd):
+							data = dim[3].d[m].data
+							dim[3].d[m].data = [[[]]]
+							dim[3].d[m].data[0][0].append(data)
+					else:
+						s = readScan(file, max(0,verbose-1))
+						# append data arrays
+						if j==0 and k==0:
+							for m in range(dim[3].np):
+								dim[3].p[m].data.append([[]])
+								dim[3].p[m].data[i][0].append(s.p[m].data)
+							for m in range(dim[3].nd):
+								dim[3].d[m].data.append([[]])
+								dim[3].d[m].data[i][0].append(s.d[m].data)
+						else:
+							for m in range(dim[3].np):
+								if k==0: dim[3].p[m].data[i].append([])
+								dim[3].p[m].data[i][j].append(s.p[m].data)
+							for m in range(dim[3].nd):
+								if k==0: dim[3].d[m].data[i].append([])
+								dim[3].d[m].data[i][j].append(s.d[m].data)
+
+
 
 	# Collect scan-environment variables into a dictionary
 	dict = {}
@@ -566,8 +580,8 @@ def writeMDA(dim, fname=None):
 	m.scan.data = packScanData(dim[1], [])
 	m.scan.bufLen = m.scan.bufLen + len(m.scan.data)
 	prevScan = m.scan
-	print "\n m.scan=", m.scan
-	print "\n type(m.scan.pLowerScans)=", type(m.scan.pLowerScans)
+	#print "\n m.scan=", m.scan
+	#print "\n type(m.scan.pLowerScans)=", type(m.scan.pLowerScans)
 
 	if (rank > 1):
 		for i in range(m.scan.npts):
@@ -698,14 +712,120 @@ def writeMDA(dim, fname=None):
 	f.close()
 	return
 
-import copy
-def addMDA(d1, d2):
+
+########################
+# opMDA and related code
+########################
+def isScan(d):
+	if type(d) != type([]): return(0)
+	if type(d[0]) != type({}): return(0)
+	if 'rank' not in d[0].keys(): return(0)
+	if len(d) < 2: return(0)
+	if type(d[1]) != type(scanDim()): return(0)
+	return(1)
+
+def isScalar(d):
+	if (type(d) == type(1)) or (type(d) == type(1.0)): return(1)
+	return(0)
+
+def add(a,b): return(a+b)
+def sub(a,b): return(a-b)
+def mul(a,b): return(a*b)
+def div(a,b): return(a/b)
+
+def setOp(op):
+	if (op == '+') or (op == 'add'): return(add)
+	if (op == '-') or (op == 'sub'): return(sub)
+	if (op == '*') or (op == 'x') or (op == 'mul'): return(mul)
+	if (op == '/') or (op == 'div'): return(div)
+	if (op == '>') or (op == 'max'): return(max)
+	if (op == '<') or (op == 'min'): return(min)
+	print "opMDA: unrecognized op = ", op
+	return None
+
+def opMDA_usage():
+	print "opMDA() usage:"
+	print "   result = opMDA(op, scan1, scan2)"
+	print "        OR"
+	print "   result = opMDA(op, scan1, scalar_value)"
+	print "\nwhere:"
+	print "   op is one of '+', '-', '*', '/', '>', '<'"
+	print "   scan1, scan2 are scans, i.e., structures returned by mda.readMDA()"
+	print "   result is a copy of scan1, modified by the operation\n"
+	print "\n examples:"
+	print "   r = opMDA('+', scan1, scan2) -- adds all detector data from scan1 and scan2"
+	print "   r = opMDA('-', scan1, 2.0)   -- subtracts 2 from all detector data from scan1"
+	print "   r = opMDA('>', r, 0)         -- 'r' data or 0, whichever is greater"
+
+def opMDA_scalar(op, d1, scalar):
+	op = setOp(op)
+	if (op == None):
+		opMDA_usage()
+		return None
+
 	s = copy.deepcopy(d1)
-	if len(s) != len(d2):
+
+	# 1D op
+	for i in range(s[1].nd):
+		for j in range(s[1].npts):
+			s[1].d[i].data[j] = op(s[1].d[i].data[j], scalar)
+
+	if (len(s) == 2): return s
+	# 2D op
+	for i in range(s[2].nd):
+		for j in range(s[1].npts):
+			for k in range(s[2].npts):
+				s[2].d[i].data[j][k] = op(s[2].d[i].data[j][k], scalar)
+
+	if (len(s) == 3): return s
+	# 3D op
+	for i in range(s[3].nd):
+		for j in range(s[1].npts):
+			for k in range(s[2].npts):
+				for l in range(s[3].npts):
+					s[3].d[i].data[j][k][l] = op(s[3].d[i].data[j][k][l], scalar)
+			
+	if (len(s) == 4): return s
+	# 4D op
+	for i in range(s[4].nd):
+		for j in range(s[1].npts):
+			for k in range(s[2].npts):
+				for l in range(s[3].npts):
+					for m in range(s[4].npts):
+						s[4].d[i].data[j][k][l][m] = op(s[4].d[i].data[j][k][l][m], scalar)
+
+	if (len(s) > 4):
+		print "opMDA supports up to 4D scans"
+	return s
+
+def opMDA(op, d1, d2):
+	"""opMDA() is a function for performing arithmetic operations on MDA files, or on an MDA file and a scalar value.
+
+	For examples, type 'opMDA_usage()'.
+	"""
+	if isScan(d1) and isScalar(d2): return(opMDA_scalar(op,d1,d2))
+	if (not isScan(d1)) :
+		print "opMDA: first operand is not a scan"
+		opMDA_usage()
+		return None
+
+	if (not isScan(d2)):
+		print "opMDA: second operand is neither a scan nor a scalar"
+		opMDA_usage()
+		return None
+
+	if len(d1) != len(d2):
 		print "scans do not have same dimension"
 		return None
 
-	# 1D sum
+	op = setOp(op)
+	if (op == None):
+		opMDA_usage()
+		return None
+
+	s = copy.deepcopy(d1)
+
+	# 1D op
 	if s[1].nd != d2[1].nd:
 		print "scans do not have same number of 1D detectors"
 		return None
@@ -713,31 +833,54 @@ def addMDA(d1, d2):
 		print "scans do not have same number of data points"
 		return None
 	for i in range(s[1].nd):
-		for j in range(s[1].npts):
-			s[1].d[i].data[j] = s[1].d[i].data[j] + d2[1].d[i].data[j]
-	if (len(s) == 2): return s
+		s[1].d[i].data = map(op, s[1].d[i].data, d2[1].d[i].data)
 
-	# 2D sum
+	if (len(s) == 2): return s
+	# 2D op
 	if s[2].nd != d2[2].nd:
 		print "scans do not have same number of 2D detectors"
 		return None
 	if s[2].npts != d2[2].npts:
 		print "scans do not have same number of data points"
 		return None
-	for i in range(s[1].nd):
-		for j in range(s[1].npts):	
-			for k in range(s[2].npts):
-				x = s[2].d[i].data[j][k] + d2[2].d[i].data[j][k]
-				print s[2].d[i].data[j][k], " + ",d2[2].d[i].data[j][k], " = ", x
-				s[2].d[i].data[j][k] = s[2].d[i].data[j][k] + d2[2].d[i].data[j][k]
+	for i in range(s[2].nd):
+		for j in range(s[1].npts):
+			s[2].d[i].data[j] = map(op, s[2].d[i].data[j], d2[2].d[i].data[j])
 
 	if (len(s) == 3): return s
+	# 3D op
+	if s[3].nd != d2[3].nd:
+		print "scans do not have same number of 3D detectors"
+		return None
+	if s[3].npts != d2[3].npts:
+		print "scans do not have same number of data points"
+		return None
+	for i in range(s[3].nd):
+		for j in range(s[1].npts):
+			for k in range(s[2].npts):
+				s[3].d[i].data[j][k] = map(op, s[3].d[i].data[j][k], d2[3].d[i].data[j][k])
+			
+	if (len(s) == 4): return s
+	# 3D op
+	if s[4].nd != d2[4].nd:
+		print "scans do not have same number of 4D detectors"
+		return None
+	if s[4].npts != d2[4].npts:
+		print "scans do not have same number of data points"
+		return None
+	for i in range(s[4].nd):
+		for j in range(s[1].npts):
+			for k in range(s[2].npts):
+				for l in range(s[3].npts):
+					s[4].d[i].data[j][k][l] = map(op, s[4].d[i].data[j][k][l], d2[4].d[i].data[j][k][l])
 
-	# 3D sum
-	print ">=3D sum not implemented yet"
-	return None
+	if (len(s) > 5):
+		print "opMDA supports up to 4D scans"
+	return s
 
-
+#######################################
+# If called directory from command line
+#######################################
 def main():
 	root = Tkinter.Tk()
 	if len(sys.argv) < 2:
@@ -749,16 +892,14 @@ def main():
 	else:
 		fname = sys.argv[1]
 
-	maxdim = 2
+	maxdim = 4
 	verbose = 1
 	if len(sys.argv) > 1:
 		maxdim = int(sys.argv[2])
 	if len(sys.argv) > 2:
 		verbose = int(sys.argv[3])
-	if len(sys.argv) > 3:
-		help = int(sys.argv[4])
 
-	dim = readMDA(fname, maxdim, verbose, help)
+	dim = readMDA(fname, maxdim, verbose, 0)
 
 
 if __name__ == "__main__":
