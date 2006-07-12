@@ -88,6 +88,7 @@ static short mapNewToOld[newDBR_ENUM+1] = {
 	DBF_LONG,DBF_LONG,DBF_FLOAT,DBF_DOUBLE,DBF_ENUM};
 
 int   recDynLinkQsize = 256;
+epicsExportAddress(int, recDynLinkQsize);
    
 LOCAL epicsThreadId inpTaskId=NULL;
 LOCAL epicsThreadId	outTaskId=NULL;
@@ -409,6 +410,10 @@ long epicsShareAPI recDynLinkPut(recDynLink *precDynLink,void *pbuffer,size_t nR
 	return(recDynLinkPutCallback(precDynLink, pbuffer, nRequest, NULL));
 }
 
+/*
+ * Note caller should interpret any non-zero return code as failure to initiate
+ * an action, and caller should not wait for that action to complete.
+ */
 long epicsShareAPI recDynLinkPutCallback(recDynLink *precDynLink,void *pbuffer,size_t nRequest,
 	recDynCallback notifyCallback)
 {
