@@ -251,37 +251,44 @@
  * 5.29 03-07-06  tmm   Check that "Move To ..." can work before trying.
  * 5.29a 03-07-06  tmm  denyConnectCollision set to 0, else bad link can never be fixed.
  * 5.30 04-17-06  tmm   If recDynLinkPvt.connectInProgress, wait a while.
+ * 5.31 06-03-06  tmm   If retrace fails because recDynLinkPutCallback() returned
+ *                      an error for all retrace motors, then just skip the retrace.
+ *                      Similarly, if aswait and after-scan link can't be written to,
+ *                      skip it.  Replace #define'd ticsPerSecond with 1./epicsThreadSleepQuantum();
+ * 5.32 07-12-06  tmm   Include calledBy to help trace execution.  Looking for ways to avoid
+ *                      hanging if, e.g., a completion callback is missed.
  */
 
-#define VERSION 5.30
+#define VERSION 5.32
 
 
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include	<string.h>
-#include	<math.h>
-#include	<float.h>
-#include	<ctype.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#include <ctype.h>
 
-#include	<alarm.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbScan.h>
-#include	<dbDefs.h>
-#include	<dbFldTypes.h>
-#include	<devSup.h>
-#include	<errMdef.h>
-#include	<recSup.h>
+#include <alarm.h>
+#include <dbDefs.h>
+#include <dbAccess.h>
+#include <dbEvent.h>
+#include <dbScan.h>
+#include <dbDefs.h>
+#include <dbFldTypes.h>
+#include <devSup.h>
+#include <errMdef.h>
+#include <recSup.h>
 #include <recGbl.h>
-#include	<special.h>
-#include	<callback.h>
-#include	<taskwd.h>
-#include <epicsMutex.h>	/* semaphore */
-#include <epicsTimer.h>	/* access to timers for delayed callbacks */
-#include	<dbStaticLib.h>	/* for enumStrings stuff */
+#include <special.h>
+#include <callback.h>
+#include <taskwd.h>
+#include <epicsMutex.h>		/* semaphore */
+#include <epicsTimer.h>		/* access to timers for delayed callbacks */
+#include <epicsThread.h>	/* for epicsThreadSleepQuantum() */
+#include <dbStaticLib.h>	/* for enumStrings stuff */
 
 #include	"recDynLink.h"
 #include "epicsExport.h"
@@ -312,7 +319,6 @@
 #define NINT(f)	(long)((f)>0 ? (f)+0.5 : (f)-0.5)
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #define MIN(a,b) ((a)<(b)?(a):(b))
-#define ticsPerSecond 60.0
 
 /***************************
   Declare constants
@@ -525,6 +531,16 @@ typedef struct detFields {
 } detFields;
 #define NUM_DET_FIELDS 8
 
+/* calledBy values */
+#define UNKNOWN		0x00
+#define SPECIAL		0x01
+#define NOTIFY		0x02
+#define GET			0x03
+#define SEARCH		0x04
+#define POSMON		0x05
+#define DO_PUTS		0x06
+#define DELAY		0x10
+
 typedef struct recPvtStruct {
 	/* THE CODE ASSUMES doPutsCallback is THE FIRST THING IN THIS STRUCTURE! */
 	CALLBACK        doPutsCallback;	/* do output links callback structure */
@@ -566,6 +582,7 @@ typedef struct recPvtStruct {
 	epicsMutexId	pvStatSem;
 	double			*dataBuffer;
 	short			userSetAWAIT;
+	short			calledBy;
 } recPvtStruct;
 
 /* enum strings */
@@ -604,6 +621,7 @@ static void		restorePosParms(sscanRecord * psscan, unsigned short i);
 static void		savePosParms(sscanRecord * psscan, unsigned short i);
 static void		zeroPosParms(sscanRecord * psscan, unsigned short i);
 
+static int ticsPerSecond;
 /* variables ... */
 volatile int	sscanRecordDebug = 0;
 epicsExportAddress(int, sscanRecordDebug);
@@ -660,6 +678,8 @@ init_record(sscanRecord *psscan, int pass)
 		psscan->vers = VERSION;
 		if (psscan->mpts < DEF_WF_SIZE)
 			psscan->mpts = DEF_WF_SIZE;
+
+		ticsPerSecond = NINT(1./epicsThreadSleepQuantum());
 
 		/* First time through, rpvt needs initialized */
 		psscan->rpvt = calloc(1, sizeof(recPvtStruct));
@@ -903,7 +923,10 @@ process(sscanRecord *psscan)
 			packData(psscan);
 			checkMonitors(psscan);
 		}
-		if (psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) return(status);
+		if (psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) {
+			precPvt->calledBy = UNKNOWN;
+			return(status);
+		}
 
 		psscan->busy = 0; POST(&psscan->busy);
 		psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
@@ -913,6 +936,7 @@ process(sscanRecord *psscan)
 
 		psscan->kill = 0;
 		psscan->pact = FALSE;
+		precPvt->calledBy = UNKNOWN;
 		return (status);
 	}
 
@@ -921,11 +945,13 @@ process(sscanRecord *psscan)
 		if (psscan->paus) {
 			sprintf(psscan->smsg, "Scan is paused ...");
 			POST(&psscan->smsg);
+			precPvt->calledBy = UNKNOWN;
 			return(-1);
 		}
 		if (psscan->wtng) {
 			sprintf(psscan->smsg, "waiting for client ...");
 			POST(&psscan->smsg);
+			precPvt->calledBy = UNKNOWN;
 			return(-1);
 		}
 	}
@@ -947,12 +973,16 @@ process(sscanRecord *psscan)
 		 */
 		if (sscanRecordDebug >= 2) printf("%s:process: processed by pvSearchCallback\n", psscan->name);
 		precPvt->scanBySearchCallback = 0;
-		if (psscan->faze != sscanFAZE_SCAN_PENDING) return(status);
+		if (psscan->faze != sscanFAZE_SCAN_PENDING) {
+			precPvt->calledBy = UNKNOWN;
+			return(status);
+	}
 	}
 
 	if (psscan->faze == sscanFAZE_SCAN_PENDING) {
 		checkConnections(psscan);
 		if (!psscan->xsc || precPvt->badOutputPv || precPvt->badInputPv) {
+			precPvt->calledBy = UNKNOWN;
 			return (status);
 		} else {
 			if (sscanRecordDebug >= 2) printf("%s:process: unpending scan\n", psscan->name);
@@ -967,14 +997,25 @@ process(sscanRecord *psscan)
 				psscan->name, sscanFAZE_strings[psscan->faze], precPvt->numPositionerCallbacks,
 				precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, psscan->xsc, psscan->pxsc);
 		}
-		sprintf(psscan->smsg, psscan->paus ? "Scan is paused" : "Already busy!");
+		if (psscan->paus) {
+			sprintf(psscan->smsg, "Scan is paused");
+		} else {
+			sprintf(psscan->smsg, "Already busy! PTA=%1d%1d%1d; CB=%d", precPvt->numPositionerCallbacks,
+				precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, precPvt->calledBy);
+		}
 		POST(&psscan->smsg);
+		precPvt->calledBy = UNKNOWN;
 		return(0);
 	}
 
 	if ((psscan->pxsc == 0) && (psscan->xsc == 1)) {
 		/* Brand new scan */
-		if (psscan->busy) {return (status);}
+		if (psscan->busy) {
+			sprintf(psscan->smsg, "Still busy! PTA=%1d%1d%1d; CB=%d", precPvt->numPositionerCallbacks,
+				precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, precPvt->calledBy);
+			precPvt->calledBy = UNKNOWN;
+			return (status);
+		}
 		/* use TimeStamp to record beginning of scan */
 		recGblGetTimeStamp(psscan);
 		psscan->dstate = sscanDSTATE_UNPACKED; POST(&psscan->dstate);
@@ -1007,6 +1048,7 @@ process(sscanRecord *psscan)
 			}
 			sprintf(psscan->smsg, "Abort: waiting for callback");
 			POST(&psscan->smsg);
+			precPvt->calledBy = UNKNOWN;
 			return(status);
 		} else {
 			sprintf(psscan->smsg, "Scan aborted by operator");
@@ -1043,7 +1085,11 @@ process(sscanRecord *psscan)
 		/* Scan is essentially finished (since xsc==0), but may still have some after-scan business */
 		if (psscan->dstate < sscanDSTATE_PACKED) {
 			packData(psscan);
-			if (psscan->dstate < sscanDSTATE_PACKED) return(status);
+			if (psscan->dstate < sscanDSTATE_PACKED) {
+				sprintf(psscan->smsg, "waiting for packData"); POST(&psscan->smsg);
+				precPvt->calledBy = UNKNOWN;
+				return(status);
+		}
 		}
 		if (psscan->faze == sscanFAZE_RETRACE_WAIT) {
 			afterScan(psscan);
@@ -1072,6 +1118,7 @@ process(sscanRecord *psscan)
 	recGblResetAlarms(psscan);
 
 	psscan->pact = FALSE;
+	precPvt->calledBy = UNKNOWN;
 	return (status);
 }
 
@@ -1091,7 +1138,7 @@ special(struct dbAddr *paddr, int after)
     int             fieldIndex = dbGetFieldIndex(paddr);
 	epicsTimeStamp	timeCurrent;
 
-if (sscanRecordDebug) {printf("%s:special:entry.\n", psscan->name);}
+	if (sscanRecordDebug) {printf("%s:special:entry.\n", psscan->name);}
 	if (!after) {
 		precPvt->pffo = psscan->ffo;	/* save previous ffo flag */
 		/* Forbid certain changes while scan is in progress. */
@@ -1296,6 +1343,7 @@ if (sscanRecordDebug) {printf("%s:special:entry.\n", psscan->name);}
 							sprintf(psscan->smsg, "Waiting for client");
 							POST(&psscan->smsg);
 						} else {
+							precPvt->calledBy = SPECIAL;
 							if (psscan->rdly < .001) {
 								scanOnce(psscan);
 							} else {
@@ -1410,6 +1458,7 @@ if (sscanRecordDebug) {printf("%s:special:entry.\n", psscan->name);}
 					} else {
 						sprintf(psscan->smsg, "Scanning ...");
 						POST(&psscan->smsg);
+						precPvt->calledBy = SPECIAL;
 						(void) scanOnce((void *)psscan);
 					}
 				}
@@ -1420,8 +1469,10 @@ if (sscanRecordDebug) {printf("%s:special:entry.\n", psscan->name);}
 			if (sscanRecordDebug >= 2)
 				printf("%s:special await=%d, dstate='%s'\n",
 					psscan->name, psscan->await, sscanDSTATE_strings[psscan->dstate]);
-			if ((psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) && (psscan->await == 0))
+			if ((psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) && (psscan->await == 0)) {
+				precPvt->calledBy = SPECIAL;
 				scanOnce(psscan);
+			}
 			break;
 
 		case sscanRecordACQM:
@@ -2090,14 +2141,17 @@ static void
 delayCallback(CALLBACK *pCB)
 {
 	sscanRecord     *psscan;
+	recPvtStruct	*precPvt;
 
 	callbackGetUser(psscan, pCB);
+	precPvt = (recPvtStruct *)psscan->rpvt;
 	if (sscanRecordDebug > 10) epicsPrintf("%s:delayCallback:entry\n", psscan->name);
 	if (psscan->wcnt) {
 		psscan->wtng = 1; POST(&psscan->wtng);
 		sprintf(psscan->smsg, "Waiting for client");
 		POST(&psscan->smsg);
 	} else {
+		precPvt->calledBy |= DELAY;
 		(void) scanOnce((void *) psscan);
 	}
 }
@@ -2138,9 +2192,11 @@ notifyCallback(recDynLink * precDynLink)
 					sprintf(psscan->smsg, "Waiting for client");
 					POST(&psscan->smsg);
 				} else {
+					precPvt->calledBy = NOTIFY;
 					(void) scanOnce((void *)psscan);
 				}
 			} else {
+				precPvt->calledBy = NOTIFY;
 				callbackRequestDelayed(&precPvt->dlyCallback, psscan->ddly);
 			}
 		}
@@ -2152,6 +2208,7 @@ notifyCallback(recDynLink * precDynLink)
 				POST(&psscan->smsg);
 				return;
 			}
+			precPvt->calledBy = NOTIFY;
 			scanOnce((void *)psscan);
 		}
 	} else {	/* POSITIONER_OUT, BS_AS_LINK */
@@ -2162,6 +2219,7 @@ notifyCallback(recDynLink * precDynLink)
 				POST(&psscan->smsg);
 				return;
 			}
+			precPvt->calledBy = NOTIFY;
 			if ((psscan->faze != sscanFAZE_CHECK_MOTORS) || (psscan->pdly == 0.)) {
 				scanOnce(psscan);
 			} else {
@@ -2226,6 +2284,7 @@ userGetCallback(recDynLink * precDynLink)
 			printf("%s:userGetCallback: calling scanOnce(), faze='%s', data_state='%s'\n",
 				psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
 		}
+		precPvt->calledBy = GET;
 		scanOnce(psscan);
 		return;
 	}
@@ -2446,6 +2505,7 @@ pvSearchCallback(recDynLink * precDynLink)
 			if (sscanRecordDebug >= 2) printf("%s:pvSearchCallback: scan pending - call scanOnce()\n",
 					psscan->name);
 			precPvt->scanBySearchCallback = 1;
+			precPvt->calledBy = SEARCH;
 			scanOnce(psscan);
 		}
 	}
@@ -2520,6 +2580,7 @@ posMonCallback(recDynLink * precDynLink)
 		if (sscanRecordDebug >= 2) printf("%s:posMonCallback: scan pending - call scanOnce()\n",
 				psscan->name);
 		precPvt->scanBySearchCallback = 1;
+		precPvt->calledBy = POSMON;
 		scanOnce(psscan);
 	}
 }
@@ -3613,6 +3674,7 @@ doPuts(CALLBACK *pCB)
 			 * cause the record to process.  (We get here if
 			 * there are no positioners.)
 			 */
+			precPvt->calledBy = DO_PUTS;
 			if (psscan->ddly == 0.) {
 				scanOnce(psscan);
 			} else {
@@ -3678,18 +3740,21 @@ doPuts(CALLBACK *pCB)
 					precPvt->numPositionerCallbacks++;
 					status = recDynLinkPutCallback(&precPvt->caLinkStruct[i + P1_OUT],
 					    &(pPos->p_dv), 1, notifyCallback);
-					if (status) precPvt->numPositionerCallbacks--;
-					if (status == NOTIFY_IN_PROGRESS) {
-						psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
-						sprintf(psscan->smsg, "Positioner %1d is busy", i);
+					if (status) {
+						/* nonzero return means we failed to tell the motor to move */
+						precPvt->numPositionerCallbacks--;
+						psscan->alrt = 1; POST(&psscan->alrt);
+						sprintf(psscan->smsg, "Can't retrace positioner %1d", i);
 						POST(&psscan->smsg);
 					}
 				}
 			}
 		}
-		if (psscan->faze == sscanFAZE_RETRACE_MOVE) {
+		if ((psscan->faze == sscanFAZE_RETRACE_MOVE) ||
+			 (precPvt->numPositionerCallbacks == 0)) {
+			 /* Didn't have to (or failed completely to) do any retrace. */
 			psscan->faze = sscanFAZE_AFTER_SCAN_DO; POST(&psscan->faze);
-			/* Didn't have to do any retrace.  Fall through to sscanFAZE_AFTER_SCAN_DO */
+			/* Fall through to sscanFAZE_AFTER_SCAN_DO */
 		} else {
 			break;
 		}
@@ -3704,10 +3769,10 @@ doPuts(CALLBACK *pCB)
 				precPvt->numPositionerCallbacks++;
 				status = recDynLinkPutCallback(&precPvt->caLinkStruct[AS_OUT],
 						&(psscan->ascd), 1, notifyCallback);
-				if (status) precPvt->numPositionerCallbacks--;
-				if (status == NOTIFY_IN_PROGRESS) {
-					psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
-					sprintf(psscan->smsg, "After-scan link is busy");
+				if (status) {
+					precPvt->numPositionerCallbacks--;
+					psscan->alrt = 1; POST(&psscan->alrt);
+					sprintf(psscan->smsg, "Can't fire After-scan link");
 					POST(&psscan->smsg);
 				}
 			} else {
@@ -3715,10 +3780,12 @@ doPuts(CALLBACK *pCB)
 						&(psscan->ascd), 1);
 			}
 		}
-		if (psscan->faze == sscanFAZE_AFTER_SCAN_DO) {
+		if ((psscan->faze == sscanFAZE_AFTER_SCAN_DO) ||
+			(precPvt->numPositionerCallbacks == 0)) {
 			/* Don't have to wait for after-scan link callback */
 			psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze);
 			/* Scan must end in the process() routine. */
+			precPvt->calledBy = DO_PUTS;
 			scanOnce(psscan);
 		}
 		break;
