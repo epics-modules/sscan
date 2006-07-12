@@ -621,7 +621,7 @@ static void		restorePosParms(sscanRecord * psscan, unsigned short i);
 static void		savePosParms(sscanRecord * psscan, unsigned short i);
 static void		zeroPosParms(sscanRecord * psscan, unsigned short i);
 
-static int ticsPerSecond;
+static double ticsPerSecond;
 /* variables ... */
 volatile int	sscanRecordDebug = 0;
 epicsExportAddress(int, sscanRecordDebug);
