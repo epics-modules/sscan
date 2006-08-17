@@ -10,25 +10,64 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
+<h2 align="center">Release 2-5-3</h2>
+
+<ul>
+<li>Added sscanApp/op/python directory, with the following programs:
+<dl>
+<dt>addMDA.py<dd>Front end for adding MDA files, uses readMDA, opMDA, and writeMDA
+from mda.py
+<dt>mda.py<dd>Python API for MDA files.  Supports reading, writing, and arithmetic
+operations for up to 4-dimensional MDA files
+<dt>mdaAsc.py<dd>Uses mda.py to render a 1-dimensional MDA file as ascii text.
+<dt>opMDA.py<dd>Front end for operating on MDA files, uses readMDA, opMDA, and writeMDA
+from mda.py
+</dl>
+
+<li>Note that synApps contains Dohn Arms' 'mdautils' software in the support/TAR
+directory.  This software can convert an MDA file to ascii, print info
+about an MDA file, and read an MDA file into C data structures.
+
+<li>Fixed a race condition in the sscan record that was responsible for hanging scans
+at the last point (and maybe other things as well).
+
+<li> the sscan record no longer renews PV links when a scan starts if the new scan
+follows the previous scan by less than sscanRecordLookupTime.
+
+<li>If retrace or after-scan fails because recDynLinkPutCallback returns an error, skip
+the action rather than hang.
+
+<li>If the sscan record attempts to connect to a PV while an earlier connection attempt
+is still in progress, it now waits and retries.
+
+<li>recDynLinkQsize is now exported for use by the ioc shell
+
+<li>saveData used to check directory permissions by attempting to create a file
+whose name was illegal (contained ':') on some operating systems.
+</ul>
+
 <h2 align="center">Release 2-5-2</h2>
 
-<P>sscanRecord checks parameters more closely, allows before-scan and after-scan
+<ul>
+<li>sscanRecord checks parameters more closely, allows before-scan and after-scan
 links to write to selected PV's of their own sscan record.
-<br>New after-scan action: Move to center of mass of peak (this choice has
+
+<li>New after-scan action: Move to center of mass of peak (this choice has
 problems with multiple positioners, since they won't, in general, have the
 same peak position).
 
-<P>In previous versions, recDynLink would deadlock if asked to clear the link
+<li>In previous versions, recDynLink would deadlock if asked to clear the link
 to a PV while an action for that PV was still on queue.  This is fixed.
 
-<P>saveData zeros unused points in its XDR buffer, because XDR doesn't manage
+<li>saveData zeros unused points in its XDR buffer, because XDR doesn't manage
 this well.
+
+</ul>
 
 <h2 align="center">Release 2-4</h2>
 
 This version is intended to build with EPICS base 3.14.7.
 
-<P>Differences from v2.3:
 <ul>
 <li>The sscan record and saveData now take advantage of the sscan record's
 double buffered data arrays, and allow a scan to proceed while the previous
