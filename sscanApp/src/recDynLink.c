@@ -22,6 +22,10 @@ of this distribution.
  *               to clear had a queued action, it would loop forever waiting for
  *               the action to be dispatched, because it would not give recDynOut
  *               any processing time to dispatch the action.
+ * 08/21/06  tmm CA callback functions were not checking the status field of
+ *               the event_handler_args argument they were being passed, and
+ *               this resulted in a crash if they tried to use other elements
+ *               of the structure when eha.status != ECA_NORMAL.
  *
  */
 
@@ -509,7 +513,11 @@ LOCAL void getCallback(struct event_handler_args eha)
 	recDynLink				*precDynLink;
 	dynLinkPvt				*pdynLinkPvt;
 	size_t					nRequest;
-    
+   
+    if (eha.status != ECA_NORMAL) {
+		printf("recDynLink:getCallback: CA returns eha.status=%d\n", eha.status);
+		return;
+	}
 	precDynLink = (recDynLink *)ca_puser(eha.chid);
 	if (!precDynLink) return;
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
@@ -555,23 +563,35 @@ LOCAL void monitorCallback(struct event_handler_args eha)
 	long		*plong;
 	float		*pfloat;
 	double		*pdouble;
-    
+   
+    if (eha.status != ECA_NORMAL) {
+		printf("recDynLink:monitorCallback: CA returns eha.status=%d\n", eha.status);
+		return;
+	}
 	precDynLink = (recDynLink *)ca_puser(eha.chid);
 	if (!precDynLink) return;
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
 	if (recDynLinkDebug >= 5) {
-		printf("recDynLink:monitorCallback:  PV=%s, nRequest=%d\n",
-			pdynLinkPvt->pvname, pdynLinkPvt->nRequest);
+		printf("recDynLink:monitorCallback:  PV=%s, nRequest=%d, status=%d\n",
+			pdynLinkPvt->pvname, pdynLinkPvt->nRequest, eha.status);
+		if (recDynLinkDebug >= 15) {
+			printf("recDynLink:monitorCallback:  eha.usr=%p, .chid=%p, .type=%ld, .count=%ld, .dbr=%p, .status=%d\n",
+				eha.usr, eha.chid, eha.type, eha.count, eha.dbr, eha.status);
+		}
 	}
 	if (pdynLinkPvt->pbuffer) {
 		epicsMutexMustLock(pdynLinkPvt->lock);
 		if (count>=pdynLinkPvt->nRequest) count = pdynLinkPvt->nRequest;
 		pdbr_time_string = (struct dbr_time_string *)pbuffer;
+		if (recDynLinkDebug >= 15) {printf("recDynLink:monitorCallback: pdbr_time_string=%p\n", pdbr_time_string); epicsThreadSleep(.1);}
 		timeType = dbf_type_to_DBR_TIME(mapNewToOld[pdynLinkPvt->dbrType]);
 		pdata = (void *)((char *)pbuffer + dbr_value_offset[timeType]);
+		if (recDynLinkDebug >= 15) {printf("recDynLink:monitorCallback: copying time stamp\n"); epicsThreadSleep(.1);}
 		pdynLinkPvt->timestamp = pdbr_time_string->stamp; /*array copy*/
+		if (recDynLinkDebug >= 15) {printf("recDynLink:monitorCallback: copying status\n"); epicsThreadSleep(.1);}
 		pdynLinkPvt->status = pdbr_time_string->status;
 		pdynLinkPvt->severity = pdbr_time_string->severity;
+		if (recDynLinkDebug >= 15) printf("recDynLink:monitorCallback: calling memcpy\n");
 		memcpy(pdynLinkPvt->pbuffer,pdata,
 			(count * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
 		epicsMutexUnlock(pdynLinkPvt->lock);
@@ -579,6 +599,7 @@ LOCAL void monitorCallback(struct event_handler_args eha)
 			printf("recDynLink:monitorCallback: array of %d elements\n", pdynLinkPvt->nRequest);
 			switch (mapNewToOld[pdynLinkPvt->dbrType]) {
 			case DBF_STRING: case DBF_CHAR:
+				if (recDynLinkDebug >= 15) printf("recDynLink:monitorCallback: case DBF_STRING\n");
 				pchar = (char *)pdata;
 				printf("...char/string: %c, %c, %c...\n", pchar[0], pchar[1], pchar[2]);
 				break;
@@ -605,8 +626,12 @@ LOCAL void monitorCallback(struct event_handler_args eha)
 			}
 		}
 	}
+	if (recDynLinkDebug >= 15) printf("recDynLink:monitorCallback: executing client callback\n");
+
 	if (pdynLinkPvt->monitorCallback)
 		(*pdynLinkPvt->monitorCallback)(precDynLink);
+	if (recDynLinkDebug >= 15) printf("recDynLink:monitorCallback: exit\n");
+
 }
 
 LOCAL void userGetCallback(struct event_handler_args eha)
@@ -618,7 +643,11 @@ LOCAL void userGetCallback(struct event_handler_args eha)
 	struct dbr_time_string	*pdbr_time_string;
 	void		*pdata;
 	short		timeType;
-    
+
+    if (eha.status != ECA_NORMAL) {
+		printf("recDynLink:userGetCallback: CA returns eha.status=%d\n", eha.status);
+		return;
+	}
 	precDynLink = (recDynLink *)ca_puser(eha.chid);
 	if (!precDynLink) return;
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
@@ -647,7 +676,11 @@ LOCAL void notifyCallback(struct event_handler_args eha)
 {
 	recDynLink	*precDynLink;
 	dynLinkPvt	*pdynLinkPvt;
-    
+
+    if (eha.status != ECA_NORMAL) {
+		printf("recDynLink:notifyCallback: CA returns eha.status=%d\n", eha.status);
+		return;
+	}
 	precDynLink = (recDynLink *)ca_puser(eha.chid);
 	if (!precDynLink) return;
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
