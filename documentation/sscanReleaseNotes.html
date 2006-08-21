@@ -40,7 +40,11 @@ the action rather than hang.
 <li>If the sscan record attempts to connect to a PV while an earlier connection attempt
 is still in progress, it now waits and retries.
 
-<li>recDynLinkQsize is now exported for use by the ioc shell
+<li>recDynLinkQsize is now exported for use by the ioc shell.
+
+<li>recDynLink used to crash if one of its callback functions received an
+event_handler_args structure with a status element whose value was not ==
+ECA_NORMAL.  Now it declines to process the event or to pass it on to the client.
 
 <li>saveData used to check directory permissions by attempting to create a file
 whose name was illegal (contained ':') on some operating systems.
