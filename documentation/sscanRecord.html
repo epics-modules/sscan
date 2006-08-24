@@ -2,11 +2,11 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <title>The SSCAN record v5.20</title>
+   <title>The SSCAN record v5.33</title>
 </head>
 <body>
 <h1>
-The SSCAN record v5.25</h1>
+The SSCAN record v5.33</h1>
 Author: Tim M. Mooney<br>
 Based on the scan record, written by Ned D. Arnold.<br>
 <p>&nbsp;Advanced Photon Source
@@ -417,7 +417,7 @@ record in the database must refrain from firing its Forward Link until the
 operation is finished, and that record must be either be the record written to,
 or it must be linked with attribute PP to the record.  The BUSY record was
 implemented for this purpose.  Using the BUSY record, any sort of processing,
-even processing that involves an external, non-EPICS processor can esily
+even processing that involves an external, non-EPICS processor can easily
 satisfy the completion-callback criterion.
 
 <p>Database developers should note that a PP link from a record in one crate to
@@ -588,6 +588,18 @@ have the same center of mass.
 </tr>
 
 <tr>
+<th>Field</th>
+<th>Summary</th>
+<th>Type</th>
+<th>DCT</th>
+<th>Initial/Default</th>
+<th>Read</th>
+<th>Modify</th>
+<th>Posted</th>
+<th>PP</th>
+</tr>
+
+<tr>
 <td><tt>REFD</tt></td>
 <td>Reference detector for After-Scan mode</td>
 <td>SHORT</td>
@@ -678,6 +690,18 @@ and no field of a higher level scan record.
 <tr colspan=9><td colspan=9></td></tr>
 
 <tr>
+<th>Field</th>
+<th>Summary</th>
+<th>Type</th>
+<th>DCT</th>
+<th>Initial/Default</th>
+<th>Read</th>
+<th>Modify</th>
+<th>Posted</th>
+<th>PP</th>
+</tr>
+
+<tr>
 <td><tt>ASPV</tt></td>
 <td>After-Scan Process Variable link</td>
 <td>STRING [40]</td>
@@ -750,6 +774,18 @@ and no field of a higher level scan record.
 <tr colspan=9><td colspan=9></td></tr>
 <tr colspan=9><td colspan=9></td></tr>
 <tr colspan=9><td colspan=9></td></tr>
+
+<tr>
+<th>Field</th>
+<th>Summary</th>
+<th>Type</th>
+<th>DCT</th>
+<th>Initial/Default</th>
+<th>Read</th>
+<th>Modify</th>
+<th>Posted</th>
+<th>PP</th>
+</tr>
 
 <tr>
 <td><tt>A1PV</tt></td>
