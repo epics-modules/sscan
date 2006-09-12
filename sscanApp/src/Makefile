@@ -24,7 +24,6 @@ DBDINC += busyRecord
 # <name>.dbd will be created from <name>Include.dbd
 DBD += sscan.dbd
 DBD += sscanSupport.dbd
-DBD += sscanVXSupport.dbd
 DBD += sscanWin32Support.dbd
 DBD += sscanMenu.dbd
 
