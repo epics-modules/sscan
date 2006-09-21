@@ -47,7 +47,6 @@ $(P)$(S).PDLY
 $(P)$(S).DDLY
 $(P)$(S).REFD
 $(P)$(S).AWCT
-$(P)$(S).AAWAIT
 $(P)$(S).ACQT
 $(P)$(S).ACQM
 $(P)$(S).A1PV
