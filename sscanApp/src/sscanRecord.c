@@ -1726,6 +1726,7 @@ get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 	 */
 
 	fieldOffset = ((dbFldDes *) (paddr->pfldDes))->offset;
+/*printf("get_array_info: fieldIndex=%d\n", fieldIndex);*/
 
 	*offset = 0;
 	pPvStat = &psscan->d01nv;
@@ -1733,10 +1734,13 @@ get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 		if (((char *) &pDet->d_da - (char *) psscan) == fieldOffset) {
 			if ((precPvt->acqDet[i]) ||
 			    ((i < NUM_POS) && (psscan->faze == sscanFAZE_PREVIEW))) {
-				if (precPvt->validBuf == B_BUFFER)
+				if (precPvt->validBuf == B_BUFFER) {
+/*if (fieldIndex==345) printf("get_array_info: returning B (.pBufB[0]=%f)\n", precPvt->detBufPtr[i].pBufB[0]);*/
 					paddr->pfield = precPvt->detBufPtr[i].pBufB;
-				else
+				} else {
+/*if (fieldIndex==345) printf("get_array_info: returning A (.pBufA[0]=%f)\n", precPvt->detBufPtr[i].pBufA[0]);*/
 					paddr->pfield = precPvt->detBufPtr[i].pBufA;
+				}
 			} else {
 				paddr->pfield = precPvt->nullArray;
 			}
@@ -2007,7 +2011,11 @@ checkMonitors(sscanRecord *psscan)
 	if (psscan->dstate == sscanDSTATE_PACKED) {
 		psscan->dstate = sscanDSTATE_POSTED; POST(&psscan->dstate);
 
-		/* Must post events on both pointers, since toggle */
+		/* Must post events on both pointers, since toggle.  Note that this is
+		 * merely the notification step of the posting, since these PV's are
+		 * arrays.  The actual accociation between PV and data will
+		 * occur in and get_array_info().
+		 */
 		for (i = 0; i < NUM_POS; i++) {
 			db_post_events(psscan, precPvt->posBufPtr[i].pBufA, DBE_VAL_LOG);
 			db_post_events(psscan, precPvt->posBufPtr[i].pBufB, DBE_VAL_LOG);
@@ -2033,6 +2041,11 @@ checkMonitors(sscanRecord *psscan)
 			psscan->exsc = psscan->xsc; POST(&psscan->exsc);
 		}
 
+		/* post buffered copy of cpt for use by data-storage client */
+		psscan->bcpt = psscan->cpt;
+		POST(&psscan->bcpt);
+
+		/* Tell clients that new array data have been posted */
 		psscan->data = 1; POST(&psscan->data);
 		if (psscan->aawait == sscanNOYES_YES) {
 			psscan->await = 1;
@@ -3504,6 +3517,7 @@ packData(sscanRecord *psscan, int caller)
 
 	/* Switch validBuf flag and fill pointers */
 	if (precPvt->validBuf == A_BUFFER) {
+/* if (strcmp(psscan->name, "xxx:scanH")==0) printf("---packData: validBuf is now B---\n"); */
 		precPvt->validBuf = B_BUFFER;
 		for (i = 0; i < NUM_POS; i++) {
 			precPvt->posBufPtr[i].pFill = precPvt->posBufPtr[i].pBufA;
@@ -3513,6 +3527,7 @@ packData(sscanRecord *psscan, int caller)
 		}
 	} else {
 		precPvt->validBuf = A_BUFFER;
+/* if (strcmp(psscan->name, "xxx:scanH")==0) printf("---packData: validBuf is now A---\n"); */
 		for (i = 0; i < NUM_POS; i++) {
 			precPvt->posBufPtr[i].pFill = precPvt->posBufPtr[i].pBufB;
 		}

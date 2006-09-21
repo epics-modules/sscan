@@ -126,6 +126,11 @@ recordtype(sscan) {
 		special(SPC_NOMOD)
 		interest(1)
 	}
+	field(BCPT,DBF_LONG) {
+		prompt("Bufferred Current Point")
+		special(SPC_NOMOD)
+		interest(1)
+	}
 	field(DPT,DBF_LONG) {
 		prompt("Desired Point")
 		special(119)
