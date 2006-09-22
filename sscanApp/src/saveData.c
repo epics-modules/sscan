@@ -147,6 +147,7 @@
 #include <epicsTypes.h>     /* for MAX_STRING_SIZE */
 
 #define DESC_SIZE 30
+#define EGU_SIZE 16
 #include "req_file.h"
 #include "xdr_lib.h"
 #ifdef vxWorks
@@ -332,11 +333,11 @@ typedef struct scan {
   chid    cpxnv[SCAN_NBP];
   char    pxpv[SCAN_NBP][PVNAME_STRINGSZ]; /* positioner X PV name      */
   chid    cpxpv[SCAN_NBP];
-  char    pxds[SCAN_NBP][PVNAME_STRINGSZ]; /* positioner X description field */
+  char    pxds[SCAN_NBP][MAX_STRING_SIZE]; /* positioner X description string */
   chid    cpxds[SCAN_NBP];
   struct dbr_ctrl_double  pxeu[SCAN_NBP];/* positioner X eng unit       */
   chid    cpxeu[SCAN_NBP];
-  char    pxsm[SCAN_NBP][PVNAME_STRINGSZ]; /* positioner step mode      */
+  char    pxsm[SCAN_NBP][MAX_STRING_SIZE]; /* positioner step mode      */
   chid    cpxsm[SCAN_NBP];
 
   /*========================== READBACKS ===============================*/
@@ -345,7 +346,7 @@ typedef struct scan {
   chid    crxnv[SCAN_NBP];
   char    rxpv[SCAN_NBP][PVNAME_STRINGSZ]; /* readback X PV name        */
   chid    crxpv[SCAN_NBP];
-  char    rxds[SCAN_NBP][PVNAME_STRINGSZ]; /* readback X description field */
+  char    rxds[SCAN_NBP][MAX_STRING_SIZE]; /* readback X description string */
   chid    crxds[SCAN_NBP];
   struct dbr_ctrl_double  rxeu[SCAN_NBP];/* readback X eng unit         */
   chid    crxeu[SCAN_NBP];
@@ -361,7 +362,7 @@ typedef struct scan {
   chid    cdxnv[SCAN_NBD];
   char    dxpv[SCAN_NBD][PVNAME_STRINGSZ]; /* detector X PV name        */
   chid    cdxpv[SCAN_NBD];
-  char    dxds[SCAN_NBD][PVNAME_STRINGSZ]; /* detector X description field */
+  char    dxds[SCAN_NBD][MAX_STRING_SIZE]; /* detector X description string */
   chid    cdxds[SCAN_NBD];
   struct dbr_ctrl_float  dxeu[SCAN_NBD];/* detector X eng unit          */
   chid    cdxeu[SCAN_NBD];
@@ -500,7 +501,7 @@ typedef struct scan_index_msg {
 typedef struct string_msg {
   int  type;
   epicsTimeStamp time;
-  char* pdest;
+  char* pdest;   /* specified as user arg in ca_create_subscription() call */
   char  string[MAX_STRING_SIZE];
 } STRING_MSG;
 
@@ -545,7 +546,8 @@ typedef struct pv_node {
   chid     channel;
   chid     desc_chid;
   char     name[PVNAME_STRINGSZ];
-  char     desc[DESC_SIZE];
+  char     desc[MAX_STRING_SIZE];	/* note DESC size is 30, butthe description
+                                       can also be read from the req file. */
   int      dbr_type;
   long     count;
   DBR_VAL* pval;
@@ -804,7 +806,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.20 2006-09-21 17:27:22 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.21 2006-09-22 19:19:46 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -866,8 +868,8 @@ LOCAL int connectScan(char* name, char* handShake, char* autoHandShake)
 
   pscan->first_scan= TRUE;
   pscan->scan_dim= 1;
-  strncpy(pscan->name, name, 28);
-  pscan->name[28]='\0';
+  strncpy(pscan->name, name, PVNAME_STRINGSZ-1);
+  pscan->name[PVNAME_STRINGSZ-1]='\0';
   pscan->nxt= NULL;
   epicsTimeGetCurrent(&(pscan->cpt_time));
   pscan->cpt_monitored= FALSE;
@@ -1735,7 +1737,7 @@ LOCAL void extraValCallback(struct event_handler_args eha)
   memcpy(pnode->pval, pval, size);
   if (type == DBR_STRING) {
     string = (char *)pnode->pval;
-    string[size>39?39:size] = '\0';
+    string[size>(MAX_STRING_SIZE-1)?(MAX_STRING_SIZE-1):size] = '\0';
     /* logMsg("extraValCallback: string is >%s<\n", (char *)(pnode->pval)); */
   }
   pnode->count= count;
@@ -1761,7 +1763,7 @@ LOCAL int connectPV(char* pv, char* desc)
 {
   PV_NODE* pnode;
   PV_NODE* pcur;
-  char buff[MAX_STRING_SIZE];
+  char buff[PVNAME_STRINGSZ];
   long  count;
   int   type;
   int   len;
@@ -1787,8 +1789,8 @@ LOCAL int connectPV(char* pv, char* desc)
     return -1;
   }
 
-  strncpy(pnode->name, pv, 28);
-  pnode->name[28]= '\0';
+  strncpy(pnode->name, pv, PVNAME_STRINGSZ-1);
+  pnode->name[PVNAME_STRINGSZ-1]= '\0';
 
   /* Allocate space for the pv's value */
   size= 0;
@@ -1859,8 +1861,8 @@ LOCAL int connectPV(char* pv, char* desc)
     }
   } else {
     /* Copy the description from the req file. */
-    strncpy(pnode->desc, desc, 39);
-    pnode->desc[39]='\0';
+    strncpy(pnode->desc, desc, MAX_STRING_SIZE-1);
+    pnode->desc[MAX_STRING_SIZE-1]='\0';
   }
 
   /* Append the pv to the list */
@@ -2296,7 +2298,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
     if ((fd == NULL) || (fileStatus(pscan->ffname) == ERROR)) {
       printf("saveData:proc_scan_data: can't open data file!!\n");
       sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
-      msg[39]= '\0';
+      msg[MAX_STRING_SIZE-1]= '\0';
       sendUserMessage(msg);
       save_status = STATUS_ERROR;
       ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
@@ -2311,7 +2313,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
     if(pscan->first_scan) {
       /* Tell user what we're doing */
       sprintf(msg, "saving: %s", pscan->fname);	  
-      msg[39]= '\0';
+      msg[MAX_STRING_SIZE-1]= '\0';
       sendUserMessage(msg);
 
       /* Write file name where client can easily find it. */
@@ -2517,7 +2519,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
     if ((fd == NULL) || (fileStatus(pscan->ffname) == ERROR)) {
       printf("saveData:proc_scan_data: can't open data file!!\n");
       sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
-      msg[39]= '\0';
+      msg[MAX_STRING_SIZE-1]= '\0';
       sendUserMessage(msg);
       return;
     }
@@ -2566,7 +2568,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
                 printf("saveData: Can't alloc array for det %s.%s\n", pscan->name, dxda[i]);
                 sprintf(msg, "WARNING no mem for %s.%s", pscan->name, dxda[i]);
               }
-              msg[39]= '\0';
+              msg[MAX_STRING_SIZE-1]= '\0';
               sendUserMessage(msg);
             }
 
@@ -2586,7 +2588,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
       if(ca_pend_io(1.0)!=ECA_NORMAL) {
         Debug0(3, "unable to get all valid arrays \n");
         sprintf(msg, "Warning!! can't get data");
-        msg[39]= '\0';
+        msg[MAX_STRING_SIZE-1]= '\0';
         sendUserMessage(msg);
         return;
       }
@@ -2837,8 +2839,8 @@ LOCAL void proc_scan_pxsm(STRING_MSG* pmsg)
 {
   epicsTimeStamp now;
 
-  strncpy(pmsg->pdest, pmsg->string, 39);
-  pmsg->pdest[39]='\0';
+  strncpy(pmsg->pdest, pmsg->string, MAX_STRING_SIZE-1);
+  pmsg->pdest[MAX_STRING_SIZE-1]='\0';
 
   epicsTimeGetCurrent(&now);
   DebugMsg2(2, "MSG_SCAN_PXSM(%s)= %f\n", pmsg->string, 
@@ -2961,7 +2963,7 @@ LOCAL void proc_scan_dxnv(SCAN_INDEX_MSG* pmsg)
     if (pscan->dxda[i] == NULL) {
       printf("saveData: Can't alloc array for det %s.%s\n", pscan->name, dxda[i]);
       sprintf(msg, "WARNING no mem for %s.%s", pscan->name, dxda[i]);
-      msg[39]= '\0';
+      msg[MAX_STRING_SIZE-1]= '\0';
       sendUserMessage(msg);
     }
 #endif
@@ -3063,8 +3065,8 @@ LOCAL void proc_desc(STRING_MSG* pmsg)
 {
   epicsTimeStamp now;
 
-  strncpy(pmsg->pdest, pmsg->string, 39);
-  pmsg->pdest[39]= '\0';
+  strncpy(pmsg->pdest, pmsg->string, MAX_STRING_SIZE-1);
+  pmsg->pdest[MAX_STRING_SIZE-1]= '\0';
 
   epicsTimeGetCurrent(&now);
   DebugMsg2(2, "MSG_DESC(%s)= %f\n", pmsg->string, 
