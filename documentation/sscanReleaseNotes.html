@@ -24,6 +24,28 @@ operations for up to 4-dimensional MDA files
 from mda.py
 </dl>
 
+<li>Fixed problems in the communication between the sscan record and saveData
+that caused corrupted data files to be written:
+<ul>
+
+<li>The basic problem was that saveData was getting bufferred data arrays, but
+an unbuffered copy of the sscan record's CPT field.  The sscan record now
+maintains the field BCPT (bufferred CPT) which is posted when data array buffers
+are switched.
+
+<li>A second problem was that saveData was not able to put AWAIT=1 quickly
+enough to stop a very fast scan in time to ensure integrity of the data file.
+saveData now writes '1' to the sscan record's AAWAIT field on init, and
+writes '0' if it ever exits (not a supported operation at this time).  As a
+consequence, AAWAIT no longer occurs in the autosave-request file
+scan_settings.req.
+
+<li>A remaining problem, thus far seen only on cygwin, is that multidimensional
+scans can get saveData into trouble because CA monitors sometimes are received
+by saveData in a different order than they were posted by the sscan records.
+Currently, neither the sscan record nor saveData defend against this.
+
+</ul>
 <li>Added Dohn Arms' 'mdautils' software in the sscanApp/src
 directory.  This software can convert an MDA file to ascii, print info
 about an MDA file, and read an MDA file into C data structures.
