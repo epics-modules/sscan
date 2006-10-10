@@ -263,9 +263,12 @@
  *                      But the resulting callbacks could have caused FAZE to change while doPuts
  *                      (itself running in a callback thread) was doing other things, like calling
  *                      sprintf().  Now doPuts uses a local variable to keep track of what it did.
+ * 5.34 09-21-06  tmm   More fixes for pipelined data acquisition: cpt field of sscan record now
+ *                      buffered in bcpt field along with data array.
+ * 5.35 10-10-06  tmm   Autosaved PnSP, PnEP did not correctly initialize PnCP or PnWD.
  */
 
-#define VERSION 5.33
+#define VERSION 5.35
 
 
 #include <stddef.h>
@@ -4407,6 +4410,14 @@ changedNpts(psscan)
 			case (23):
 				pParms->p_si = (pParms->p_ep - pParms->p_sp) / MAX(1,(psscan->npts - 1));
 				POST(&pParms->p_si);
+				if (pParms->p_wd != (pParms->p_ep - pParms->p_sp)) {
+					pParms->p_wd = (pParms->p_ep - pParms->p_sp);
+					POST(&pParms->p_wd);
+				}
+				if (pParms->p_cp != ((pParms->p_ep + pParms->p_sp)/2)) {
+					pParms->p_cp = ((pParms->p_ep + pParms->p_sp)/2);
+					POST(&pParms->p_cp);
+				}
 				break;
 
 			case (8):	/* end/center/width unfrozen, change them */
@@ -4447,6 +4458,8 @@ changedNpts(psscan)
 
 		}
 	}
+	printf("%s:changedNpts: p1sp=%lf,p1cp=%lf,p1ep=%lf,p1wd=%lf,p1si=%lf\n", psscan->name,
+		psscan->p1sp,psscan->p1cp,psscan->p1ep,psscan->p1wd,psscan->p1si);
 }
 
 
