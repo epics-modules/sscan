@@ -266,9 +266,10 @@
  * 5.34 09-21-06  tmm   More fixes for pipelined data acquisition: cpt field of sscan record now
  *                      buffered in bcpt field along with data array.
  * 5.35 10-10-06  tmm   Autosaved PnSP, PnEP did not correctly initialize PnCP or PnWD.
+ * 5.36 10-10-06  tmm   If AQCT="1D ARRAY", P1RA contains (0,1,...) for use as array index.
  */
 
-#define VERSION 5.35
+#define VERSION 5.36
 
 
 #include <stddef.h>
@@ -3176,7 +3177,7 @@ readArrays(sscanRecord *psscan)
 	 * In either case, recDynLink now has good data in its buffers.  Record it.
 	 */
 
-	/* Read array-values positioner readbacks, if any */
+	/* Read array-valued positioner readbacks, if any */
 	pPvStat = &psscan->r1nv;
 	pPvStatPos = &psscan->p1nv;
 	pPos = (posFields *) & psscan->p1pp;
@@ -3205,6 +3206,11 @@ readArrays(sscanRecord *psscan)
 				/* Neither PV is valid, store array of point numbers */
 				for (j = 0; j < psscan->npts; j++) pDbuff[j] = j;
 			}
+		} else if (psscan->acqt == sscanACQT_1D_ARRAY) {
+			/* We don't have point-by-point data, and we don't support positioner readback arrays.
+			 * Make sure we have something client can use as an X axis.
+			 */
+			for (j = 0; j < psscan->npts; j++) pDbuff[j] = j;
 		}
 	}
 
@@ -3333,14 +3339,23 @@ packData(sscanRecord *psscan, int caller)
 	pDet = (detFields *) & psscan->d01hr;
 	for (i = 0; i < precPvt->valDetPvs; i++, pDet++) {
 		if (precPvt->acqDet[i]) {
+			/* last data point acquired */
+			if (psscan->acqt == sscanACQT_1D_ARRAY) {
+				if (psscan->cpt > 0)
+					d = precPvt->detBufPtr[i].pFill[psscan->cpt-1];
+				else
+					d = precPvt->detBufPtr[i].pFill[0];
+			} else {
+				d = pDet->d_cv;
+			}
 			for (j = psscan->cpt; j < psscan->mpts; j++) {
-				precPvt->detBufPtr[i].pFill[j] = pDet->d_cv;
+				precPvt->detBufPtr[i].pFill[j] = d;
 			}
 		}
 	}
-	/* Fill in the readback arrays with last values */
-	for (i = 0; i < precPvt->valPosPvs; i++) {
-		for (j = psscan->cpt; j < psscan->mpts; j++) {
+	/* Fill in the readback arrays with last values.  (Make sure we at least do P1.) */
+	for (i = 0; (i == 0) || (i < precPvt->valPosPvs); i++) {
+		for (j = MAX(1,psscan->cpt); j < psscan->mpts; j++) {
 			precPvt->posBufPtr[i].pFill[j] =
 				precPvt->posBufPtr[i].pFill[j - 1];
 		}
@@ -4458,7 +4473,7 @@ changedNpts(psscan)
 
 		}
 	}
-	printf("%s:changedNpts: p1sp=%lf,p1cp=%lf,p1ep=%lf,p1wd=%lf,p1si=%lf\n", psscan->name,
+	printf("%s:changedNpts: p1sp=%f,p1cp=%f,p1ep=%f,p1wd=%f,p1si=%f\n", psscan->name,
 		psscan->p1sp,psscan->p1cp,psscan->p1ep,psscan->p1wd,psscan->p1si);
 }
 
