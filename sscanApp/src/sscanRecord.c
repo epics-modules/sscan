@@ -269,9 +269,11 @@
  * 5.36 10-10-06  tmm   If AQCT="1D ARRAY", P1RA contains (0,1,...) for use as array index.
  * 5.37 10-12-06  tmm   If recDynLinkPvt.connectInProgress, wait for sscanRecordConnectWaitSeconds,
  *                      which may be zero.  Default is 1 second.  (We used to wait 5 seconds.)
+ * 5.38 10-10-06  tmm   If AQCT="1D ARRAY", P1RA contains [p1sp, p1sp_p1si,...p1sp+N*p1si} for use as
+ *                      array index.
  */
 
-#define VERSION 5.37
+#define VERSION 5.38
 
 
 #include <stddef.h>
@@ -3206,18 +3208,16 @@ readArrays(sscanRecord *psscan)
 					if (nReq < psscan->npts)
 						for (j = nReq; j < psscan->npts; j++) pDbuff[j] = 0;
 				}
-			} else if (*pPvStatPos == PV_OK) {
-				/* stuff array with desired value */
-				for (j = 0; j < psscan->npts; j++) pDbuff[j] = pPos->p_sp + j * pPos->p_si;
 			} else {
-				/* Neither PV is valid, store array of point numbers */
-				for (j = 0; j < psscan->npts; j++) pDbuff[j] = j;
+				/* stuff array with desired values */
+				for (j = 0; j < psscan->npts; j++) pDbuff[j] = pPos->p_sp + j * pPos->p_si;
 			}
 		} else if (psscan->acqt == sscanACQT_1D_ARRAY) {
-			/* We don't have point-by-point data, and we don't support positioner readback arrays.
-			 * Make sure we have something client can use as an X axis.
+			/*
+			 * We don't have point-by-point data, and we don't support positioner readback
+			 * arrays.  Make sure we have something client can use as an X axis.
 			 */
-			for (j = 0; j < psscan->npts; j++) pDbuff[j] = j;
+			for (j = 0; j < psscan->npts; j++) pDbuff[j] = pPos->p_sp + j * pPos->p_si;
 		}
 	}
 
