@@ -267,9 +267,11 @@
  *                      buffered in bcpt field along with data array.
  * 5.35 10-10-06  tmm   Autosaved PnSP, PnEP did not correctly initialize PnCP or PnWD.
  * 5.36 10-10-06  tmm   If AQCT="1D ARRAY", P1RA contains (0,1,...) for use as array index.
+ * 5.37 10-12-06  tmm   If recDynLinkPvt.connectInProgress, wait for sscanRecordConnectWaitSeconds,
+ *                      which may be zero.  Default is 1 second.  (We used to wait 5 seconds.)
  */
 
-#define VERSION 5.36
+#define VERSION 5.37
 
 
 #include <stddef.h>
@@ -647,7 +649,8 @@ volatile int	sscanRecordDontCheckLimits = 0;
 epicsExportAddress(int, sscanRecordDontCheckLimits);
 volatile int	sscanRecordLookupTime = 1;
 epicsExportAddress(int, sscanRecordLookupTime);
-
+volatile int	sscanRecordConnectWaitSeconds = 1;
+epicsExportAddress(int, sscanRecordConnectWaitSeconds);
 
 static int isBlank(char *name)
 {
@@ -1205,7 +1208,11 @@ special(struct dbAddr *paddr, int after)
 #if denyConnectCollision
 				return(-1);
 #else
-				for (i=0; i<5 && puserPvt->connectInProgress; i++) epicsThreadSleep(1.);
+				if (sscanRecordConnectWaitSeconds < 0) {
+					printf("%s:special: sscanRecordConnectWaitSeconds can't be negative; setting it to zero.", psscan->name);
+					sscanRecordConnectWaitSeconds = 0;
+				}
+				for (i=0; i<sscanRecordConnectWaitSeconds && puserPvt->connectInProgress; i++) epicsThreadSleep(1.);
 				if (puserPvt->connectInProgress) {
 					printf("%s:special:connect still in progress for link %s.  Trying new PV name.\n",
 						psscan->name, linkNames[puserPvt->linkIndex]);
@@ -1221,7 +1228,7 @@ special(struct dbAddr *paddr, int after)
 #if denyConnectCollision
 					return(-1);
 #else
-					for (i=0; i<5 && puserPvt->connectInProgress; i++) epicsThreadSleep(1.);
+					for (i=0; i<sscanRecordConnectWaitSeconds && puserPvt->connectInProgress; i++) epicsThreadSleep(1.);
 					if (puserPvt->connectInProgress) {
 						printf("%s:special:connect still in progress for link %s.  Trying new PV name.\n",
 							psscan->name, linkNames[puserPvt->linkIndex]);
