@@ -806,7 +806,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.21 2006-09-22 19:19:46 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.22 2006-10-30 18:07:42 rivers Exp $\n");
 }
 
 void saveData_Info() {
@@ -2397,7 +2397,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 
     xdr_int(&xdrs, &pscan->nb_pos);     /* # of positioners             */
     xdr_int(&xdrs, &pscan->nb_det);     /* # of detectors               */
-    xdr_int(&xdrs, &pscan->nb_trg);     /* # of detectors               */
+    xdr_int(&xdrs, &pscan->nb_trg);     /* # of triggers                */
       
     if(pscan->nb_pos) {
       for(i=0; i<SCAN_NBP; i++) {
