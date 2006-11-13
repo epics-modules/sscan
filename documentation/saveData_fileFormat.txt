@@ -75,8 +75,8 @@ EXTRA PVs
 	  depending on the type:
 	    DBR_STRING:
 		xdr_counted_string:		value
-	    DBR_CTRL_SHORT:
-		xdr_bytes(count):		value
+	    DBR_CTRL_CHAR:
+		xdr_vector(count, xdr_char):	value
 	    DBR_CTRL_SHORT:
 		xdr_vector(count, xdr_short):	value
 	    DBR_CTRL_LONG:
