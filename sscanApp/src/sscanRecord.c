@@ -1802,7 +1802,7 @@ put_array_info(struct dbAddr *paddr, long nNew)
 		if (((char *) &pPos->p_pa - (char *) psscan) == fieldOffset) {
 			precPvt->tablePts[i] = nNew;
 			if (nNew < psscan->npts) {
-				sprintf(psscan->smsg, "Pts in P%d Table < # of Steps", i + 1);
+				sprintf(psscan->smsg, "Pts in P%d Table < # of Steps.", i + 1);
 				POST(&psscan->smsg);
 				if (!psscan->alrt) {
 					psscan->alrt = 1; POST(&psscan->alrt);
@@ -4382,13 +4382,13 @@ changedNpts(psscan)
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	posFields      *pParms = (posFields *) & psscan->p1pp;
 	int             i;
-	unsigned short  freezeState = 0;
+	unsigned short  freezeState = 0, *pPvStat = &psscan->p1nv;
 
-	/* for each positioner, calculate scan params as best as we can */
+	/* for each valid positioner, calculate scan params as best as we can */
 	/* if the positioner is in table mode, don't touch linear scan parms! */
 	for (i = 0; i < NUM_POS; i++, pParms++) {
 		/* Check if Positioner is in TABLE Mode */
-		if (pParms->p_sm == sscanP1SM_Table) {
+		if ((*pPvStat == PV_OK) && (pParms->p_sm == sscanP1SM_Table)) {
 			if (precPvt->tablePts[i] < psscan->npts) {
 				sprintf(psscan->smsg, "Pts in P%d Table < # of Steps", i + 1);
 				if (!psscan->alrt) {
@@ -4550,7 +4550,7 @@ checkScanLimits(psscan)
 	if (sscanRecordDontCheckLimits && psscan->xsc)
 		return (OK);
 
-	/* First check if any pos'rs are in Table mode with insufficient points */
+	/* First check if any valid pos'rs are in Table mode with insufficient points */
 	pPvStat = &psscan->p1nv;
 	pPos = (posFields *) & psscan->p1pp;
 	for (i = 0; i < NUM_POS; i++, pPos++, pPvStat++) {
