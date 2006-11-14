@@ -1599,7 +1599,7 @@ special(struct dbAddr *paddr, int after)
 					zeroPosParms(psscan, (unsigned short) i);
 					precPvt->prevSm[i] = pPos->p_sm;
 					if (precPvt->tablePts[i] < psscan->npts) {
-						sprintf(psscan->smsg, "Pts in P%d Table < # of Steps", i + 1);
+						sprintf(psscan->smsg, "Pts in P%d Table < # of steps.", i + 1);
 						POST(&psscan->smsg);
 						if (!psscan->alrt) {
 							psscan->alrt = 1; POST(&psscan->alrt);
@@ -4386,11 +4386,11 @@ changedNpts(psscan)
 
 	/* for each valid positioner, calculate scan params as best as we can */
 	/* if the positioner is in table mode, don't touch linear scan parms! */
-	for (i = 0; i < NUM_POS; i++, pParms++) {
+	for (i = 0; i < NUM_POS; i++, pParms++, pPvStat++) {
 		/* Check if Positioner is in TABLE Mode */
 		if ((*pPvStat == PV_OK) && (pParms->p_sm == sscanP1SM_Table)) {
 			if (precPvt->tablePts[i] < psscan->npts) {
-				sprintf(psscan->smsg, "Pts in P%d Table < # of Steps", i + 1);
+				sprintf(psscan->smsg, "Pts in P%d Table < # of Steps!", i + 1);
 				if (!psscan->alrt) {
 					psscan->alrt = 1;
 				}
