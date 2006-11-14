@@ -4480,8 +4480,10 @@ changedNpts(psscan)
 
 		}
 	}
-	printf("%s:changedNpts: p1sp=%f,p1cp=%f,p1ep=%f,p1wd=%f,p1si=%f\n", psscan->name,
-		psscan->p1sp,psscan->p1cp,psscan->p1ep,psscan->p1wd,psscan->p1si);
+	if (sscanRecordDebug >= 5) {
+		printf("%s:changedNpts: p1sp=%f,p1cp=%f,p1ep=%f,p1wd=%f,p1si=%f\n", psscan->name,
+			psscan->p1sp,psscan->p1cp,psscan->p1ep,psscan->p1wd,psscan->p1si);
+	}
 }
 
 
