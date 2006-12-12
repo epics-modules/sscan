@@ -343,10 +343,63 @@ While a <b>sscan</b> record is paused, it will do nothing to further the progres
 of the scan, but it will remain receptive to outstanding callbacks.  A paused
 scan is continued by writing "GO", or the number <tt>0</tt>, to the <tt>PAUS</tt> field.
 
+<P>Pausing a multidimensional scan should work in the same way as pausing a
+single <b>sscan</b> record, but there have been reports that the process fails
+sometimes for multidimensional scans, leaving the scan active but not resuming
+when <tt>PAUS</tt> is rescinded.  The issue is being studied.
+
 <p><a NAME="HEADING_1-3-4"></a>
 <h3>1.3.4 Displaying scan data</h3>
 
-...to be written...
+The <b>sscan</b> record does not post data arrays into which it is acquiring.
+After a scan has completed, acquired data arrays are posted, and those data
+remain available to clients until the next scan completes.   This means that
+only way for a client to get data from a scan in progress is to monitor the
+scalar <i>current-value</i> PVs, such as <tt>R1CV</tt>, <tt>D01CV</tt>, etc.,
+and collect their values into arrays.
+
+<P>Positioners actually have two fields that might be suitable for display while a
+scan is in progress: the positioner's desired value (<tt>P<i>n</i>DV</tt>) and
+the readback's current value (<tt>R<i>n</i>CV</tt>).  (If there is no readback
+PV, the posted readback value will be a copy of the desired value.)
+
+<P>Not all data points of a scan are guaranteed to be posted as scalar values,
+because the <b>sscan</b> record <i>throttles</i> it's posting, so that it
+doesn't exceed 20 data points per second.  This throttling is intended to limit
+the network activity caused by a scan, and it's necessary because displaying
+scan data is not more important that acquiring it, and because the <b>sscan</b>
+record also uses the network to acquire data.
+
+<P>The task of accumulating posted scalar values into data arrays is complicated
+by the standard EPICS behavior of declining to post a field whose value has not
+changed since the last time the field was posted.   If a client were simply to
+append each new posting to the data arrays it is accumulating, it would not
+be including those repeated values.  The following algorithm will accumulate
+data correctly:
+
+<ol>
+
+<li> monitor <tt>D<i>nn</i>CV</tt>, <tt>R<i>m</i>CV</tt> and <tt>VAL</tt>  (<i>scalar data and control
+fields</i>).
+
+<li> monitor <tt>D<i>nn</i>DA</tt>, <tt>P<i>m</i>RA</tt>, <tt>DATA</tt>, and <tt>CPT</tt> (<i>array
+data and control fields</i>).
+
+<li> whenever <tt>D<i>nn</i>CV</tt>, <tt>R<i>m</i>CV</tt>, or <tt>CPT</tt> are received, cache the
+received scalar value in a local variable.
+
+<li> whenever <tt>D<i>nn</i>DA</tt> or <tt>P<i>m</i>RA</tt> are received, cache the received array
+value in a local variable.
+
+<li> when <tt>DATA==0</tt> is received, clear all data arrays, and reset numPoints to zero.
+
+<li> when <tt>VAL</tt> is received, append to all data arrays from cached scalar values, and increment
+numPoints.
+
+<li> when <tt>DATA==1</tt> is received, clear all data arrays and replace with cached array values; set
+numPoints to the cached value received from <tt>CPT</tt>.
+
+</ol>
 
 <p><a NAME="HEADING_1-3-5"></a>
 <h3>1.3.5 Handshaking with data-storage clients</h3>
