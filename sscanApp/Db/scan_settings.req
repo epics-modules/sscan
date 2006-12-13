@@ -47,8 +47,6 @@ $(P)$(S).PDLY
 $(P)$(S).DDLY
 $(P)$(S).REFD
 $(P)$(S).AWCT
-$(P)$(S).ACQT
-$(P)$(S).ACQM
 $(P)$(S).A1PV
 $(P)$(S).A1CD
 $(P)$(S).D01PV
