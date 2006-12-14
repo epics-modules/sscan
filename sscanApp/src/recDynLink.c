@@ -678,7 +678,22 @@ LOCAL void notifyCallback(struct event_handler_args eha)
 	dynLinkPvt	*pdynLinkPvt;
 
     if (eha.status != ECA_NORMAL) {
-		printf("recDynLink:notifyCallback: CA returns eha.status=%d\n", eha.status);
+		printf("recDynLink:notifyCallback: CA returns eha.status=%d (%s)\n",
+			eha.status, ca_message(eha.status));
+/* try to find out who sent the command that produced this result */
+#if 1
+		precDynLink = (recDynLink *)ca_puser(eha.chid);
+		if (!precDynLink) {
+			printf("recDynLink:notifyCallback: ...Can't examine recDynLink\n");
+			return;
+		}
+		pdynLinkPvt = precDynLink->pdynLinkPvt;
+		if (!pdynLinkPvt) {
+			printf("recDynLink:notifyCallback: ...Can't examine dynLinkPvt\n");
+			return;
+		}
+		printf("recDynLink:notifyCallback: ...pvname='%s'\n", pdynLinkPvt->pvname);
+#endif
 		return;
 	}
 	precDynLink = (recDynLink *)ca_puser(eha.chid);
