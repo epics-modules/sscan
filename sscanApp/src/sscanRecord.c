@@ -1366,6 +1366,12 @@ special(struct dbAddr *paddr, int after)
 			POST(&psscan->pdly);
 			break;
 		case sscanRecordPAUS:
+			if (sscanRecordDebug) {
+				printf("%s:special:paus: faze='%s', nPTR_CBs=%1d%1d%1d, xsc=%d, pxsc=%d, calledBy 0x%x\n",
+					psscan->name, sscanFAZE_strings[psscan->faze], precPvt->numPositionerCallbacks,
+					precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, psscan->xsc, psscan->pxsc,
+					precPvt->calledBy);
+			}
 			if (psscan->paus != psscan->lpau) {
 				if (psscan->paus == 0) {
 					sprintf(psscan->smsg, "Scan pause rescinded");
