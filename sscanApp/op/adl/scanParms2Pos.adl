@@ -507,7 +507,7 @@ text {
 	}
 	"dynamic attribute" {
 		vis="calc"
-		calc="A==1"
+		calc="A=1"
 		chan="$(SCAN).BUSY"
 	}
 	textix="RUNNING..."
@@ -525,7 +525,7 @@ text {
 	}
 	"dynamic attribute" {
 		vis="calc"
-		calc="A==0"
+		calc="A=0"
 		chan="$(SCAN).BUSY"
 	}
 	textix="DONE"
