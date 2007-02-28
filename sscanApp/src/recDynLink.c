@@ -162,11 +162,11 @@ long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 		return(-1);
 	}
 	if (pvname==NULL) {
-		printf("recDynLinkAddInput: pvname is empty.\n");
+		printf("recDynLinkAddInput: pvname was not supplied.\n");
 		return(-1);
 	}
 	if (*pvname=='\0') {
-		printf("recDynLinkAddInput: pvname is NULL\n");
+		printf("recDynLinkAddInput: pvname is blank\n");
 		return(-1);
 	}
 	if (options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr)) return(-1);
@@ -214,11 +214,11 @@ long epicsShareAPI recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 		return(-1);
 	}
 	if (pvname==NULL) {
-		printf("recDynLinkAddOutput: pvname is empty.\n");
+		printf("recDynLinkAddOutput: pvname was not supplied.\n");
 		return(-1);
 	}
 	if (*pvname=='\0') {
-		printf("recDynLinkAddOutput: pvname is NULL\n");
+		printf("recDynLinkAddOutput: pvname is empty\n");
 		return(-1);
 	}
 	if (options&rdlDBONLY  && db_name_to_addr(pvname,&dbaddr)) return(-1);
@@ -855,12 +855,12 @@ LOCAL void recDynLinkOut(void)
 		epicsEventWaitWithTimeout(wakeUpEvt,1.0);
 		while (epicsMessageQueuePending(recDynLinkOutMsgQ) && interruptAccept) {
 			if (recDynLinkDebug > 10) 
-                            printf("epicsMessageQueuePending(recDynLinkOutMsgQ)=%d\n", 
+				printf("epicsMessageQueuePending(recDynLinkOutMsgQ)=%d\n", 
 				epicsMessageQueuePending(recDynLinkOutMsgQ));
 			n = epicsMessageQueueReceive(recDynLinkOutMsgQ, (void *)&cmd,
 				sizeof(msgQCmd));
 			if (recDynLinkDebug > 10) 
-                            printf("recDynLinkOut: got message of size %d, cmd=%s\n", n, commands[cmd.cmd]); 
+				printf("recDynLinkOut: got message of size %d, cmd=%s\n", n, commands[cmd.cmd]); 
 			if (n != s) {
 				printf("recDynLinkOutTask: got %d bytes, expected %d\n", n, s);
 				continue;
@@ -878,15 +878,19 @@ LOCAL void recDynLinkOut(void)
 			precDynLink = cmd.data.precDynLink;
 			pdynLinkPvt = precDynLink->pdynLinkPvt;
 			if (recDynLinkDebug > 10) 
-                            printf("recDynLinkOut: precDynLink=%p", (void *)precDynLink); 
+				printf("recDynLinkOut: precDynLink=%p", (void *)precDynLink); 
 			if (pdynLinkPvt==NULL) {
 				printf("\nrecDynLinkOut: ***ERROR***: pdynLinkPvt==%p (precDynLink==%p)\n",
 					(void *)pdynLinkPvt, (void *)precDynLink);
 				precDynLink->onQueue--;
 				continue;
+			} else if (pdynLinkPvt->pvname[0] == '\0') {
+				printf("\nrecDynLinkOut: ***ERROR***: pvname=='' (precDynLink==%p)\n",
+					(void *)precDynLink);
+				continue;
 			} else {
 				if (recDynLinkDebug > 10) 
-                                    printf(", pvname=%s\n", pdynLinkPvt->pvname);
+					printf(", pvname=%s\n", pdynLinkPvt->pvname);
 			}
 			switch (cmd.cmd) {
 			case (cmdSearch):
