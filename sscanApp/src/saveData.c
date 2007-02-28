@@ -2,8 +2,10 @@
 /*
  *      Original Author: Eric Boucher
  *      Date:            04-09-98
- *
- *	Experimental Physics and Industrial Control System (EPICS)
+ *      Current Author: Tim Mooney
+ *      Date:            2/21/2007
+ 
+ *      Experimental Physics and Industrial Control System (EPICS)
  *
  *      Copyright 1991, the University of Chicago Board of Governors.
  *
@@ -132,6 +134,7 @@
 #endif
 
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
@@ -546,7 +549,7 @@ typedef struct pv_node {
   chid     channel;
   chid     desc_chid;
   char     name[PVNAME_STRINGSZ];
-  char     desc[MAX_STRING_SIZE];	/* note DESC size is 30, butthe description
+  char     desc[MAX_STRING_SIZE];   /* note DESC size is 30, butthe description
                                        can also be read from the req file. */
   int      dbr_type;
   long     count;
@@ -563,18 +566,18 @@ LOCAL char* server_subdir;
 LOCAL char  local_pathname[80];
 LOCAL char* local_subdir;
 
-#define STATUS_INACTIVE		0
-#define STATUS_ACTIVE_OK	1
-#define STATUS_ACTIVE_FS_ERROR	2
-#define STATUS_ERROR	3
+#define STATUS_INACTIVE         0
+#define STATUS_ACTIVE_OK        1
+#define STATUS_ACTIVE_FS_ERROR  2
+#define STATUS_ERROR            3
 LOCAL chid  save_status_chid;
 LOCAL short save_status= STATUS_INACTIVE;
 LOCAL chid  message_chid;
 LOCAL chid  filename_chid;
 LOCAL chid  full_pathname_chid;
 
-#define FS_NOT_MOUNTED	0
-#define FS_MOUNTED	1
+#define FS_NOT_MOUNTED  0
+#define FS_MOUNTED      1
 LOCAL chid  file_system_chid;
 LOCAL chid  file_system_disp_chid;
 LOCAL int   file_system_state= FS_NOT_MOUNTED;
@@ -585,17 +588,17 @@ LOCAL chid  file_subdir_disp_chid;
 LOCAL int   realTime1D= 1;
 LOCAL chid  realTime1D_chid;
 
-LOCAL long  counter;		/* data file counter			*/
+LOCAL long  counter;  /* data file counter*/
 LOCAL chid  counter_chid;
 LOCAL char  ioc_prefix[10];
 
-LOCAL epicsThreadId          threadId     =NULL;/* saveDataTask thread id		*/
-LOCAL epicsMessageQueueId     msg_queue   =NULL; /* saveDataTask's message queue	*/
+LOCAL epicsThreadId          threadId     =NULL;/* saveDataTask thread id */
+LOCAL epicsMessageQueueId     msg_queue   =NULL; /* saveDataTask's message queue */
 
 LOCAL double       cpt_wait_time;
-LOCAL int          nb_scan_running=0; /* # of scan currently running	*/
-LOCAL SCAN_NODE*   list_scan   =NULL; /* list of scan to be saved	*/
-LOCAL PV_NODE*     list_pv= NULL;    /* list of pvs to be saved with each scan */
+LOCAL int          nb_scan_running=0; /* # of scan currently running */
+LOCAL SCAN_NODE*   list_scan   =NULL; /* list of scan to be saved */
+LOCAL PV_NODE*     list_pv= NULL;     /* list of pvs to be saved with each scan */
 LOCAL int          nb_extraPV= 0;
 
 /************************************************************************/
@@ -691,6 +694,7 @@ LOCAL void txcdMonitor(struct event_handler_args eha);
 /* The task in charge of updating and saving scans                      */
 /*                                                                      */
 LOCAL int saveDataTask(void *parm);
+LOCAL void remount_file_system(char* filesystem);
 
 
 
@@ -703,8 +707,14 @@ LOCAL int saveDataTask(void *parm);
 LOCAL int fileStatus(char* fname)
 {
   struct stat status;
+  int retVal;
 
-  return stat(fname, &status);
+  errno = 0;
+  retVal = stat(fname, &status);
+  if ((retVal == -1) && (debug_saveData)) {
+    printf("saveData: stat returned -1 for filename '%s'; errno=%d\n", fname, errno);
+  }
+  return retVal;
 }
 
 /*----------------------------------------------------------------------*/
@@ -806,7 +816,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.22 2006-10-30 18:07:42 rivers Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.23 2007-02-28 05:55:00 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -1042,7 +1052,7 @@ LOCAL int connectScan(char* name, char* handShake, char* autoHandShake)
     if(nc>0) printf("saveDataTask warning: %s: %d trigger(s) not connected\n", pscan->name, nc);
   }
   
-  /* get the max number of points of the scan to allocate the buffers	*/
+  /* get the max number of points of the scan to allocate the buffers */
   if(ca_array_get(DBR_LONG, 1, pscan->cmpts, &(pscan->mpts))!=ECA_NORMAL) {
     if(ca_pend_io(5.0)==ECA_TIMEOUT) {
       printf("saveData: %s: Unable to read MPTS. Aborting connection", pscan->name);
@@ -1052,7 +1062,7 @@ LOCAL int connectScan(char* name, char* handShake, char* autoHandShake)
     }
   }
 
-  /* Try to allocate memory for the buffers				*/
+  /* Try to allocate memory for the buffers */
   ok= 1;
   Debug2(1, "connectScan(%s): allocating %ld pts for positioners\n", name, pscan->mpts);
   for(i=0; ok && i<SCAN_NBP; i++) {
@@ -1476,7 +1486,7 @@ if (pscan->nxt) {
 }
   pval = (struct dbr_time_short *) eha.dbr;
   sval= pval->value;
-/*printf("dataMonitor(%s): (DATA=%d)\n", pscan->name, sval);*/
+  /*printf("dataMonitor(%s): (DATA=%d)\n", pscan->name, sval);*/
   if (pscan->data != -1) {
     if (sval == 1) {
       /* hand shaking notify */
@@ -2165,7 +2175,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
   char  msg[200];
   char  *cptr;
   SCAN  *pscan, *pnxt;
-  FILE  *fd;
+  FILE  *fd=NULL;
   XDR   xdrs;
   int   i, status;
 
@@ -2180,14 +2190,14 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
   char  timeStr[MAX_STRING_SIZE];
 
   pscan= pmsg->pscan;  
-/* printf("proc_scan_data(%s): entry (%d)\n", pscan->name, pmsg->val);*/
-  /* get bufferred copy of cpt.  This copy goes with data arrays */
+  Debug2(5, "proc_scan_data(%s):entry:pmsg->val=%d\n", pscan->name, pmsg->val);
+  /* get buffered copy of cpt.  This copy goes with data arrays */
   if (pmsg->val==1) ca_array_get(DBR_LONG, 1, pscan->cbcpt, &pscan->bcpt);
 
   if (pscan->data ==-1) {
     /* this should happen only once, at init */
     pscan->data = pmsg->val;
-    Debug1(2,"!!!%s pscan->data == -1!!!\n", pscan->name);
+    Debug1(2,"!!!proc_scan_data(%s) pscan->data == -1!!!\n", pscan->name);
     return;
   }
 
@@ -2196,7 +2206,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
       /* The file system is not mounted.  Warn user and punt */
       sendUserMessage("Scan not being saved !!!!!");
     } else {
-      /* Scan is over.  Enable file system record                       */
+      /* Scan is over.  If all scans in this group are over, enable file system record */
       if(--nb_scan_running==0) {
         cval=(char)0;
         ca_array_put(DBR_CHAR, 1, file_system_disp_chid, &cval);
@@ -2204,6 +2214,11 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
         ca_array_put(DBR_CHAR, 1, file_subdir_disp_chid, &cval);
       }
       Debug1(2,"(save_status inactive) nb_scan_running=%d\n", nb_scan_running);
+      if (nb_scan_running < 0) {
+        printf("proc_scan_data(%s): nb_scan_running was %d.  Set to zero.\n",
+          pscan->name, nb_scan_running);
+        nb_scan_running = 0;
+      }
     }
     pscan->data= pmsg->val;
     return;
@@ -2257,11 +2272,11 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
       printf("saveData: Unable to get all pos/rdb/det units\n");
     }
 
-    /* Attempt to open data file */
+		/* Make file name */
     if (pscan->first_scan) {
       /* We're processing the outermost of a possibly multidimensional scan */
       Debug0(3, "Outermost scan\n");
-/*printf("New file for scan %s\n", pscan->name);*/
+      Debug1(5, "proc_scan_data(%s):New file\n", pscan->name);
       /* Get number for this scan */
       ca_array_get(DBR_LONG, 1, counter_chid, &counter);
       if(ca_pend_io(0.5)!=ECA_NORMAL) {
@@ -2285,29 +2300,38 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
       if (duplicate_scan_number) {
         sprintf(&pscan->fname[strlen(pscan->fname)], "_%.2d", duplicate_scan_number);
       }
-      Debug1(3, "Open file: %s\n", pscan->ffname);
-      epicsTimeGetCurrent(&openTime);
-      fd= fopen(pscan->ffname, "wb+");
-    } else {
-      Debug1(3, "Open file: %s\n", pscan->ffname);
-      epicsTimeGetCurrent(&openTime);
-      fd= fopen(pscan->ffname, "rb+");
-      if (fd != NULL) fseek(fd, 0, SEEK_END);
     }
 
-    if ((fd == NULL) || (fileStatus(pscan->ffname) == ERROR)) {
-      printf("saveData:proc_scan_data: can't open data file!!\n");
-      sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
-      msg[MAX_STRING_SIZE-1]= '\0';
-      sendUserMessage(msg);
-      save_status = STATUS_ERROR;
-      ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
-      return;
-    } else if (save_status == STATUS_ERROR) {
+		fd = NULL;
+  	while (fd == NULL) {
+    	/* Attempt to open data file */
+    	Debug1(3, "Open file: %s\n", pscan->ffname);
+    	epicsTimeGetCurrent(&openTime);
+    	fd= fopen(pscan->ffname, pscan->first_scan ? "wb+" : "rb+");
+
+    	if ((fd == NULL) || (fileStatus(pscan->ffname) == ERROR)) {
+      	if (fd != NULL) {
+        	printf("saveData: stat(%s) set errno to %d ('%s')\n", 
+          	pscan->ffname, errno, strerror(errno));
+        	fclose(fd); fd = NULL;
+        }
+    	  printf("saveData:proc_scan_data(%s): can't open data file!!\n", pscan->name);
+    	  sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
+    	  msg[MAX_STRING_SIZE-1]= '\0';
+    	  sendUserMessage(msg);
+    	  save_status = STATUS_ERROR;
+    	  ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
+        epicsThreadSleep(15.);
+    	  printf("saveData:proc_scan_data(%s): trying again to open data file...\n", pscan->name);
+    	}
+    }
+
+    if (save_status == STATUS_ERROR) {
       save_status = STATUS_ACTIVE_OK;
       ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
     }
 
+    if (!(pscan->first_scan)) fseek(fd, 0, SEEK_END);
     xdrstdio_create(&xdrs, fd, XDR_ENCODE);
 
     if(pscan->first_scan) {
@@ -2380,7 +2404,8 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
     if(pscan->scan_dim>1) {             /* index of lower scans         */
       lval= xdr_getpos(&xdrs);
       pscan->nxt->offset= lval; /* tell inner scan where to write its offset */
-/*printf("%s telling %s to write its next offset at loc %ld\n", pscan->name, pscan->nxt->name, lval);*/
+      Debug3(15, "proc_scan_data(%s) telling %s to write its next offset at loc %ld\n",
+        pscan->name, pscan->nxt->name, lval);
       xdr_setpos(&xdrs, lval+pscan->npts*sizeof(long));
     }
       
@@ -2492,7 +2517,8 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 
 
     if(pscan->first_scan==FALSE) {
-/*printf("proc_scan_data(%s): writing offset %ld at loc %ld\n", pscan->name, scan_offset, pscan->offset);*/
+      Debug3(15, "proc_scan_data(%s): writing offset %ld at loc %ld\n",
+        pscan->name, scan_offset, pscan->offset);
       xdr_setpos(&xdrs, pscan->offset);
       xdr_long(&xdrs, &scan_offset);
       pscan->offset= xdr_getpos(&xdrs);
@@ -2528,13 +2554,13 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 
     if((!pscan->all_pts) || (pscan->cpt!=pscan->npts)) {
 
-      /* The scan just finished. update buffers and save scan	*/
+      /* The scan just finished. update buffers and save scan */
       Debug2(3, "writing %s to %s\n", pscan->name, pscan->fname);
 
       /* get cpt that agrees with data arrays */
      pscan->cpt = pscan->bcpt;
 
-/* printf("proc_scan_data: cpt=%ld\n", pscan->cpt);*/
+     Debug2(5, "proc_scan_data(%s): cpt=%ld\n", pscan->name, pscan->cpt);
 
       /*------------------------------------------------------------*/
       /* Get all valid arrays                                       */
@@ -2592,7 +2618,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
         sendUserMessage(msg);
         return;
       }
-/* if (pscan->dxda[0]) printf("proc_scan_data: pscan->dxda[0][0]=%f\n", pscan->dxda[0][0]); */
+      /* if (pscan->dxda[0]) printf("proc_scan_data(%s): pscan->dxda[0][0]=%f\n", pscan->name, pscan->dxda[0][0]); */
 
       /* current point */
       xdr_setpos(&xdrs, pscan->cpt_fpos);
@@ -2655,7 +2681,8 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
     /* hand shaking notify */
     if (pscan->chandShake) {
       sval= HANDSHAKE_DONE;
-/* printf("proc_scan_data: done writing file %s; putting %d to %s.AWAIT\n", pscan->fname, sval, pscan->name); */
+      Debug3(5, "proc_scan_data(%s): done writing file %s; putting %d to .AWAIT\n",
+        pscan->name, pscan->fname, sval);
       ca_array_put(DBR_SHORT, 1, pscan->chandShake, &sval);
     }
 
@@ -2673,7 +2700,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
             (float)epicsTimeDiffInSeconds(&now, &pmsg->time));
 
   }
-/* printf("proc_scan_data(%s): exit(%d)\n", pscan->name, pmsg->val);*/
+  Debug2(5, "proc_scan_data(%s): exit(%d)\n", pscan->name, pmsg->val);
 }
 
 LOCAL void proc_scan_npts(SCAN_LONG_MSG* pmsg)
@@ -3088,21 +3115,22 @@ LOCAL void proc_egu(STRING_MSG* pmsg)
 
 LOCAL void proc_file_system(STRING_MSG* pmsg)
 {
+  pmsg->string[MAX_STRING_SIZE-1]='\0';
+  DebugMsg1(2, "MSG_FILE_SYSTEM(%s)\n", pmsg->string);
+  remount_file_system(pmsg->string);
+}
+
+
+LOCAL void remount_file_system(char* filesystem)
+{
   char  msg[MAX_STRING_SIZE];
-  char  *filesystem;
-  epicsTimeStamp now;
   char *path = local_pathname;
-  
 #ifdef vxWorks
   char  hostname[40];
-  char* cout;
+  char *cout;
 #endif
 
-  /* make sure string is null terminated */
-  pmsg->string[MAX_STRING_SIZE-1]='\0';
-
 #ifdef vxWorks
-  /* unmount previous data directory */
   nfsUnmount("/data");
 #endif
 
@@ -3116,8 +3144,6 @@ LOCAL void proc_file_system(STRING_MSG* pmsg)
   }
   server_pathname[0]='\0';
   server_subdir= server_pathname;
-
-  filesystem= pmsg->string;
 
 #ifdef vxWorks
 
@@ -3147,7 +3173,7 @@ LOCAL void proc_file_system(STRING_MSG* pmsg)
 #endif
 
   if (file_system_state == FS_MOUNTED) {
-    strcpy(server_pathname, pmsg->string);
+    strcpy(server_pathname, filesystem);
     strcat(server_pathname, "/");
     server_subdir= &server_pathname[strlen(server_pathname)];  
 
@@ -3159,16 +3185,12 @@ LOCAL void proc_file_system(STRING_MSG* pmsg)
     }
   }
 
-  if(full_pathname_chid) {
+  if (full_pathname_chid) {
     ca_array_put(DBR_CHAR, strlen(server_pathname)+1,
                  full_pathname_chid, server_pathname);
   }
   sendUserMessage(msg);
   ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
-
-  epicsTimeGetCurrent(&now);
-  DebugMsg2(2, "MSG_FILE_SYSTEM(%s)= %f\n", pmsg->string, 
-            (float)epicsTimeDiffInSeconds(&now, &pmsg->time));
 }
 
 LOCAL void proc_file_subdir(STRING_MSG* pmsg)
