@@ -323,7 +323,6 @@ typedef struct scan {
   epicsTimeStamp  cpt_time;	/* time of the last cpt monitor             */
   int     cpt_monitored;
   evid    cpt_evid;
-  int     all_pts;  /* true if we got all data points during the scan   */
 
   int     nb_pos;   /* # of pos to save                                 */
   int     nb_det;   /* # of det to save                                 */
@@ -746,7 +745,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.24 2007-03-05 21:45:53 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.25 2007-03-05 22:42:55 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -1214,7 +1213,6 @@ LOCAL void updateScan(SCAN* pscan)
       Debug2(2, "updateScan:%s: clear .CPT subscription (cpt_evid = 0x%x)\n", pscan->name, (int)pscan->cpt_evid);
       if (pscan->cpt_evid) ca_clear_subscription(pscan->cpt_evid);
       pscan->cpt_monitored= FALSE;
-      pscan->all_pts= FALSE;
     }
   } else {
     if(pscan->cpt_monitored==FALSE) {
@@ -1222,7 +1220,6 @@ LOCAL void updateScan(SCAN* pscan)
       if (ca_create_subscription(DBR_LONG, 1, pscan->ccpt, DBE_VALUE, cptMonitor, NULL, &pscan->cpt_evid) == ECA_NORMAL) {
         Debug2(2, "updateScan:%s: cpt_evid=%x\n", pscan->name, (int)pscan->cpt_evid);
         pscan->cpt_monitored=TRUE;
-        pscan->all_pts= FALSE;
       } else {
         Debug1(2, "Unable to post monitor on %s\n", ca_name(pscan->ccpt));
       }
@@ -2284,6 +2281,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       
     if (pscan->old_npts < pscan->npts) {
       writeFailed |= !xdr_setpos(&xdrs, pscan->dims_offset);
+      if (writeFailed) goto cleanup;
       lval = pscan->npts;
       writeFailed |= !xdr_long(&xdrs, &lval);
     }
@@ -2292,6 +2290,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       /* npts changed during scan (possible only for a multidimensional scan) */
       ival = 0;  /*regular= FALSE */
       writeFailed |= !xdr_setpos(&xdrs, pscan->regular_offset);
+      if (writeFailed) goto cleanup;
       writeFailed |= !xdr_int(&xdrs, &ival);
     }
     pscan->old_npts = pscan->npts;
@@ -2301,6 +2300,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       Debug3(15, "saveData:writeScanInProgress(%s): writing offset %ld at loc %ld\n",
         pscan->name, scan_offset, pscan->offset);
       writeFailed |= !xdr_setpos(&xdrs, pscan->offset);
+      if (writeFailed) goto cleanup;
       writeFailed |= !xdr_long(&xdrs, &scan_offset);
       lval = xdr_getpos(&xdrs);
       if (lval == (u_int)(-1)) {writeFailed = TRUE; goto cleanup;}
@@ -2399,6 +2399,7 @@ LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
       for (i=0; i<SCAN_NBP; i++) {
         if ((pscan->rxnv[i]==XXNV_OK) || (pscan->pxnv[i]==XXNV_OK)) {
           writeFailed |= !xdr_setpos(&xdrs, pscan->pxra_fpos[i]);
+          if (writeFailed) goto cleanup;
           writeFailed |= !xdr_vector(&xdrs, (char*)pscan->pxra[i], pscan->npts, 
                      sizeof(double), xdr_double);
         }
@@ -2409,6 +2410,7 @@ LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
       for (i=0; i<SCAN_NBD; i++) {
         if ((pscan->dxnv[i]==XXNV_OK) && pscan->dxda[i]) {
           writeFailed |= !xdr_setpos(&xdrs, pscan->dxda_fpos[i]);
+          if (writeFailed) goto cleanup;
           writeFailed |= !xdr_vector(&xdrs, (char*)pscan->dxda[i], pscan->npts,
                      sizeof(float), xdr_float);
         }
@@ -2416,6 +2418,7 @@ LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
     }
 
     writeFailed |= !xdr_setpos(&xdrs, pscan->cpt_fpos);
+    if (writeFailed) goto cleanup;
     lval = pscan->bcpt;
     writeFailed |= !xdr_long(&xdrs, &lval); 
 
@@ -2443,6 +2446,7 @@ LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
       if (lval == (u_int)(-1)) {writeFailed = TRUE; goto cleanup;}
       writeFailed |= saveExtraPV(&xdrs);
       writeFailed |= !xdr_setpos(&xdrs, pscan->offset_extraPV);
+      if (writeFailed) goto cleanup;
       writeFailed |= !xdr_long(&xdrs, &lval);
 
       sprintf(msg,"Scan saved: %s", pscan->fname);
@@ -2541,7 +2545,6 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
       }
     }
     
-    pscan->all_pts= FALSE;
     pscan->cpt= 0;
       
     /* make sure all requests for units are completed */
@@ -2703,73 +2706,79 @@ LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
   FILE* fd;
   XDR   xdrs;
   epicsTimeStamp now, openTime;
+  bool_t writeFailed = FALSE;
 
-  pscan= pmsg->pscan;
+  pscan = pmsg->pscan;
 
   if ((save_status == STATUS_INACTIVE) || (save_status == STATUS_ACTIVE_FS_ERROR)) {
     return;
   }
 
-  /* process the message */
-
-  if(pmsg->val==0) pscan->all_pts= TRUE;
-  else pscan->all_pts= ((pscan->all_pts) && (pscan->cpt==pmsg->val-1));
-
-  pscan->cpt= pmsg->val;
+  pscan->cpt = pmsg->val;
 
   /* is the scan running ? */
-  if((pscan->data!=0) || (pscan->cpt==0)) {
+  if ((pscan->data!=0) || (pscan->cpt==0)) {
     return;
   }
-  Debug3(2, "saving %s[%ld] to %s\n", pscan->name, pscan->cpt-1, pscan->fname);
+  Debug3(2, "saveData:proc_scan_cpt: saving %s[%ld] to %s\n", pscan->name, pscan->cpt-1, pscan->fname);
     
-  for(i=0; i<SCAN_NBP; i++) {
-    if((pscan->rxnv[i]==XXNV_OK) || (pscan->pxnv[i]==XXNV_OK))
+  for (i=0; i<SCAN_NBP; i++) {
+    if ((pscan->rxnv[i]==XXNV_OK) || (pscan->pxnv[i]==XXNV_OK))
       ca_array_get(DBR_DOUBLE, 1, pscan->crxcv[i], &pscan->rxcv[i]);
   }
-  for(i=0; i<SCAN_NBD; i++) {
-    if(pscan->dxnv[i]==XXNV_OK)
+  for (i=0; i<SCAN_NBD; i++) {
+    if (pscan->dxnv[i]==XXNV_OK)
       ca_array_get(DBR_FLOAT, 1, pscan->cdxcv[i], &pscan->dxcv[i]);
   }
-  if(ca_pend_io(0.5)!=ECA_NORMAL) {
+  if (ca_pend_io(0.5)!=ECA_NORMAL) {
     /* error !!! */
-    printf("saveData: unable to get current values !!!\n");
-    pscan->all_pts= FALSE;
-  } else {
-    epicsTimeGetCurrent(&openTime);
-    fd= fopen(pscan->ffname, "rb+");
-    xdrstdio_create(&xdrs, fd, XDR_ENCODE);
-
-    /* point number  */
-    xdr_setpos(&xdrs, pscan->cpt_fpos);
-    lval= pscan->cpt;
-    xdr_long(&xdrs, &lval);
-    /* positioners and detectors values */
-    if(pscan->nb_pos)
-      for(i=0; i<SCAN_NBP; i++) {
-        if((pscan->rxnv[i]==XXNV_OK) || (pscan->pxnv[i]==XXNV_OK)) {
-          xdr_setpos(&xdrs, pscan->pxra_fpos[i]+(pscan->cpt-1)*sizeof(double));
-          xdr_double(&xdrs, &pscan->rxcv[i]);
-        }
-      }
-    if(pscan->nb_det)
-      for(i=0; i<SCAN_NBD; i++) {
-        if(pscan->dxnv[i]==XXNV_OK) {
-          xdr_setpos(&xdrs, pscan->dxda_fpos[i]+(pscan->cpt-1)*sizeof(float));
-          xdr_float(&xdrs, &pscan->dxcv[i]);
-        }
-      }
-      
-    xdr_destroy(&xdrs);
-    fclose(fd);
-    epicsTimeGetCurrent(&now);
-    Debug2(1, "%s data point written (%.3fs)\n", pscan->name,
-            (float)epicsTimeDiffInSeconds(&now, &openTime));
+    printf("saveData:proc_scan_cpt: unable to get current detector values !!!\n");
+    return;
   }
 
-    epicsTimeGetCurrent(&now);
-  DebugMsg3(2, "%s MSG_SCAN_CPT(%ld)= %f\n", pscan->name, pscan->cpt, 
-            (float)epicsTimeDiffInSeconds(&now, &pmsg->time));
+  epicsTimeGetCurrent(&openTime);
+  fd = fopen(pscan->ffname, "rb+");
+  if (fd == NULL) {
+      printf("saveData:proc_scan_cpt: can't open data file!!\n");
+      return;
+  }
+  xdrstdio_create(&xdrs, fd, XDR_ENCODE);
+
+  /* point number  */
+  writeFailed |= !xdr_setpos(&xdrs, pscan->cpt_fpos);
+  if (writeFailed) goto cleanup;
+  lval = pscan->cpt;
+  writeFailed |= !xdr_long(&xdrs, &lval);
+  if (writeFailed) goto cleanup;
+
+  /* positioners and detectors values */
+  if (pscan->nb_pos) {
+    for (i=0; i<SCAN_NBP; i++) {
+      if ((pscan->rxnv[i]==XXNV_OK) || (pscan->pxnv[i]==XXNV_OK)) {
+        writeFailed |= !xdr_setpos(&xdrs, pscan->pxra_fpos[i]+(pscan->cpt-1)*sizeof(double));
+        if (writeFailed) goto cleanup;
+        writeFailed |= !xdr_double(&xdrs, &pscan->rxcv[i]);
+      }
+    }
+  }
+  if (writeFailed) goto cleanup;
+  if (pscan->nb_det) {
+    for (i=0; i<SCAN_NBD; i++) {
+      if (pscan->dxnv[i]==XXNV_OK) {
+        writeFailed |= !xdr_setpos(&xdrs, pscan->dxda_fpos[i]+(pscan->cpt-1)*sizeof(float));
+        if (writeFailed) goto cleanup;
+        writeFailed |= !xdr_float(&xdrs, &pscan->dxcv[i]);
+      }
+      if (writeFailed) goto cleanup;
+    }
+  }
+
+cleanup:
+  xdr_destroy(&xdrs);
+  fclose(fd);
+  epicsTimeGetCurrent(&now);
+  Debug2(1, "saveData:proc_scan_cpt:%s data point written (%.3fs)\n", pscan->name,
+          (float)epicsTimeDiffInSeconds(&now, &openTime));
 }
 
 
