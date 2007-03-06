@@ -750,7 +750,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.27 2007-03-06 05:30:39 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.28 2007-03-06 05:40:46 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -2103,7 +2103,7 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
         fclose(fd);
       }
       printf("saveData:writeScanRecInProgress(%s): can't open data file!!\n", pscan->name);
-      sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
+      sprintf(msg, "!! Can't open file '%s'", pscan->fname);
       msg[MAX_STRING_SIZE-1] = '\0';
       sendUserMessage(msg);
       save_status = STATUS_ERROR;
@@ -2342,7 +2342,7 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
   fd = fopen(pscan->ffname, "rb+");
   if ((fd == NULL) || (fileStatus(pscan->ffname) == ERROR)) {
     printf("saveData:writeScanRecCompleted(%s): can't open data file!!\n", pscan->name);
-    sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
+    sprintf(msg, "!! Can't open file '%s'", pscan->fname);
     msg[MAX_STRING_SIZE-1]= '\0';
     sendUserMessage(msg);
     save_status = STATUS_ERROR;
@@ -2390,7 +2390,7 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
             sprintf(msg, "Allocated mem for %s.%s", pscan->name, dxda[i]);
           } else {
             printf("saveData:writeScanRecCompleted: Can't alloc array for det %s.%s\n", pscan->name, dxda[i]);
-            sprintf(msg, "WARNING no mem for %s.%s", pscan->name, dxda[i]);
+            sprintf(msg, "!! No mem for %s.%s", pscan->name, dxda[i]);
           }
           msg[MAX_STRING_SIZE-1] = '\0';
           sendUserMessage(msg);
@@ -2408,7 +2408,7 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
   }
   if (ca_pend_io(1.0)!=ECA_NORMAL) {
     Debug0(3, "saveData:writeScanRecCompleted: unable to get all valid arrays \n");
-    sprintf(msg, "Warning!! can't get data");
+    sprintf(msg, "!! Can't get data");
     msg[MAX_STRING_SIZE-1] = '\0';
     sendUserMessage(msg);
     return(-1);
@@ -2770,7 +2770,7 @@ LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
   fd = fopen(pscan->ffname, "rb+");
   if (fd == NULL) {
       printf("saveData:proc_scan_cpt(%s): can't open data file!!\n", pscan->name);
-      sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
+      sprintf(msg, "!! Can't open file '%s'", pscan->fname);
       msg[MAX_STRING_SIZE-1] = '\0';
       sendUserMessage(msg);
       save_status = STATUS_ERROR;
@@ -3017,7 +3017,7 @@ LOCAL void proc_scan_dxnv(SCAN_INDEX_MSG* pmsg)
     if (pscan->dxda[i] == NULL) pscan->dxda[i]=(float*)calloc(pscan->mpts, sizeof(float));
     if (pscan->dxda[i] == NULL) {
       printf("saveData: Can't alloc array for det %s.%s\n", pscan->name, dxda[i]);
-      sprintf(msg, "WARNING no mem for %s.%s", pscan->name, dxda[i]);
+      sprintf(msg, "!! No mem for %s.%s", pscan->name, dxda[i]);
       msg[MAX_STRING_SIZE-1]= '\0';
       sendUserMessage(msg);
     }
