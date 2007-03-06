@@ -108,7 +108,8 @@ record(mbbi, "$(P)saveData_status") {
   field(DTYP, "Soft Channel")
   field(ZRST, "Inactive")
   field(ONST, "Active")
-  field(TWST, "Problem!")
+  field(TWST, "Mount err")
+  field(THST, "I/O err")
 }
 
 record(seq, "$(P)scanPauseSEQ") {
