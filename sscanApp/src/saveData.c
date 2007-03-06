@@ -750,7 +750,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.28 2007-03-06 05:40:46 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.29 2007-03-06 05:50:12 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -2111,11 +2111,6 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       return(-1);
     }
 
-    if (save_status == STATUS_ERROR) {
-      save_status = STATUS_ACTIVE_OK;
-      ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
-    }
-
     if (!(pscan->first_scan)) {
       if (isRetry && pscan->savedSeekPos) {
         /*
@@ -2312,7 +2307,10 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       pscan->offset = lval;
     }
 
-
+  if (save_status == STATUS_ERROR) {
+    save_status = STATUS_ACTIVE_OK;
+    ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
+  }
   if (isRetry) {
       printf("saveData:writeScanRecCompleted(%s): retry succeeded\n", pscan->name);
       sprintf(msg, "Retry succeeded for '%s'", pscan->fname);
@@ -2349,10 +2347,7 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
     ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);    if (fd) fclose(fd);
     return(-1);
   }
-  if (save_status == STATUS_ERROR) {
-    save_status = STATUS_ACTIVE_OK;
-    ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
-  }
+
   xdrstdio_create(&xdrs, fd, XDR_ENCODE);
 
   /* The scan just finished. update buffers and save scan */
@@ -2473,10 +2468,17 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
     sendUserMessage(msg);
   }
 
+  if (save_status == STATUS_ERROR) {
+    save_status = STATUS_ACTIVE_OK;
+    ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
+  }
   if (isRetry) {
     printf("saveData:writeScanRecCompleted(%s): retry succeeded\n", pscan->name);
     sprintf(msg, "Retry succeeded for '%s'", pscan->name);
     msg[MAX_STRING_SIZE-1]= '\0';
+    sendUserMessage(msg);
+  } else {
+    sprintf(msg,"Wrote data to '%s'", pscan->fname);
     sendUserMessage(msg);
   }
 
@@ -2777,10 +2779,7 @@ LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
       ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
       return;
   }
-  if (save_status == STATUS_ERROR) {
-    save_status = STATUS_ACTIVE_OK;
-    ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
-  }
+
   xdrstdio_create(&xdrs, fd, XDR_ENCODE);
 
   /* point number  */
@@ -2810,6 +2809,14 @@ LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
       }
       if (writeFailed) goto cleanup;
     }
+  }
+
+  if (save_status == STATUS_ERROR) {
+      sprintf(msg, "Wrote data to '%s'", pscan->fname);
+      msg[MAX_STRING_SIZE-1] = '\0';
+      sendUserMessage(msg);
+      save_status = STATUS_ACTIVE_OK;
+      ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
   }
 
 cleanup:
