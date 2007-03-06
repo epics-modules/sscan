@@ -750,7 +750,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.26 2007-03-06 03:48:15 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.27 2007-03-06 05:30:39 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -2312,6 +2312,17 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       pscan->offset = lval;
     }
 
+
+  if (isRetry) {
+      printf("saveData:writeScanRecCompleted(%s): retry succeeded\n", pscan->name);
+      sprintf(msg, "Retry succeeded for '%s'", pscan->fname);
+      msg[MAX_STRING_SIZE-1]= '\0';
+      sendUserMessage(msg);
+  } else {
+    sprintf(msg,"Wrote data to '%s'", pscan->fname);
+    sendUserMessage(msg);
+  }
+
 cleanup:
     xdr_destroy(&xdrs);
     fclose(fd);
@@ -2328,140 +2339,151 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
   long j, lval;
   bool_t writeFailed = FALSE;
 
-    fd = fopen(pscan->ffname, "rb+");
-    if ((fd == NULL) || (fileStatus(pscan->ffname) == ERROR)) {
-      printf("saveData:writeScanRecCompleted: can't open data file!!\n");
-      sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
-      msg[MAX_STRING_SIZE-1]= '\0';
-      sendUserMessage(msg);
-      if (fd) fclose(fd);
-      return(-1);
-    }
+  fd = fopen(pscan->ffname, "rb+");
+  if ((fd == NULL) || (fileStatus(pscan->ffname) == ERROR)) {
+    printf("saveData:writeScanRecCompleted(%s): can't open data file!!\n", pscan->name);
+    sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
+    msg[MAX_STRING_SIZE-1]= '\0';
+    sendUserMessage(msg);
+    save_status = STATUS_ERROR;
+    ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);    if (fd) fclose(fd);
+    return(-1);
+  }
+  if (save_status == STATUS_ERROR) {
+    save_status = STATUS_ACTIVE_OK;
+    ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
+  }
+  xdrstdio_create(&xdrs, fd, XDR_ENCODE);
 
-    xdrstdio_create(&xdrs, fd, XDR_ENCODE);
+  /* The scan just finished. update buffers and save scan */
+  Debug2(3, "saveData:writeScanRecCompleted: writing %s to %s\n", pscan->name, pscan->fname);
 
-    /* The scan just finished. update buffers and save scan */
-    Debug2(3, "saveData:writeScanRecCompleted: writing %s to %s\n", pscan->name, pscan->fname);
+  /* get cpt that goes with buffered data arrays */
+  pscan->cpt = pscan->bcpt;
+  Debug2(5, "saveData:writeScanRecCompleted(%s): bcpt=%ld\n", pscan->name, pscan->bcpt);
 
-    /* get cpt that goes with buffered data arrays */
-    pscan->cpt = pscan->bcpt;
-    Debug2(5, "saveData:writeScanRecCompleted(%s): bcpt=%ld\n", pscan->name, pscan->bcpt);
-
-    /* Get all valid arrays */
-    if (pscan->nb_pos) {
-      for (i=0; i<SCAN_NBP; i++) {
-        if ((pscan->pxnv[i]==XXNV_OK) || (pscan->rxnv[i]==XXNV_OK)) {
-          status = ca_array_get(DBR_DOUBLE, pscan->bcpt, pscan->cpxra[i], pscan->pxra[i]);
-          if (status != ECA_NORMAL) {
-            printf("saveData:writeScanRecCompleted: ca_array_get_callback returned %d\n", status);
-          }
-          if (pscan->bcpt < pscan->npts) { /* zero unacquired data points */
-            for (j=pscan->bcpt; j<pscan->npts; j++) pscan->pxra[i][j] = 0.0;
-          }
+  /* Get all valid arrays */
+  if (pscan->nb_pos) {
+    for (i=0; i<SCAN_NBP; i++) {
+      if ((pscan->pxnv[i]==XXNV_OK) || (pscan->rxnv[i]==XXNV_OK)) {
+        status = ca_array_get(DBR_DOUBLE, pscan->bcpt, pscan->cpxra[i], pscan->pxra[i]);
+        if (status != ECA_NORMAL) {
+          printf("saveData:writeScanRecCompleted: ca_array_get_callback returned %d\n", status);
+        }
+        if (pscan->bcpt < pscan->npts) { /* zero unacquired data points */
+          for (j=pscan->bcpt; j<pscan->npts; j++) pscan->pxra[i][j] = 0.0;
         }
       }
     }
-    if (pscan->nb_det) {
-      for (i=0; i<SCAN_NBD; i++) {
+  }
+  if (pscan->nb_det) {
+    for (i=0; i<SCAN_NBD; i++) {
 #if ALLOC_ALL_DETS
-        if (pscan->dxnv[i]==XXNV_OK) {
-          ca_array_get(DBR_FLOAT, pscan->bcpt, pscan->cdxda[i], pscan->dxda[i]);
-        }
+      if (pscan->dxnv[i]==XXNV_OK) {
+        ca_array_get(DBR_FLOAT, pscan->bcpt, pscan->cdxda[i], pscan->dxda[i]);
+      }
 #else
-        if (pscan->dxnv[i]==XXNV_OK) {
-          if (!pscan->dxda[i]) {
-            if ((pscan->dxda[i] = (float*)calloc(pscan->mpts, sizeof(float))) != NULL) {
-              printf("saveData:writeScanRecCompleted: Allocated array for det %s.%s\n", pscan->name, dxda[i]);
-              sprintf(msg, "Allocated mem for %s.%s", pscan->name, dxda[i]);
-            } else {
-              printf("saveData:writeScanRecCompleted: Can't alloc array for det %s.%s\n", pscan->name, dxda[i]);
-              sprintf(msg, "WARNING no mem for %s.%s", pscan->name, dxda[i]);
-            }
-            msg[MAX_STRING_SIZE-1] = '\0';
-            sendUserMessage(msg);
+      if (pscan->dxnv[i]==XXNV_OK) {
+        if (!pscan->dxda[i]) {
+          if ((pscan->dxda[i] = (float*)calloc(pscan->mpts, sizeof(float))) != NULL) {
+            printf("saveData:writeScanRecCompleted: Allocated array for det %s.%s\n", pscan->name, dxda[i]);
+            sprintf(msg, "Allocated mem for %s.%s", pscan->name, dxda[i]);
+          } else {
+            printf("saveData:writeScanRecCompleted: Can't alloc array for det %s.%s\n", pscan->name, dxda[i]);
+            sprintf(msg, "WARNING no mem for %s.%s", pscan->name, dxda[i]);
           }
-          if (pscan->dxda[i]) {
-            status = ca_array_get(DBR_FLOAT, pscan->bcpt, pscan->cdxda[i], pscan->dxda[i]);
-            if (status != ECA_NORMAL) printf("saveData:writeScanRecCompleted: ca_array_get returned error for det %d \n", i);
-          }
+          msg[MAX_STRING_SIZE-1] = '\0';
+          sendUserMessage(msg);
         }
+        if (pscan->dxda[i]) {
+          status = ca_array_get(DBR_FLOAT, pscan->bcpt, pscan->cdxda[i], pscan->dxda[i]);
+          if (status != ECA_NORMAL) printf("saveData:writeScanRecCompleted: ca_array_get returned error for det %d \n", i);
+        }
+      }
 #endif
-        if (pscan->dxda[i] && (pscan->bcpt < pscan->npts)) { /* zero unacquired data points */
-          for (j=pscan->bcpt; j<pscan->npts; j++) pscan->dxda[i][j] = 0.0;
-        }
+      if (pscan->dxda[i] && (pscan->bcpt < pscan->npts)) { /* zero unacquired data points */
+        for (j=pscan->bcpt; j<pscan->npts; j++) pscan->dxda[i][j] = 0.0;
       }
     }
-    if (ca_pend_io(1.0)!=ECA_NORMAL) {
-      Debug0(3, "saveData:writeScanRecCompleted: unable to get all valid arrays \n");
-      sprintf(msg, "Warning!! can't get data");
-      msg[MAX_STRING_SIZE-1] = '\0';
-      sendUserMessage(msg);
-      return(-1);
+  }
+  if (ca_pend_io(1.0)!=ECA_NORMAL) {
+    Debug0(3, "saveData:writeScanRecCompleted: unable to get all valid arrays \n");
+    sprintf(msg, "Warning!! can't get data");
+    msg[MAX_STRING_SIZE-1] = '\0';
+    sendUserMessage(msg);
+    return(-1);
+  }
+
+  /* Write the positioner arrays */
+  if (pscan->nb_pos) {
+    for (i=0; i<SCAN_NBP; i++) {
+      if ((pscan->rxnv[i]==XXNV_OK) || (pscan->pxnv[i]==XXNV_OK)) {
+        writeFailed |= !xdr_setpos(&xdrs, pscan->pxra_fpos[i]);
+        if (writeFailed) goto cleanup;
+        writeFailed |= !xdr_vector(&xdrs, (char*)pscan->pxra[i], pscan->npts, 
+                   sizeof(double), xdr_double);
+      }
+    }
+  }
+  /* Write the detector arrays */
+  if (pscan->nb_det) {
+    for (i=0; i<SCAN_NBD; i++) {
+      if ((pscan->dxnv[i]==XXNV_OK) && pscan->dxda[i]) {
+        writeFailed |= !xdr_setpos(&xdrs, pscan->dxda_fpos[i]);
+        if (writeFailed) goto cleanup;
+        writeFailed |= !xdr_vector(&xdrs, (char*)pscan->dxda[i], pscan->npts,
+                   sizeof(float), xdr_float);
+      }
+    }
+  }
+
+  writeFailed |= !xdr_setpos(&xdrs, pscan->cpt_fpos);
+  if (writeFailed) goto cleanup;
+  lval = pscan->bcpt;
+  writeFailed |= !xdr_long(&xdrs, &lval); 
+
+
+  if (pscan->first_scan) {
+    /* Write extra pvs at the end of the file. */
+    if (isRetry && pscan->savedSeekPos) {
+      /*
+       * We've tried before and failed to write this scan, and any writing that did
+       * succeed would have changed the end-of-file position.  Luckily, we saved
+       * that position the first time we tried to write extra PV's.  Go there now.
+       */
+       if (fseek(fd, pscan->savedSeekPos, SEEK_SET)==EOF) {fclose(fd); return(-1);}
+    } else {
+      /*
+       * Extra PV's get tacked on at the end of the file.  Remember where that is,
+       * in case we run into trouble and have to retry.
+       */
+      if (fseek(fd, 0, SEEK_END)==EOF) {fclose(fd); return(-1);;}
+      pscan->savedSeekPos = ftell(fd);
+      if (pscan->savedSeekPos == EOF) {pscan->savedSeekPos = 0; fclose(fd); return(-1);}
     }
 
-    /* Write the positioner arrays */
-    if (pscan->nb_pos) {
-      for (i=0; i<SCAN_NBP; i++) {
-        if ((pscan->rxnv[i]==XXNV_OK) || (pscan->pxnv[i]==XXNV_OK)) {
-          writeFailed |= !xdr_setpos(&xdrs, pscan->pxra_fpos[i]);
-          if (writeFailed) goto cleanup;
-          writeFailed |= !xdr_vector(&xdrs, (char*)pscan->pxra[i], pscan->npts, 
-                     sizeof(double), xdr_double);
-        }
-      }
-    }
-    /* Write the detector arrays */
-    if (pscan->nb_det) {
-      for (i=0; i<SCAN_NBD; i++) {
-        if ((pscan->dxnv[i]==XXNV_OK) && pscan->dxda[i]) {
-          writeFailed |= !xdr_setpos(&xdrs, pscan->dxda_fpos[i]);
-          if (writeFailed) goto cleanup;
-          writeFailed |= !xdr_vector(&xdrs, (char*)pscan->dxda[i], pscan->npts,
-                     sizeof(float), xdr_float);
-        }
-      }
-    }
-
-    writeFailed |= !xdr_setpos(&xdrs, pscan->cpt_fpos);
+    lval = xdr_getpos(&xdrs);
+    if (lval == (u_int)(-1)) {writeFailed = TRUE; goto cleanup;}
+    writeFailed |= saveExtraPV(&xdrs);
+    writeFailed |= !xdr_setpos(&xdrs, pscan->offset_extraPV);
     if (writeFailed) goto cleanup;
-    lval = pscan->bcpt;
-    writeFailed |= !xdr_long(&xdrs, &lval); 
+    writeFailed |= !xdr_long(&xdrs, &lval);
 
+    sprintf(msg,"Done writing '%s'", pscan->fname);
+    sendUserMessage(msg);
+  }
 
-    if (pscan->first_scan) {
-      /* Write extra pvs at the end of the file. */
-      if (isRetry && pscan->savedSeekPos) {
-        /*
-         * We've tried before and failed to write this scan, and any writing that did
-         * succeed would have changed the end-of-file position.  Luckily, we saved
-         * that position the first time we tried to write extra PV's.  Go there now.
-         */
-         if (fseek(fd, pscan->savedSeekPos, SEEK_SET)==EOF) {fclose(fd); return(-1);}
-      } else {
-        /*
-         * Extra PV's get tacked on at the end of the file.  Remember where that is,
-         * in case we run into trouble and have to retry.
-         */
-        if (fseek(fd, 0, SEEK_END)==EOF) {fclose(fd); return(-1);;}
-        pscan->savedSeekPos = ftell(fd);
-        if (pscan->savedSeekPos == EOF) {pscan->savedSeekPos = 0; fclose(fd); return(-1);}
-      }
-
-      lval = xdr_getpos(&xdrs);
-      if (lval == (u_int)(-1)) {writeFailed = TRUE; goto cleanup;}
-      writeFailed |= saveExtraPV(&xdrs);
-      writeFailed |= !xdr_setpos(&xdrs, pscan->offset_extraPV);
-      if (writeFailed) goto cleanup;
-      writeFailed |= !xdr_long(&xdrs, &lval);
-
-      sprintf(msg,"Scan saved: %s", pscan->fname);
-      sendUserMessage(msg);
-    }
+  if (isRetry) {
+    printf("saveData:writeScanRecCompleted(%s): retry succeeded\n", pscan->name);
+    sprintf(msg, "Retry succeeded for '%s'", pscan->name);
+    msg[MAX_STRING_SIZE-1]= '\0';
+    sendUserMessage(msg);
+  }
 
 cleanup:
-    xdr_destroy(&xdrs);
-    fclose(fd);
-    return(writeFailed?1:0);
+  xdr_destroy(&xdrs);
+  fclose(fd);
+  return(writeFailed?1:0);
 }
 
 
@@ -2586,7 +2608,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
       }
 
       /* Tell user what we're doing */
-      sprintf(msg, "saving: %s", pscan->fname);
+      sprintf(msg, "Writing to '%s'", pscan->fname);
       msg[MAX_STRING_SIZE-1]= '\0';
       sendUserMessage(msg);
 
@@ -2714,6 +2736,7 @@ LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
   XDR   xdrs;
   epicsTimeStamp now, openTime;
   bool_t writeFailed = FALSE;
+  char  msg[200];
 
   pscan = pmsg->pscan;
 
@@ -2746,8 +2769,17 @@ LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
   epicsTimeGetCurrent(&openTime);
   fd = fopen(pscan->ffname, "rb+");
   if (fd == NULL) {
-      printf("saveData:proc_scan_cpt: can't open data file!!\n");
+      printf("saveData:proc_scan_cpt(%s): can't open data file!!\n", pscan->name);
+      sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
+      msg[MAX_STRING_SIZE-1] = '\0';
+      sendUserMessage(msg);
+      save_status = STATUS_ERROR;
+      ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
       return;
+  }
+  if (save_status == STATUS_ERROR) {
+    save_status = STATUS_ACTIVE_OK;
+    ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
   }
   xdrstdio_create(&xdrs, fd, XDR_ENCODE);
 
