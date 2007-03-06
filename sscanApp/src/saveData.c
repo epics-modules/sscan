@@ -112,10 +112,15 @@
  *                    relative to a locally defined mount point.
  *     03-30-06  tmm  v1.22 Clear unused data points before writing
  *     05-19-06  tmm  v1.23 Changed test filename from "rix:_" to "rix_"
+ *     03-02-07  tmm  v1.24 Check file writes; retry if they fail
+ *     03-05-07  tmm  v1.25 Extend file-write check to point-by-point writing, but don't
+ *                    retry point-by-point.  Deleted all references to pscan->all_pts,
+ *                    which used to indicate that all data had been written point-by-point,
+ *                    so array write was not needed.  Now we always do the array write.
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.24.0"
+#define SAVE_DATA_VERSION   "1.25.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -745,7 +750,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.25 2007-03-05 22:42:55 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.26 2007-03-06 03:48:15 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -2074,7 +2079,7 @@ LOCAL void reset_old_npts(SCAN *pscan) {
 }
 
 /* Write a scan to the data file.  Return zero if successful. */
-LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
+LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
 {
   FILE *fd = NULL;
   XDR   xdrs;
@@ -2087,17 +2092,17 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
   bool_t writeFailed = FALSE;
 
     /* Attempt to open data file */
-    Debug1(3, "saveData:writeScanInProgress: Opening file '%s'\n", pscan->ffname);
+    Debug1(3, "saveData:writeScanRecInProgress: Opening file '%s'\n", pscan->ffname);
     epicsTimeGetCurrent(&openTime);
     fd = fopen(pscan->ffname, pscan->first_scan ? "wb+" : "rb+");
 
     if ((fd==NULL) || (fileStatus(pscan->ffname) == ERROR)) {
       if (fd!=NULL) {
-        printf("saveData:writeScanInProgress: stat(%s) set errno to %d ('%s')\n", 
+        printf("saveData:writeScanRecInProgress: stat(%s) set errno to %d ('%s')\n", 
           pscan->ffname, errno, strerror(errno));
         fclose(fd);
       }
-      printf("saveData:writeScanInProgress(%s): can't open data file!!\n", pscan->name);
+      printf("saveData:writeScanRecInProgress(%s): can't open data file!!\n", pscan->name);
       sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
       msg[MAX_STRING_SIZE-1] = '\0';
       sendUserMessage(msg);
@@ -2131,7 +2136,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
     if (pscan->first_scan) {
       /*----------------------------------------------------------------*/
       /* Write the file header */
-      Debug0(3, "saveData:writeScanInProgress: Writing file header\n");
+      Debug0(3, "saveData:writeScanRecInProgress: Writing file header\n");
       writeFailed |= !xdr_float(&xdrs, &fileFormatVersion); /* file format version      */
       writeFailed |= !xdr_long(&xdrs, &pscan->counter);     /* scan number              */
       writeFailed |= !xdr_short(&xdrs, &pscan->scan_dim);   /* rank of the data         */
@@ -2150,7 +2155,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       lval = 0;
       writeFailed |= !xdr_long(&xdrs, &lval);
       if (writeFailed) goto cleanup;
-      Debug0(3, "saveData:writeScanInProgress: File Header written\n");
+      Debug0(3, "saveData:writeScanRecInProgress: File Header written\n");
     }
 
     /* the offset of this scan                                          */
@@ -2159,7 +2164,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
 
     /*------------------------------------------------------------------*/
     /* Scan header                                                      */
-    Debug0(3, "saveData:writeScanInProgress: Writing per-scan header\n");
+    Debug0(3, "saveData:writeScanRecInProgress: Writing per-scan header\n");
     writeFailed |= !xdr_short(&xdrs, &pscan->scan_dim); /* scan dimension               */
     lval = pscan->npts;
     writeFailed |= !xdr_long(&xdrs, &lval);             /* # of pts                     */
@@ -2172,7 +2177,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       lval = xdr_getpos(&xdrs);
       if (lval == (u_int)(-1)) {writeFailed = TRUE; goto cleanup;}
       pscan->nxt->offset = lval; /* tell inner scan where to write its offset */
-      Debug3(15, "saveData:writeScanInProgress(%s) telling %s to write its next offset at loc %ld\n",
+      Debug3(15, "saveData:writeScanRecInProgress(%s) telling %s to write its next offset at loc %ld\n",
         pscan->name, pscan->nxt->name, lval);
       writeFailed |= !xdr_setpos(&xdrs, lval+pscan->npts*sizeof(long));
     }
@@ -2180,7 +2185,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
 
     /*------------------------------------------------------------------*/
     /* Scan info                                                        */
-    Debug0(3, "saveData:writeScanInProgress: Save scan info\n");
+    Debug0(3, "saveData:writeScanRecInProgress: Save scan info\n");
     cptr = pscan->name;
     writeFailed |= !xdr_counted_string(&xdrs, &cptr);   /* scan name                    */
 
@@ -2198,7 +2203,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
     if (pscan->nb_pos) {
       for (i=0; i<SCAN_NBP; i++) {
         if ((pscan->rxnv[i]==XXNV_OK) || (pscan->pxnv[i]==XXNV_OK)) {
-          Debug1(3, "saveData:writeScanInProgress: Pos[%d] info\n", i);
+          Debug1(3, "saveData:writeScanRecInProgress: Pos[%d] info\n", i);
           writeFailed |= !xdr_int(&xdrs, &i);           /* positioner number            */
           cptr = pscan->pxpv[i];
           writeFailed |= !xdr_counted_string(&xdrs, &cptr);/* positioner name           */
@@ -2222,7 +2227,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
     if (pscan->nb_det) {
       for (i=0; i<SCAN_NBD; i++) {
         if (pscan->dxnv[i]==XXNV_OK) {
-          Debug1(3, "saveData:writeScanInProgress: Det[%d] info\n", i);
+          Debug1(3, "saveData:writeScanRecInProgress: Det[%d] info\n", i);
           writeFailed |= !xdr_int(&xdrs, &i);              /* detector number           */
           cptr = pscan->dxpv[i];
           writeFailed |= !xdr_counted_string(&xdrs, &cptr);/* detector name             */
@@ -2238,7 +2243,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
     if (pscan->nb_trg) {
       for (i=0; i<SCAN_NBT; i++) {
         if (pscan->txnv[i]==XXNV_OK) {
-          Debug1(3, "saveData:writeScanInProgress: Trg[%d] info\n", i);
+          Debug1(3, "saveData:writeScanRecInProgress: Trg[%d] info\n", i);
           writeFailed |= !xdr_int(&xdrs, &i);               /* trigger number           */
           cptr = pscan->txpv[i];
           writeFailed |= !xdr_counted_string(&xdrs, &cptr); /* trigger name             */
@@ -2255,7 +2260,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       /* calculate file space required for nb_pos positioners                          */
       for (i=0; i<SCAN_NBP; i++) {
         if ((pscan->rxnv[i]==XXNV_OK) || (pscan->pxnv[i]==XXNV_OK)) {
-          Debug1(3, "saveData:writeScanInProgress: Allocate space for Pos[%d]\n", i);
+          Debug1(3, "saveData:writeScanRecInProgress: Allocate space for Pos[%d]\n", i);
           pscan->pxra_fpos[i] = lval+data_size;
           data_size += pscan->npts*sizeof(double);
         }
@@ -2265,7 +2270,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       /* calculate file space required for nb_det detectors                            */
       for (i=0; i<SCAN_NBD; i++) {
         if (pscan->dxnv[i]==XXNV_OK) {
-          Debug1(3, "saveData:writeScanInProgress: Allocate space for Det[%d]\n", i);
+          Debug1(3, "saveData:writeScanRecInProgress: Allocate space for Det[%d]\n", i);
           pscan->dxda_fpos[i] = lval+data_size;
           data_size += pscan->npts*sizeof(float);
         }
@@ -2297,7 +2302,7 @@ LOCAL int writeScanInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
 
 
     if (pscan->first_scan==FALSE) {
-      Debug3(15, "saveData:writeScanInProgress(%s): writing offset %ld at loc %ld\n",
+      Debug3(15, "saveData:writeScanRecInProgress(%s): writing offset %ld at loc %ld\n",
         pscan->name, scan_offset, pscan->offset);
       writeFailed |= !xdr_setpos(&xdrs, pscan->offset);
       if (writeFailed) goto cleanup;
@@ -2314,7 +2319,7 @@ cleanup:
 }
 
 /* Write the last or only scan to the data file.  Return zero if successful. */
-LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
+LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
 {
   FILE *fd = NULL;
   XDR   xdrs;
@@ -2325,7 +2330,7 @@ LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
 
     fd = fopen(pscan->ffname, "rb+");
     if ((fd == NULL) || (fileStatus(pscan->ffname) == ERROR)) {
-      printf("saveData:writeScanCompleted: can't open data file!!\n");
+      printf("saveData:writeScanRecCompleted: can't open data file!!\n");
       sprintf(msg, "Warning!! can't open file '%s'", pscan->fname);
       msg[MAX_STRING_SIZE-1]= '\0';
       sendUserMessage(msg);
@@ -2336,11 +2341,11 @@ LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
     xdrstdio_create(&xdrs, fd, XDR_ENCODE);
 
     /* The scan just finished. update buffers and save scan */
-    Debug2(3, "saveData:writeScanCompleted: writing %s to %s\n", pscan->name, pscan->fname);
+    Debug2(3, "saveData:writeScanRecCompleted: writing %s to %s\n", pscan->name, pscan->fname);
 
     /* get cpt that goes with buffered data arrays */
     pscan->cpt = pscan->bcpt;
-    Debug2(5, "saveData:writeScanCompleted(%s): bcpt=%ld\n", pscan->name, pscan->bcpt);
+    Debug2(5, "saveData:writeScanRecCompleted(%s): bcpt=%ld\n", pscan->name, pscan->bcpt);
 
     /* Get all valid arrays */
     if (pscan->nb_pos) {
@@ -2348,7 +2353,7 @@ LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
         if ((pscan->pxnv[i]==XXNV_OK) || (pscan->rxnv[i]==XXNV_OK)) {
           status = ca_array_get(DBR_DOUBLE, pscan->bcpt, pscan->cpxra[i], pscan->pxra[i]);
           if (status != ECA_NORMAL) {
-            printf("saveData:writeScanCompleted: ca_array_get_callback returned %d\n", status);
+            printf("saveData:writeScanRecCompleted: ca_array_get_callback returned %d\n", status);
           }
           if (pscan->bcpt < pscan->npts) { /* zero unacquired data points */
             for (j=pscan->bcpt; j<pscan->npts; j++) pscan->pxra[i][j] = 0.0;
@@ -2366,10 +2371,10 @@ LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
         if (pscan->dxnv[i]==XXNV_OK) {
           if (!pscan->dxda[i]) {
             if ((pscan->dxda[i] = (float*)calloc(pscan->mpts, sizeof(float))) != NULL) {
-              printf("saveData:writeScanCompleted: Allocated array for det %s.%s\n", pscan->name, dxda[i]);
+              printf("saveData:writeScanRecCompleted: Allocated array for det %s.%s\n", pscan->name, dxda[i]);
               sprintf(msg, "Allocated mem for %s.%s", pscan->name, dxda[i]);
             } else {
-              printf("saveData:writeScanCompleted: Can't alloc array for det %s.%s\n", pscan->name, dxda[i]);
+              printf("saveData:writeScanRecCompleted: Can't alloc array for det %s.%s\n", pscan->name, dxda[i]);
               sprintf(msg, "WARNING no mem for %s.%s", pscan->name, dxda[i]);
             }
             msg[MAX_STRING_SIZE-1] = '\0';
@@ -2377,7 +2382,7 @@ LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
           }
           if (pscan->dxda[i]) {
             status = ca_array_get(DBR_FLOAT, pscan->bcpt, pscan->cdxda[i], pscan->dxda[i]);
-            if (status != ECA_NORMAL) printf("saveData:writeScanCompleted: ca_array_get returned error for det %d \n", i);
+            if (status != ECA_NORMAL) printf("saveData:writeScanRecCompleted: ca_array_get returned error for det %d \n", i);
           }
         }
 #endif
@@ -2387,7 +2392,7 @@ LOCAL int writeScanCompleted(SCAN *pscan, int isRetry)
       }
     }
     if (ca_pend_io(1.0)!=ECA_NORMAL) {
-      Debug0(3, "saveData:writeScanCompleted: unable to get all valid arrays \n");
+      Debug0(3, "saveData:writeScanRecCompleted: unable to get all valid arrays \n");
       sprintf(msg, "Warning!! can't get data");
       msg[MAX_STRING_SIZE-1] = '\0';
       sendUserMessage(msg);
@@ -2611,7 +2616,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 
     pscan->savedSeekPos = 0;
     for (status = -1, retries=0; status && retries<=saveData_MaxRetries; retries++) {
-      status = writeScanInProgress(pscan, pmsg->stamp, retries);
+      status = writeScanRecInProgress(pscan, pmsg->stamp, retries);
       if (status) {
         if (retries<saveData_MaxRetries) {
           printf("saveData: ...will retry in %d seconds\n", saveData_RetryDelayInSeconds);
@@ -2641,13 +2646,15 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
     epicsTimeGetCurrent(&openTime);
     pscan->savedSeekPos = 0;
     for (status = -1, retries=0; status && retries<=saveData_MaxRetries; retries++) {
-      status = writeScanCompleted(pscan, retries);
+      status = writeScanRecCompleted(pscan, retries);
       if (status) {
         if (retries<saveData_MaxRetries) {
           printf("saveData: ...will retry in %d seconds\n", saveData_RetryDelayInSeconds);
           epicsThreadSleep((double)saveData_RetryDelayInSeconds);
         } else {
+            printf("saveData: *******************************************\n");
             printf("saveData: too many retries; abandoning data from scan '%s'\n", pscan->name);
+            printf("saveData: *******************************************\n\n");
         }
       }
     }
