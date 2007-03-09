@@ -48,6 +48,7 @@ of this distribution.
 #include <caeventmask.h>
 #include <tsDefs.h>
 #include <epicsExport.h>
+#include <epicsExit.h>
 #include "recDynLink.h"
 
 volatile int recDynINPCallPendEvent = 1;
@@ -93,7 +94,7 @@ static short mapNewToOld[newDBR_ENUM+1] = {
 
 int   recDynLinkQsize = 256;
 epicsExportAddress(int, recDynLinkQsize);
-   
+LOCAL int shutting_down = 0;
 LOCAL epicsThreadId inpTaskId=NULL;
 LOCAL epicsThreadId	outTaskId=NULL;
 LOCAL epicsEventId	wakeUpEvt;
@@ -147,6 +148,11 @@ LOCAL void notifyCallback(struct event_handler_args eha);
 LOCAL void recDynLinkInp(void);
 LOCAL void recDynLinkOut(void);
 
+
+void exit_handler(void *arg) {
+	shutting_down = 1;
+}
+
 long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	short dbrType,int options,
 	recDynCallback searchCallback,recDynCallback monitorCallback)
@@ -741,6 +747,7 @@ LOCAL void recDynLinkInp(void)
 	msgQCmd		cmd;
 	int			didGetCallback=0;
 
+	epicsAtExit(exit_handler, 0);
 	taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
 	SEVCHK(ca_context_create(ca_enable_preemptive_callback),"ca_context_create");
 	pCaInputContext = ca_current_context();
@@ -753,7 +760,7 @@ LOCAL void recDynLinkInp(void)
 		pCaInputContext = ca_current_context();
 	}
 	if (retried) printf("recDynLinkInp: ca_current_context() returned non-NULL\n");
-	while(TRUE) {
+	while (!shutting_down) {
 		didGetCallback = 0;
 		while (epicsMessageQueuePending(recDynLinkInpMsgQ) && interruptAccept) {
 			if (recDynLinkDebug > 5) 
@@ -840,6 +847,7 @@ LOCAL void recDynLinkOut(void)
 	msgQCmd		cmd;
 	int			caStatus;
 	
+	epicsAtExit(exit_handler, 0);
 	taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
 	/* SEVCHK(ca_context_create(ca_enable_preemptive_callback),"ca_context_create"); */
 	while (pCaInputContext == NULL) {
@@ -851,7 +859,7 @@ LOCAL void recDynLinkOut(void)
 	}
 	if (retried) printf("recDynLinkOut: got CA context\n");
 	SEVCHK(ca_attach_context(pCaInputContext), "ca_attach_context");
-	while(TRUE) {
+	while (!shutting_down) {
 		epicsEventWaitWithTimeout(wakeUpEvt,1.0);
 		while (epicsMessageQueuePending(recDynLinkOutMsgQ) && interruptAccept) {
 			if (recDynLinkDebug > 10) 
