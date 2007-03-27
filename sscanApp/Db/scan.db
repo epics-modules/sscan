@@ -302,7 +302,7 @@ record(scalcout, "$(P)ScanDimH4") {
 record(longout, "$(P)saveData_maxAllowedRetries") {
   field(DTYP, "Soft Channel")
   field(HOPR, "9999")
-  field(DOL, "3")
+  field(DOL, "10")
   field(DRVH, "1000000")
 }
 
