@@ -271,9 +271,14 @@
  *                      which may be zero.  Default is 1 second.  (We used to wait 5 seconds.)
  * 5.38 10-10-06  tmm   If AQCT="1D ARRAY", P1RA contains [p1sp, p1sp_p1si,...p1sp+N*p1si} for use as
  *                      array index.
+ * 5.39 11-14-06  tmm   Don't complain about the number of elements in a positioner's table unless the
+ *                      positioner has a bad PV, and is in table mode.  (Comment added on 3/27/07)
+ * 5.40 03-27-07  tmm   special() was checking npts before it could see the new value ("if (!after)").
+ *                      This prevented an illegal NPTS value (e.g., autorestored) from being fixed.
+ *                      Added checks at beginning of process(), special(), and put_array_info()
  */
 
-#define VERSION 5.38
+#define VERSION 5.40
 
 
 #include <stddef.h>
@@ -889,6 +894,10 @@ process(sscanRecord *psscan)
 			precPvt->calledBy);
 	}
 
+	/* Make sure npts is reasonable.  Autosave might have  changed it after init_record. */
+	if (psscan->npts > psscan->mpts) {psscan->npts = psscan->mpts; POST(&psscan->npts);}
+	if (psscan->npts <= 0) {psscan->npts = 1; POST(&psscan->npts);}
+
 	if (psscan->kill) {
 		if (sscanRecordDebug>=5) printf("%s:process: kill\n", psscan->name);
 		if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
@@ -1169,6 +1178,11 @@ special(struct dbAddr *paddr, int after)
 	if (sscanRecordDebug) {
 		printf("%s:special:entry for fieldIx %d, after=%d.\n", psscan->name, fieldIndex, after);
 	}
+
+	/* Make sure npts is reasonable.  Autosave might have  changed it after init_record. */
+	if (psscan->npts > psscan->mpts) {psscan->npts = psscan->mpts; POST(&psscan->npts);}
+	if (psscan->npts <= 0) {psscan->npts = 1; POST(&psscan->npts);}
+
 	if (!after) {
 		precPvt->pffo = psscan->ffo;	/* save previous ffo flag */
 		/* Forbid certain changes while scan is in progress. */
@@ -1192,12 +1206,6 @@ special(struct dbAddr *paddr, int after)
 				default:
 					return(-1);
 				}
-			}
-		}
-		/* Reject illegal npts values */
-		if (special_type == SPC_SC_N) {
-			if ((psscan->npts > psscan->mpts) || (psscan->npts < 1)) {
-				return(-1);
 			}
 		}
 
@@ -1801,6 +1809,10 @@ put_array_info(struct dbAddr *paddr, long nNew)
 	 * "positioner" array p_pa. Determine which positioner and store
 	 * nelem for future use. Also check against current npts
 	 */
+
+	/* Make sure npts is reasonable.  Autosave might have  changed it after init_record. */
+	if (psscan->npts > psscan->mpts) {psscan->npts = psscan->mpts; POST(&psscan->npts);}
+	if (psscan->npts <= 0) {psscan->npts = 1; POST(&psscan->npts);}
 
 	fieldOffset = ((dbFldDes *) (paddr->pfldDes))->offset;
 
