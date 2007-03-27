@@ -1,14 +1,14 @@
 
 file {
-	name="/home/oxygen4/MOONEY/epics/3.13.2/tmm/tmmApp/op/adl/scan_saveData.adl"
-	version=030000
+	name="C:\cygwin\home\mooney\epics\synApps\support\all_adl\scan_saveData.adl"
+	version=030004
 }
 display {
 	object {
 		x=124
 		y=36
-		width=335
-		height=270
+		width=400
+		height=360
 	}
 	clr=31
 	bclr=3
@@ -87,11 +87,23 @@ display {
 		1a7309,
 	}
 }
+text {
+	object {
+		x=0
+		y=35
+		width=65
+		height=10
+	}
+	"basic attribute" {
+		clr=47
+	}
+	textix="         //"
+}
 "text entry" {
 	object {
-		x=80
+		x=90
 		y=15
-		width=220
+		width=270
 		height=20
 	}
 	control {
@@ -105,43 +117,7 @@ display {
 }
 text {
 	object {
-		x=0
-		y=18
-		width=80
-		height=14
-	}
-	"basic attribute" {
-		clr=14
-	}
-	textix="File system"
-}
-text {
-	object {
-		x=0
-		y=35
-		width=65
-		height=10
-	}
-	"basic attribute" {
-		clr=47
-	}
-	textix="         //"
-}
-text {
-	object {
-		x=0
-		y=45
-		width=65
-		height=10
-	}
-	"basic attribute" {
-		clr=47
-	}
-	textix="Example: //"
-}
-text {
-	object {
-		x=66
+		x=76
 		y=35
 		width=35
 		height=10
@@ -153,7 +129,7 @@ text {
 }
 text {
 	object {
-		x=102
+		x=112
 		y=35
 		width=5
 		height=10
@@ -165,7 +141,7 @@ text {
 }
 text {
 	object {
-		x=108
+		x=118
 		y=35
 		width=53
 		height=10
@@ -177,7 +153,7 @@ text {
 }
 text {
 	object {
-		x=66
+		x=76
 		y=45
 		width=35
 		height=10
@@ -189,7 +165,7 @@ text {
 }
 text {
 	object {
-		x=102
+		x=112
 		y=45
 		width=5
 		height=10
@@ -201,7 +177,7 @@ text {
 }
 text {
 	object {
-		x=108
+		x=118
 		y=45
 		width=138
 		height=10
@@ -213,9 +189,9 @@ text {
 }
 "text entry" {
 	object {
-		x=90
+		x=100
 		y=60
-		width=210
+		width=260
 		height=20
 	}
 	control {
@@ -227,97 +203,79 @@ text {
 	limits {
 	}
 }
-text {
+composite {
 	object {
-		x=0
-		y=63
-		width=80
-		height=14
-	}
-	"basic attribute" {
-		clr=14
-	}
-	textix="Subdirectory"
-}
-"text update" {
-	object {
-		x=30
-		y=85
-		width=300
-		height=10
-	}
-	monitor {
-		chan="$(P)saveData_fullPathName"
-		clr=53
-		bclr=1
-	}
-	format="string"
-	limits {
-	}
-}
-"text entry" {
-	object {
-		x=310
-		y=15
-		width=20
-		height=20
-	}
-	control {
-		chan="$(P)saveData_fileSystem.DISP"
-		clr=14
-		bclr=51
-	}
-	limits {
-	}
-}
-"text entry" {
-	object {
-		x=310
-		y=60
-		width=20
-		height=20
-	}
-	control {
-		chan="$(P)saveData_subDir.DISP"
-		clr=14
-		bclr=51
-	}
-	limits {
-	}
-}
-text {
-	object {
-		x=305
+		x=365
 		y=5
 		width=25
-		height=10
+		height=75
 	}
-	"basic attribute" {
-		clr=14
+	"composite name"=""
+	children {
+		"text entry" {
+			object {
+				x=370
+				y=15
+				width=20
+				height=20
+			}
+			control {
+				chan="$(P)saveData_fileSystem.DISP"
+				clr=14
+				bclr=51
+			}
+			limits {
+			}
+		}
+		"text entry" {
+			object {
+				x=370
+				y=60
+				width=20
+				height=20
+			}
+			control {
+				chan="$(P)saveData_subDir.DISP"
+				clr=14
+				bclr=51
+			}
+			limits {
+			}
+		}
+		text {
+			object {
+				x=365
+				y=5
+				width=25
+				height=10
+			}
+			"basic attribute" {
+				clr=14
+			}
+			textix="LOCK"
+		}
 	}
-	textix="LOCK"
 }
 "text update" {
 	object {
-		x=0
-		y=160
-		width=300
-		height=20
+		x=50
+		y=105
+		width=340
+		height=14
 	}
 	monitor {
-		chan="$(P)saveData_message"
+		chan="$(P)saveData_fileName"
 		clr=53
 		bclr=1
 	}
-	align="horiz. centered"
 	format="string"
 	limits {
 	}
 }
 "text entry" {
 	object {
-		x=173
-		y=115
+		x=183
+		y=125
 		width=60
 		height=20
 	}
@@ -331,8 +289,8 @@ text {
 }
 text {
 	object {
-		x=5
-		y=115
+		x=15
+		y=125
 		width=160
 		height=20
 	}
@@ -343,8 +301,8 @@ text {
 }
 "text update" {
 	object {
-		x=120
-		y=140
+		x=130
+		y=150
 		width=100
 		height=20
 	}
@@ -359,8 +317,8 @@ text {
 }
 text {
 	object {
-		x=5
-		y=140
+		x=15
+		y=150
 		width=110
 		height=20
 	}
@@ -371,8 +329,8 @@ text {
 }
 menu {
 	object {
-		x=240
-		y=181
+		x=250
+		y=191
 		width=50
 		height=20
 	}
@@ -382,10 +340,105 @@ menu {
 		bclr=17
 	}
 }
+"text update" {
+	object {
+		x=50
+		y=85
+		width=340
+		height=14
+	}
+	monitor {
+		chan="$(P)saveData_fullPathName"
+		clr=53
+		bclr=1
+	}
+	format="string"
+	limits {
+	}
+}
 text {
 	object {
-		x=0
-		y=185
+		x=10
+		y=18
+		width=80
+		height=14
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="File system"
+}
+text {
+	object {
+		x=10
+		y=45
+		width=65
+		height=10
+	}
+	"basic attribute" {
+		clr=47
+	}
+	textix="Example: //"
+}
+text {
+	object {
+		x=10
+		y=63
+		width=80
+		height=14
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="Subdirectory"
+}
+text {
+	object {
+		x=10
+		y=85
+		width=40
+		height=14
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="PATH:"
+	align="horiz. centered"
+}
+text {
+	object {
+		x=10
+		y=105
+		width=40
+		height=14
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="NAME:"
+	align="horiz. centered"
+}
+"text update" {
+	object {
+		x=10
+		y=170
+		width=300
+		height=20
+	}
+	monitor {
+		chan="$(P)saveData_message"
+		clr=53
+		bclr=1
+	}
+	align="horiz. centered"
+	format="string"
+	limits {
+	}
+}
+text {
+	object {
+		x=10
+		y=195
 		width=230
 		height=14
 	}
@@ -396,9 +449,9 @@ text {
 }
 text {
 	object {
-		x=0
-		y=200
-		width=150
+		x=250
+		y=130
+		width=140
 		height=10
 	}
 	"basic attribute" {
@@ -412,49 +465,7 @@ text {
 }
 text {
 	object {
-		x=0
-		y=85
-		width=30
-		height=10
-	}
-	"basic attribute" {
-		clr=14
-	}
-	textix="PATH:"
-	align="horiz. centered"
-}
-"text update" {
-	object {
-		x=30
-		y=100
-		width=300
-		height=10
-	}
-	monitor {
-		chan="$(P)saveData_fileName"
-		clr=53
-		bclr=1
-	}
-	format="string"
-	limits {
-	}
-}
-text {
-	object {
-		x=0
-		y=100
-		width=30
-		height=10
-	}
-	"basic attribute" {
-		clr=14
-	}
-	textix="NAME:"
-	align="horiz. centered"
-}
-text {
-	object {
-		x=0
+		x=10
 		y=215
 		width=170
 		height=14
@@ -466,7 +477,7 @@ text {
 }
 "text entry" {
 	object {
-		x=0
+		x=10
 		y=230
 		width=335
 		height=18
@@ -482,7 +493,7 @@ text {
 }
 "text entry" {
 	object {
-		x=0
+		x=10
 		y=250
 		width=335
 		height=18
@@ -494,5 +505,275 @@ text {
 	}
 	format="string"
 	limits {
+	}
+}
+rectangle {
+	object {
+		x=12
+		y=281
+		width=380
+		height=70
+	}
+	"basic attribute" {
+		clr=2
+	}
+}
+"text entry" {
+	object {
+		x=167
+		y=304
+		width=35
+		height=20
+	}
+	control {
+		chan="$(P)saveData_maxAllowedRetries"
+		clr=14
+		bclr=51
+	}
+	limits {
+	}
+}
+"text entry" {
+	object {
+		x=167
+		y=324
+		width=35
+		height=20
+	}
+	control {
+		chan="$(P)saveData_retryWaitInSecs"
+		clr=14
+		bclr=51
+	}
+	limits {
+	}
+}
+text {
+	object {
+		x=27
+		y=304
+		width=140
+		height=14
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="max per write"
+}
+text {
+	object {
+		x=27
+		y=324
+		width=140
+		height=14
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="retry wait (s)"
+}
+text {
+	object {
+		x=17
+		y=284
+		width=140
+		height=20
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="Retries"
+}
+composite {
+	object {
+		x=337
+		y=284
+		width=50
+		height=40
+	}
+	"composite name"=""
+	children {
+		"text update" {
+			object {
+				x=337
+				y=304
+				width=50
+				height=20
+			}
+			monitor {
+				chan="$(P)saveData_abandonedWrites"
+				clr=53
+				bclr=2
+			}
+			format="string"
+			limits {
+			}
+		}
+		text {
+			object {
+				x=337
+				y=284
+				width=50
+				height=10
+			}
+			"basic attribute" {
+				clr=14
+			}
+			textix="ABANDONED"
+			align="horiz. centered"
+		}
+		text {
+			object {
+				x=337
+				y=294
+				width=50
+				height=10
+			}
+			"basic attribute" {
+				clr=14
+			}
+			textix="WRITES"
+			align="horiz. centered"
+		}
+	}
+}
+polyline {
+	object {
+		x=10
+		y=280
+		width=382
+		height=72
+	}
+	"basic attribute" {
+		clr=14
+		width=2
+	}
+	points {
+		(11,351)
+		(11,281)
+		(391,281)
+	}
+}
+polyline {
+	object {
+		x=11
+		y=280
+		width=382
+		height=72
+	}
+	"basic attribute" {
+		clr=0
+		width=2
+	}
+	points {
+		(392,281)
+		(392,351)
+		(12,351)
+	}
+}
+composite {
+	object {
+		x=262
+		y=284
+		width=50
+		height=40
+	}
+	"composite name"=""
+	children {
+		"text update" {
+			object {
+				x=262
+				y=304
+				width=50
+				height=20
+			}
+			monitor {
+				chan="$(P)saveData_totalRetries"
+				clr=53
+				bclr=2
+			}
+			format="string"
+			limits {
+			}
+		}
+		text {
+			object {
+				x=262
+				y=284
+				width=50
+				height=10
+			}
+			"basic attribute" {
+				clr=14
+			}
+			textix="SINCE"
+			align="horiz. centered"
+		}
+		text {
+			object {
+				x=262
+				y=294
+				width=50
+				height=10
+			}
+			"basic attribute" {
+				clr=14
+			}
+			textix="BOOT"
+			align="horiz. centered"
+		}
+	}
+}
+composite {
+	object {
+		x=212
+		y=284
+		width=40
+		height=40
+	}
+	"composite name"=""
+	children {
+		"text update" {
+			object {
+				x=212
+				y=304
+				width=40
+				height=20
+			}
+			monitor {
+				chan="$(P)saveData_currRetries"
+				clr=53
+				bclr=2
+			}
+			format="string"
+			limits {
+			}
+		}
+		text {
+			object {
+				x=212
+				y=284
+				width=40
+				height=10
+			}
+			"basic attribute" {
+				clr=14
+			}
+			textix="CURRENT"
+			align="horiz. centered"
+		}
+		text {
+			object {
+				x=212
+				y=294
+				width=40
+				height=10
+			}
+			"basic attribute" {
+				clr=14
+			}
+			textix="WRITE"
+			align="horiz. centered"
+		}
 	}
 }
