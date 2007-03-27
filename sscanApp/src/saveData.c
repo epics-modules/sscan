@@ -117,10 +117,19 @@
  *                    retry point-by-point.  Deleted all references to pscan->all_pts,
  *                    which used to indicate that all data had been written point-by-point,
  *                    so array write was not needed.  Now we always do the array write.
+ *     03-27-07  tmm  v1.26 Control and display retries with PV's, instead of volatile
+ *                    variables, so end users can control and monitor the behavior.
+ *                    Discovered that scanSee uses saveData's [message] PV to determine the
+ *                    name of the MDA file, which is assumed to be the last word of the
+ *                    string.  (I don't know why it doesn't use the [filename] PV, which
+ *                    should be much simpler and less error prone.)  Recent modifications
+ *                    to saveData caused the file name to be shown in quotes, which scanSee
+ *                    treated as part of the filename, causing it to crash.   Took out the
+ *                    quotes from all user messages that include the MDA file name..
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.25.0"
+#define SAVE_DATA_VERSION   "1.26.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -176,9 +185,6 @@
 volatile int debug_saveData = 0;
 volatile int debug_saveDataMsg = 0;
 volatile int saveData_MessagePolicy = 0;
-
-volatile int saveData_RetryDelayInSeconds=15;
-volatile int saveData_MaxRetries=3;
 
 #ifdef NODEBUG 
 #define Debug0(d,s) ;
@@ -581,6 +587,7 @@ LOCAL chid  message_chid;
 LOCAL chid  filename_chid;
 LOCAL chid  full_pathname_chid;
 
+
 #define FS_NOT_MOUNTED  0
 #define FS_MOUNTED      1
 LOCAL chid  file_system_chid;
@@ -596,6 +603,18 @@ LOCAL chid  realTime1D_chid;
 LOCAL long  counter;  /* data file counter*/
 LOCAL chid  counter_chid;
 LOCAL char  ioc_prefix[10];
+
+/* file-write retries */
+LOCAL chid  maxAllowedRetries_chid;
+long maxAllowedRetries = 5;
+LOCAL chid  totalRetries_chid;
+long totalRetries = 0;
+LOCAL chid  currRetries_chid;
+long currRetries = 0;
+LOCAL chid  retryWaitInSecs_chid;
+long retryWaitInSecs = 20;
+LOCAL chid  abandonedWrites_chid;
+long abandonedWrites = 0;
 
 LOCAL epicsThreadId			threadId=NULL;  /* saveDataTask thread id */
 LOCAL epicsMessageQueueId	msg_queue=NULL; /* saveDataTask's message queue */
@@ -750,7 +769,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.29 2007-03-06 05:50:12 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.30 2007-03-27 16:35:51 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -1540,7 +1559,7 @@ LOCAL int connectCounter(char* name)
 
   ca_search(name, &counter_chid);
   if(ca_pend_io(0.5)!=ECA_NORMAL) {
-    Debug1(1, "Unable to connect counter %s\n", name);
+    Debug1(1, "Can't connect counter %s\n", name);
     return -1;
   }
   return 0;
@@ -1561,7 +1580,7 @@ LOCAL int connectFileSystem(char* fs)
   } else {
     if(ca_add_event(DBR_STRING, file_system_chid, 
                     fileSystemMonitor, NULL, NULL)!=ECA_NORMAL) {
-      printf("saveData: Unable to post monitor on %s\nsaveDataTask not initialized\n"
+      printf("saveData: Can't monitor %s\nsaveDataTask not initialized\n"
              , fs);
       ca_clear_channel(file_system_chid);
       return -1;
@@ -1583,7 +1602,7 @@ LOCAL int connectSubdir(char* sd)
   } else {
     if(ca_add_event(DBR_STRING, file_subdir_chid, 
                     fileSubdirMonitor, NULL, NULL)!=ECA_NORMAL) {
-      printf("saveData: Unable to post monitor on %s\nsaveDataTask not initialized\n"
+      printf("saveData: Can't monitor %s\nsaveDataTask not initialized\n"
              , sd);
       ca_clear_channel(file_subdir_chid);
       return -1;
@@ -1601,7 +1620,7 @@ LOCAL int connectRealTime1D(char* rt)
   } else {
     if(ca_add_event(DBR_LONG, realTime1D_chid,
                     realTime1DMonitor, NULL, NULL)!= ECA_NORMAL) {
-      printf("saveData: Unable to post monitor on %s\n", rt);
+      printf("saveData: Can't monitor %s\n", rt);
       ca_clear_channel(realTime1D_chid);
       return -1;
     }
@@ -1609,6 +1628,66 @@ LOCAL int connectRealTime1D(char* rt)
   return 0;
 }
 
+LOCAL void maxAllowedRetriesMonitor(struct event_handler_args eha)
+{
+  long i;
+  if (eha.status != ECA_NORMAL) {
+    printf("maxAllowedRetriesMonitor: bad status\n");
+  } else {
+    i = *((long *) eha.dbr);
+    if (i >= 0) maxAllowedRetries = i;
+    printf("saveData:maxAllowedRetries = %ld\n", maxAllowedRetries);
+  }
+}
+
+LOCAL void retryWaitInSecsMonitor(struct event_handler_args eha)
+{
+  long i;
+  if (eha.status != ECA_NORMAL) {
+    printf("maxAllowedRetriesMonitor: bad status\n");
+  } else {
+    i = *((long *) eha.dbr);
+    if (i >= 0) retryWaitInSecs = i;
+  }
+  printf("saveData:retryWaitInSecs = %ld\n", retryWaitInSecs);
+}
+
+LOCAL int connectRetryPVs(char *prefix)
+{
+  char pvName[PVNAME_STRINGSZ];
+
+  strcpy(pvName, prefix); strcat(pvName, "saveData_currRetries");
+  ca_search(pvName, &currRetries_chid);
+
+  strcpy(pvName, prefix); strcat(pvName, "saveData_maxAllowedRetries");
+  ca_search(pvName, &maxAllowedRetries_chid);
+
+  strcpy(pvName, prefix); strcat(pvName, "saveData_totalRetries");
+  ca_search(pvName, &totalRetries_chid);
+
+  strcpy(pvName, prefix); strcat(pvName, "saveData_retryWaitInSecs");
+  ca_search(pvName, &retryWaitInSecs_chid);
+
+  strcpy(pvName, prefix); strcat(pvName, "saveData_abandonedWrites");
+  ca_search(pvName, &abandonedWrites_chid);
+
+  if (ca_pend_io(0.5)!=ECA_NORMAL) {
+    printf("saveData: Can't connect to some or all retry PVs\n");
+  }
+  if (maxAllowedRetries_chid && ca_add_event(DBR_LONG, maxAllowedRetries_chid, 
+        maxAllowedRetriesMonitor, NULL, NULL)!=ECA_NORMAL) {
+    printf("saveData: Can't monitor %ssaveData_maxAllowedRetries.  Using default of %ld\n",
+      prefix, maxAllowedRetries);
+    if (maxAllowedRetries_chid) ca_clear_channel(maxAllowedRetries_chid);
+  }
+  if (retryWaitInSecs_chid && ca_add_event(DBR_LONG, retryWaitInSecs_chid, 
+        retryWaitInSecsMonitor, NULL, NULL)!=ECA_NORMAL) {
+    printf("saveData: Can't monitor %ssaveData_retryWaitInSecs.  Using default of %ld\n",
+      prefix, retryWaitInSecs);
+    if (retryWaitInSecs_chid) ca_clear_channel(retryWaitInSecs_chid);
+  }
+  return 0;
+}
 
 LOCAL void extraValCallback(struct event_handler_args eha)
 {
@@ -1818,6 +1897,9 @@ LOCAL int initSaveDataTask()
   if(req_gotoSection(rf, "prefix")==0) {
     req_readMacId(rf, ioc_prefix, 9);
   }
+  connectRetryPVs(ioc_prefix);
+
+  /* replace punctuation with underscore, so we can use the prefix in a file name */
   for (i=0; i<10 && ioc_prefix[i]; i++) {
     if (ispunct((int)ioc_prefix[i])) ioc_prefix[i] = '_';
   }
@@ -1962,7 +2044,7 @@ LOCAL int initSaveDataTask()
   }
 
   req_close_file(rf);
-  
+
   monitorScans();
 
   return 0;
@@ -2103,7 +2185,7 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
         fclose(fd);
       }
       printf("saveData:writeScanRecInProgress(%s): can't open data file!!\n", pscan->name);
-      sprintf(msg, "!! Can't open file '%s'", pscan->fname);
+      sprintf(msg, "!! Can't open file %s", pscan->fname);
       msg[MAX_STRING_SIZE-1] = '\0';
       sendUserMessage(msg);
       save_status = STATUS_ERROR;
@@ -2313,11 +2395,11 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
   }
   if (isRetry) {
       printf("saveData:writeScanRecCompleted(%s): retry succeeded\n", pscan->name);
-      sprintf(msg, "Retry succeeded for '%s'", pscan->fname);
+      sprintf(msg, "Retry succeeded for %s", pscan->fname);
       msg[MAX_STRING_SIZE-1]= '\0';
       sendUserMessage(msg);
   } else {
-    sprintf(msg,"Wrote data to '%s'", pscan->fname);
+    sprintf(msg,"Wrote data to %s", pscan->fname);
     sendUserMessage(msg);
   }
 
@@ -2340,7 +2422,7 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
   fd = fopen(pscan->ffname, "rb+");
   if ((fd == NULL) || (fileStatus(pscan->ffname) == ERROR)) {
     printf("saveData:writeScanRecCompleted(%s): can't open data file!!\n", pscan->name);
-    sprintf(msg, "!! Can't open file '%s'", pscan->fname);
+    sprintf(msg, "!! Can't open file %s", pscan->fname);
     msg[MAX_STRING_SIZE-1]= '\0';
     sendUserMessage(msg);
     save_status = STATUS_ERROR;
@@ -2464,7 +2546,7 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
     if (writeFailed) goto cleanup;
     writeFailed |= !xdr_long(&xdrs, &lval);
 
-    sprintf(msg,"Done writing '%s'", pscan->fname);
+    sprintf(msg,"Done writing %s", pscan->fname);
     sendUserMessage(msg);
   }
 
@@ -2478,7 +2560,7 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
     msg[MAX_STRING_SIZE-1]= '\0';
     sendUserMessage(msg);
   } else {
-    sprintf(msg,"Wrote data to '%s'", pscan->fname);
+    sprintf(msg,"Wrote data to %s", pscan->fname);
     sendUserMessage(msg);
   }
 
@@ -2494,7 +2576,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
   char  msg[200];
   char  *cptr;
   SCAN  *pscan, *pnxt;
-  int   i, status, retries;
+  int   i, status;
 
   char  cval;
   short sval;
@@ -2610,7 +2692,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
       }
 
       /* Tell user what we're doing */
-      sprintf(msg, "Writing to '%s'", pscan->fname);
+      sprintf(msg, "Writing to %s", pscan->fname);
       msg[MAX_STRING_SIZE-1]= '\0';
       sendUserMessage(msg);
 
@@ -2639,14 +2721,23 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
     }
 
     pscan->savedSeekPos = 0;
-    for (status = -1, retries=0; status && retries<=saveData_MaxRetries; retries++) {
-      status = writeScanRecInProgress(pscan, pmsg->stamp, retries);
+    currRetries = 0;
+    if (currRetries_chid) ca_array_put(DBR_LONG, 1, currRetries_chid, &currRetries);
+    for (status = -1; status && currRetries<=maxAllowedRetries; ) {
+      status = writeScanRecInProgress(pscan, pmsg->stamp, currRetries);
       if (status) {
-        if (retries<saveData_MaxRetries) {
-          printf("saveData: ...will retry in %d seconds\n", saveData_RetryDelayInSeconds);
-          epicsThreadSleep((double)saveData_RetryDelayInSeconds);
+        if (++currRetries<=maxAllowedRetries) {
+          printf("saveData: ...will retry in %ld seconds\n", retryWaitInSecs);
+          totalRetries++;
+          if (totalRetries_chid) ca_array_put(DBR_LONG, 1, totalRetries_chid, &totalRetries);
+          if (currRetries_chid) ca_array_put(DBR_LONG, 1, currRetries_chid, &currRetries);
+          epicsThreadSleep((double)retryWaitInSecs);
         } else {
-            printf("saveData: too many retries; abandoning data from scan '%s'\n", pscan->name);
+          printf("saveData: *******************************************\n");
+          printf("saveData: too many retries; abandoning data from scan '%s'\n", pscan->name);
+          printf("saveData: *******************************************\n");
+          abandonedWrites++;
+          if (abandonedWrites_chid) ca_array_put(DBR_LONG, 1, abandonedWrites_chid, &abandonedWrites);
         }
       }
     }
@@ -2669,17 +2760,23 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 
     epicsTimeGetCurrent(&openTime);
     pscan->savedSeekPos = 0;
-    for (status = -1, retries=0; status && retries<=saveData_MaxRetries; retries++) {
-      status = writeScanRecCompleted(pscan, retries);
+    currRetries = 0;
+    if (currRetries_chid) ca_array_put(DBR_LONG, 1, currRetries_chid, &currRetries);
+    for (status = -1; status && currRetries<=maxAllowedRetries; ) {
+      status = writeScanRecCompleted(pscan, currRetries);
       if (status) {
-        if (retries<saveData_MaxRetries) {
-          printf("saveData: ...will retry in %d seconds\n", saveData_RetryDelayInSeconds);
-          epicsThreadSleep((double)saveData_RetryDelayInSeconds);
+        if (++currRetries<=maxAllowedRetries) {
+          printf("saveData: ...will retry in %ld seconds\n", retryWaitInSecs);
+          totalRetries++;
+          if (totalRetries_chid) ca_array_put(DBR_LONG, 1, totalRetries_chid, &totalRetries);
+          if (currRetries_chid) ca_array_put(DBR_LONG, 1, currRetries_chid, &currRetries);
+          epicsThreadSleep((double)retryWaitInSecs);
         } else {
-            printf("saveData: *******************************************\n");
-            printf("saveData: too many retries; abandoning data from scan '%s'\n", pscan->name);
-            printf("saveData: *******************************************\n\n");
-        }
+          printf("saveData: *******************************************\n");
+          printf("saveData: too many retries; abandoning data from scan '%s'\n", pscan->name);
+          printf("saveData: *******************************************\n\n");
+          abandonedWrites++;
+          if (abandonedWrites_chid) ca_array_put(DBR_LONG, 1, abandonedWrites_chid, &abandonedWrites);        }
       }
     }
     epicsTimeGetCurrent(&now);
@@ -2772,7 +2869,7 @@ LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
   fd = fopen(pscan->ffname, "rb+");
   if (fd == NULL) {
       printf("saveData:proc_scan_cpt(%s): can't open data file!!\n", pscan->name);
-      sprintf(msg, "!! Can't open file '%s'", pscan->fname);
+      sprintf(msg, "!! Can't open file %s", pscan->fname);
       msg[MAX_STRING_SIZE-1] = '\0';
       sendUserMessage(msg);
       save_status = STATUS_ERROR;
@@ -2812,7 +2909,7 @@ LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
   }
 
   if (save_status == STATUS_ERROR) {
-      sprintf(msg, "Wrote data to '%s'", pscan->fname);
+      sprintf(msg, "Wrote data to %s", pscan->fname);
       msg[MAX_STRING_SIZE-1] = '\0';
       sendUserMessage(msg);
       save_status = STATUS_ACTIVE_OK;
@@ -3353,7 +3450,6 @@ LOCAL int saveDataTask(void *parm)
   if (epicsThreadIsSuspended(Mommy)) epicsThreadResume(Mommy);
 
   while(1) {
-    
     /* waiting for messages */
     if (epicsMessageQueueReceive(msg_queue, pmsg, MAX_SIZE) < 0) {
       /* no message received */
@@ -3447,9 +3543,6 @@ LOCAL int saveDataTask(void *parm)
 epicsExportAddress(int, debug_saveData);
 epicsExportAddress(int, debug_saveDataMsg);
 epicsExportAddress(int, saveData_MessagePolicy);
-epicsExportAddress(int, saveData_RetryDelayInSeconds);
-epicsExportAddress(int, saveData_MaxRetries);
-
 
 /* void saveData_Init(char* fname, char* macros) */
 static const iocshArg saveData_Init_Arg0 = { "fname", iocshArgString};
