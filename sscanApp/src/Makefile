@@ -24,7 +24,6 @@ DBDINC += busyRecord
 # <name>.dbd will be created from <name>Include.dbd
 DBD += sscan.dbd
 DBD += sscanSupport.dbd
-DBD += sscanWin32Support.dbd
 DBD += sscanMenu.dbd
 
 INC += recDynLink.h
@@ -41,7 +40,9 @@ sscan_SRCS += req_file.c
 
 # save scan data stuff
 # XDR not available on WIN32
-ifneq ($(OS_CLASS), WIN32)
+ifeq ($(OS_CLASS), WIN32)
+sscan_SRCS += saveDataWin32.c
+else
 sscan_SRCS += xdr_lib.c
 sscan_SRCS += saveData.c
 sscan_SRCS_vxWorks += xdr_stdio.c
