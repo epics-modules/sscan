@@ -2,11 +2,11 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <title>The <b>sscan</b> record v5.38</title>
+   <title>The <b>sscan</b> record v5.41</title>
 </head>
 <body>
 <h1>
-The <b>sscan</b> record v5.38</h1>
+The <b>sscan</b> record v5.41</h1>
 Author: Tim M. Mooney<br>
 Based on the scan record, written by Ned D. Arnold.<br>
 <p>&nbsp;Advanced Photon Source
@@ -2247,7 +2247,7 @@ limits, the operator is notified via the <tt>SMSG</tt> field.
 </tr>
 </table>
 
-<p>The command (<tt>CMND</tt>) field supports six commands, as follows:
+<p>The command (<tt>CMND</tt>) field supports eight commands, as follows:
 
 <table BORDER>
 
@@ -2265,10 +2265,15 @@ programmed scan were actually performed</td></tr>
 
 <tr><td>3<td>Clear all PVs, freeze flags, modes, switches, etc.</td></tr>
 
-<tr><td>4<td>Clear all positioner-related PVs, freeze flags, modes, and 
+<tr><td>4<td>Clear all positioner-name PVs, freeze flags, modes, and 
 switches.</td></tr>
 
 <tr><td>5<td>Clear positioner-name PVs.</td></tr>
+
+<tr><td>6<td>Clear all positioner-name and readback-name PVs, freeze flags,
+modes, and  switches.</td></tr>
+
+<tr><td>7<td>Clear positioner-name and readback-name PVs.</td></tr>
 
 </table>
 
