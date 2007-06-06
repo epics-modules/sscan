@@ -517,7 +517,7 @@ polyline {
 		bclr=51
 	}
 	label="CLEAR POSITIONERS"
-	press_msg="4"
+	press_msg="6"
 }
 "related display" {
 	object {
