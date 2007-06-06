@@ -276,9 +276,13 @@
  * 5.40 03-27-07  tmm   special() was checking npts before it could see the new value ("if (!after)").
  *                      This prevented an illegal NPTS value (e.g., autorestored) from being fixed.
  *                      Added checks at beginning of process(), special(), and put_array_info()
+ * 5.41 06-06-07  tmm   CMND == 6: clear positioner and readback PV's, set all positioners to LINEAR
+ *                      & ABSOLUTE, reset all freeze flags & .FFO, set .SCAN to Passive, set
+ *                      RETRACE=stay
+ *                      CMND==7: clear positioner and readback PV's without changing anything else.
  */
 
-#define VERSION 5.40
+#define VERSION 5.41
 
 
 #include <stddef.h>
@@ -415,6 +419,8 @@ static char linkNames[NUM_LINKS][6] =
 #define CLEAR_RECORD        	3	/* Clear PV's, frzFlags, modes, abs/rel, etc */
 #define CLEAR_POSITIONERS   	4	/* Clear positioner PV's, frzFlags, modes, abs/rel, etc */
 #define CLEAR_POSITIONER_PVS	5	/* Clear positioner PV's */
+#define CLEAR_POSandRDBK		6	/* Clear positioner and readback PV's, frzFlags, modes, abs/rel, etc */
+#define CLEAR_POSandRDBK_PVS	7	/* Clear positioner and readback PV's */
 
 #define DBE_VAL_LOG     (DBE_VALUE | DBE_LOG)
 
@@ -1174,6 +1180,7 @@ special(struct dbAddr *paddr, int after)
 	unsigned char   prevAlrt;
     int             fieldIndex = dbGetFieldIndex(paddr);
 	epicsTimeStamp	timeCurrent;
+	int				clearThisPV;
 
 	if (sscanRecordDebug) {
 		printf("%s:special:entry for fieldIx %d, after=%d.\n", psscan->name, fieldIndex, after);
@@ -1436,6 +1443,7 @@ special(struct dbAddr *paddr, int after)
 				break;
 			case CLEAR_RECORD:
 			case CLEAR_POSITIONERS:
+			case CLEAR_POSandRDBK:
 				/* clear PV's, frzFlags, modes, etc */
 				psscan->scan = 0; POST(&psscan->scan);
 				resetFrzFlags(psscan);
@@ -1449,12 +1457,19 @@ special(struct dbAddr *paddr, int after)
 				psscan->p4ar = 0; POST(&psscan->p4ar);
 				psscan->pasm = 0; POST(&psscan->pasm);
 				psscan->ffo = 0; POST(&psscan->ffo);
+				/* fall through */
 			case CLEAR_POSITIONER_PVS:
+			case CLEAR_POSandRDBK_PVS:
 				for (i = 0; i < NUM_PVS; i++) {
 					puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i].puserPvt;
-					if ((psscan->cmnd == CLEAR_RECORD) ||
-					    (((psscan->cmnd == CLEAR_POSITIONERS) || (psscan->cmnd == CLEAR_POSITIONER_PVS)) &&
-						 (puserPvt->linkType == POSITIONER))) {
+					clearThisPV = (psscan->cmnd == CLEAR_RECORD);
+					clearThisPV |= ((psscan->cmnd == CLEAR_POSITIONERS)    && (puserPvt->linkType == POSITIONER));
+					clearThisPV |= ((psscan->cmnd == CLEAR_POSandRDBK)     && (puserPvt->linkType == POSITIONER));
+					clearThisPV |= ((psscan->cmnd == CLEAR_POSandRDBK)     && (puserPvt->linkType == READBACK));
+					clearThisPV |= ((psscan->cmnd == CLEAR_POSITIONER_PVS) && (puserPvt->linkType == POSITIONER));
+					clearThisPV |= ((psscan->cmnd == CLEAR_POSandRDBK_PVS) && (puserPvt->linkType == POSITIONER));
+					clearThisPV |= ((psscan->cmnd == CLEAR_POSandRDBK_PVS) && (puserPvt->linkType == READBACK));
+					if (clearThisPV) {
 						/* clear this PV */
 						epicsMutexLock(precPvt->pvStatSem);
 						pPvStat = &psscan->p1nv + i;	/* pointer arithmetic */
@@ -1863,9 +1878,11 @@ get_enum_strs(struct dbAddr *paddr, struct dbr_enumStrs *pes)
 		strncpy(pes->strs[1], "1-Check limits", sizeof("1-Check limits"));
 		strncpy(pes->strs[2], "2-Preview scan", sizeof("2-Preview scan"));
 		strncpy(pes->strs[3], "3-Clear all PV's", sizeof("3-Clear all PV's"));
-		strncpy(pes->strs[4], "4-Clear positioner PV's", sizeof("4-Clear positioner PV's"));
+		strncpy(pes->strs[4], "4-Clear positioner PV's, etc", sizeof("4-Clear positioner PV's, etc"));
 		strncpy(pes->strs[5], "5-Clear positioner PV's", sizeof("5-Clear positioner PV's"));
-		pes->no_str = 6;
+		strncpy(pes->strs[6], "6-Clear pos&rdbk PV's, etc", sizeof("6-Clear pos&rdbk PV's, etc"));
+		strncpy(pes->strs[7], "7-Clear pos&rdbk PV's", sizeof("7-Clear pos&rdbk PV's"));
+		pes->no_str = 8;
 	} else {
 		strcpy(pes->strs[0], "No string");
 		pes->no_str = 1;
