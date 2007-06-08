@@ -126,10 +126,11 @@
  *                    to saveData caused the file name to be shown in quotes, which scanSee
  *                    treated as part of the filename, causing it to crash.   Took out the
  *                    quotes from all user messages that include the MDA file name..
+ *     06-08-07  tmm  v1.27 Set prefix size consistently as PREFIX_SIZE (currently 10)
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.26.0"
+#define SAVE_DATA_VERSION   "1.27.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -165,6 +166,8 @@
 
 #define DESC_SIZE 30
 #define EGU_SIZE 16
+#define PREFIX_SIZE 10
+
 #include "req_file.h"
 #include "xdr_lib.h"
 #ifdef vxWorks
@@ -602,7 +605,7 @@ LOCAL chid  realTime1D_chid;
 
 LOCAL long  counter;  /* data file counter*/
 LOCAL chid  counter_chid;
-LOCAL char  ioc_prefix[10];
+LOCAL char  ioc_prefix[PREFIX_SIZE];
 
 /* file-write retries */
 LOCAL chid  maxAllowedRetries_chid;
@@ -769,7 +772,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.30 2007-03-27 16:35:51 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.31 2007-06-08 22:07:03 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -1895,12 +1898,12 @@ LOCAL int initSaveDataTask()
   /* get the IOC prefix                                                 */
   ioc_prefix[0]='\0';
   if(req_gotoSection(rf, "prefix")==0) {
-    req_readMacId(rf, ioc_prefix, 9);
+    req_readMacId(rf, ioc_prefix, PREFIX_SIZE);
   }
   connectRetryPVs(ioc_prefix);
 
   /* replace punctuation with underscore, so we can use the prefix in a file name */
-  for (i=0; i<10 && ioc_prefix[i]; i++) {
+  for (i=0; i<PREFIX_SIZE && ioc_prefix[i]; i++) {
     if (ispunct((int)ioc_prefix[i])) ioc_prefix[i] = '_';
   }
 
