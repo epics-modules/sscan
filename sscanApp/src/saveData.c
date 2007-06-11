@@ -127,10 +127,16 @@
  *                    treated as part of the filename, causing it to crash.   Took out the
  *                    quotes from all user messages that include the MDA file name..
  *     06-08-07  tmm  v1.27 Set prefix size consistently as PREFIX_SIZE (currently 10)
+ *     06-11-07  tmm  v1.28 saveData was writing scan dimensions to the wrong file offset,
+ *                    under some circumstances, because proc_scan_data() was setting those
+ *                    offsets from variables that had not been initialized.  Moved the
+ *                    setting of pscan->nxt->dims_offset and pscan->nxt->regular_offset from
+ *                    proc_scan_data(), to writeScanRecInProgress().
+ *                    
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.27.0"
+#define SAVE_DATA_VERSION   "1.28.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -772,7 +778,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.31 2007-06-08 22:07:03 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.32 2007-06-11 20:39:03 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -2219,8 +2225,11 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       Debug0(3, "saveData:writeScanRecInProgress: Writing file header\n");
       writeFailed |= !xdr_float(&xdrs, &fileFormatVersion); /* file format version      */
       writeFailed |= !xdr_long(&xdrs, &pscan->counter);     /* scan number              */
+      Debug1(2, "saveData:writeScanRecInProgress: scan_dim=%d\n", pscan->scan_dim);
       writeFailed |= !xdr_short(&xdrs, &pscan->scan_dim);   /* rank of the data         */
       pscan->dims_offset = xdr_getpos(&xdrs);
+      Debug3(2, "saveData:writeScanRecInProgress:(%s) scan_dim=%d, dims_offset=%ld\n",
+	  		pscan->name, pscan->scan_dim, pscan->dims_offset);
       if (pscan->dims_offset == (u_int)(-1)) {writeFailed = TRUE; goto cleanup;}
       ival = -1;
       for (i=0; i<pscan->scan_dim; i++) writeFailed |= !xdr_int(&xdrs, &ival);
@@ -2236,6 +2245,17 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       writeFailed |= !xdr_long(&xdrs, &lval);
       if (writeFailed) goto cleanup;
       Debug0(3, "saveData:writeScanRecInProgress: File Header written\n");
+    }
+
+    /*
+	 *If an inner scan dimension exists, set it's offsets. 
+	 * (This used to be done in proc_scan_data().)
+	 */
+    if (pscan->nxt) {
+      pscan->nxt->dims_offset= pscan->dims_offset+sizeof(int);
+      Debug3(2, "saveData:proc_scan_data:(%s) scan_dim=%d, dims_offset=%ld\n",
+	  		pscan->name, pscan->scan_dim, pscan->dims_offset);
+      pscan->nxt->regular_offset= pscan->regular_offset;
     }
 
     /* the offset of this scan                                          */
@@ -2366,6 +2386,8 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
       
     if (pscan->old_npts < pscan->npts) {
       writeFailed |= !xdr_setpos(&xdrs, pscan->dims_offset);
+      Debug3(2, "saveData:writeScanRecInProgress:(%s) scan_dim=%d, dims_offset=%ld\n",
+	  		pscan->name, pscan->scan_dim, pscan->dims_offset);
       if (writeFailed) goto cleanup;
       lval = pscan->npts;
       writeFailed |= !xdr_long(&xdrs, &lval);
@@ -2717,8 +2739,17 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
     if(pscan->nxt) {
       pscan->nxt->first_scan= FALSE;
       pscan->nxt->scan_dim= pscan->scan_dim-1;
+	  /*
+	   * This is no longer a good way to set dims_offset or regular_offset. If this
+	   * scan's file header hasn't been written yet, pscan->dims_offset and
+	   * pscan->regular_offset will not have been set.
+	   */
+#if 0
       pscan->nxt->dims_offset= pscan->dims_offset+sizeof(int);
+      Debug3(2, "saveData:proc_scan_data:(%s) scan_dim=%d, dims_offset=%ld\n",
+	  		pscan->name, pscan->scan_dim, pscan->dims_offset);
       pscan->nxt->regular_offset= pscan->regular_offset;
+#endif
       strcpy(pscan->nxt->fname, pscan->fname);
       strcpy(pscan->nxt->ffname, pscan->ffname);
     }
