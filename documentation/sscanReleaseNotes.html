@@ -10,6 +10,30 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
+<h2 align="center">Release 2-5-6</h2>
+<ul>
+<li>scan.db database separated into standardScans.db and saveData.db.
+<li>Added standardScans_settings.req and sscanRecord_settings.req.  This
+allows a script to more easily write a new auto_settings.req file, since
+the request file has the same name as the database it supports.  Also, this
+makes it easy to load more than one copy of standardScans.db.
+<li>Win32-specific .dbd file is no longer needed, since Mark Rivers added
+saveDataWin32.c, which contains stub functions for commands that could not be
+built for Win32.
+<li>IsaveData now checks all data-file writes for errors, and retries until
+file is successfully written, or user-specified number of retries has been
+done.  User also specifies the time between retries.  The new PV's were added
+to scan_saveData.adl
+<li>In sscan module 2.5.3, saveData was writing scan-dimensions to the wrong
+file offset, under certain circumstances.  This is fixed.
+<li>recDynLink now calls epicsAtExit, so it can avoid making CA calls after
+CA has been shut down.
+<li>recDynLink handles null and empty PV names more gracefully.
+<li>sscan record now has a CMND-field value for clearing positioner drive
+and readback PV's, and the default medm display file uses this value for
+it's "CLEAR" button.
+</ul>
+
 <h2 align="center">Release 2-5-3</h2>
 
 <ul>
