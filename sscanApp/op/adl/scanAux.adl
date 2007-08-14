@@ -1,7 +1,7 @@
 
 file {
-	name="/home/oxygen4/MOONEY/epics/3.14.2/synApps/support/std/stdApp/op/adl/scanAux1.adl"
-	version=030003
+	name="/home/oxygen/MOONEY/epics/synApps/support/sscan/sscanApp/op/adl/scanAux.adl"
+	version=030101
 }
 display {
 	object {
@@ -453,6 +453,7 @@ text {
 		clr=53
 		bclr=3
 	}
+	format="compact"
 	limits {
 	}
 }
@@ -500,6 +501,7 @@ text {
 		clr=53
 		bclr=3
 	}
+	format="compact"
 	limits {
 	}
 }
@@ -548,6 +550,7 @@ text {
 		clr=14
 		bclr=51
 	}
+	format="compact"
 	limits {
 	}
 }
@@ -576,6 +579,7 @@ text {
 		clr=14
 		bclr=51
 	}
+	format="compact"
 	limits {
 	}
 }
@@ -604,6 +608,7 @@ text {
 		clr=14
 		bclr=51
 	}
+	format="compact"
 	limits {
 	}
 }

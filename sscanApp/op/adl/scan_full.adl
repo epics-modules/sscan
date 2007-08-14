@@ -1,7 +1,7 @@
 
 file {
-	name="/home/oxygen/MOONEY/epics/synApps_5_1/support/sscan/cvs/sscanApp/op/adl/scan_full.adl"
-	version=030004
+	name="/home/oxygen/MOONEY/epics/synApps/support/sscan/sscanApp/op/adl/scan_full.adl"
+	version=030101
 }
 display {
 	object {
@@ -711,6 +711,7 @@ text {
 		clr=14
 		bclr=51
 	}
+	format="compact"
 	limits {
 	}
 }
@@ -726,6 +727,7 @@ text {
 		clr=14
 		bclr=51
 	}
+	format="compact"
 	limits {
 	}
 }
@@ -767,6 +769,7 @@ text {
 		clr=14
 		bclr=51
 	}
+	format="compact"
 	limits {
 	}
 }
@@ -782,6 +785,7 @@ text {
 		clr=14
 		bclr=51
 	}
+	format="compact"
 	limits {
 	}
 }
@@ -797,6 +801,7 @@ text {
 		clr=14
 		bclr=51
 	}
+	format="compact"
 	limits {
 	}
 }
@@ -954,6 +959,7 @@ text {
 		clr=53
 		bclr=3
 	}
+	format="compact"
 	limits {
 	}
 }
@@ -1001,6 +1007,7 @@ text {
 		clr=53
 		bclr=3
 	}
+	format="compact"
 	limits {
 	}
 }
