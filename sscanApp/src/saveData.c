@@ -147,13 +147,13 @@
 #include <ioLib.h>
 #include <nfsDrv.h>
 #else
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #define OK 0
 #define ERROR -1
 #endif
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -778,7 +778,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.32 2007-06-11 20:39:03 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.33 2007-10-05 14:16:53 mooney Exp $\n");
 }
 
 void saveData_Info() {
