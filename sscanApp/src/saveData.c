@@ -132,11 +132,12 @@
  *                    offsets from variables that had not been initialized.  Moved the
  *                    setting of pscan->nxt->dims_offset and pscan->nxt->regular_offset from
  *                    proc_scan_data(), to writeScanRecInProgress().
- *                    
+ *     11-13-07  tmm  v1.29 Increased stack size.  Ron Sluiter found an ioc with a stack
+ *                    margin of only 616 (of 11720).
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.28.0"
+#define SAVE_DATA_VERSION   "1.29.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -733,7 +734,7 @@ void saveData_Init(char* fname, char* macros)
     printf("saveData: message queue created\n");
 
     threadId = epicsThreadCreate("saveDataTask", PRIORITY,
-      epicsThreadGetStackSize(epicsThreadStackMedium),
+      epicsThreadGetStackSize(epicsThreadStackBig),
       (EPICSTHREADFUNC)saveDataTask, (void *)epicsThreadGetIdSelf());
 
     if (threadId==NULL) {
@@ -778,7 +779,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.34 2007-10-05 14:23:37 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.35 2007-11-13 22:42:00 mooney Exp $\n");
 }
 
 void saveData_Info() {
