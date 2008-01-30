@@ -10,6 +10,19 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
+<h2 align="center">Release 2-5-7</h2>
+<ul>
+
+<li>Allow end user to specify the base name of data files written by saveData.
+Previously, the ioc prefix (modified to avoid characters illegal in file names
+on the supported operating systems) was used as the base file name.  Now, if
+saveData.req contains the section [basename], and the PV named in that section
+exists, and the string value of that PV is not the empty string, then saveData
+will use the string value, instead of the ioc prefix, as the base file name
+(onto which the scan number and the string ".mda" will be appended).
+
+</ul>
+
 <h2 align="center">Release 2-5-6</h2>
 <ul>
 <li>scan.db database separated into standardScans.db and saveData.db.
