@@ -134,10 +134,11 @@
  *                    proc_scan_data(), to writeScanRecInProgress().
  *     11-13-07  tmm  v1.29 Increased stack size.  Ron Sluiter found an ioc with a stack
  *                    margin of only 616 (of 11720).
+ *     01-29-08  tmm  v1.30 Allow end user to specify filename (see "basename")
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.29.0"
+#define SAVE_DATA_VERSION   "1.30.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -174,6 +175,7 @@
 #define DESC_SIZE 30
 #define EGU_SIZE 16
 #define PREFIX_SIZE 10
+#define BASENAME_SIZE 20
 
 #include "req_file.h"
 #include "xdr_lib.h"
@@ -434,6 +436,7 @@ typedef struct scan {
 #define MSG_FILE_SYSTEM 20
 #define MSG_FILE_SUBDIR 21
 #define MSG_REALTIME1D  22
+#define MSG_FILE_BASENAME 23
 
 /* Message structures */
 typedef struct scan_short_msg {
@@ -607,12 +610,16 @@ LOCAL int   file_system_state= FS_NOT_MOUNTED;
 LOCAL chid  file_subdir_chid;
 LOCAL chid  file_subdir_disp_chid;
 
+LOCAL chid  file_basename_chid = NULL;
+LOCAL chid  file_basename_disp_chid = NULL;
+
 LOCAL int   realTime1D= 1;
 LOCAL chid  realTime1D_chid;
 
 LOCAL long  counter;  /* data file counter*/
 LOCAL chid  counter_chid;
 LOCAL char  ioc_prefix[PREFIX_SIZE];
+LOCAL char  scanFile_basename[BASENAME_SIZE] = "";
 
 /* file-write retries */
 LOCAL chid  maxAllowedRetries_chid;
@@ -779,7 +786,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.35 2007-11-13 22:42:00 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.36 2008-01-30 19:26:21 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -1435,6 +1442,10 @@ if (pscan->nxt) {
       ca_array_put(DBR_CHAR, 1, file_system_disp_chid, &disp);
       disp = (char)1;
       ca_array_put(DBR_CHAR, 1, file_subdir_disp_chid, &disp);
+      if (file_basename_disp_chid) {
+        disp = (char)1;
+        ca_array_put(DBR_CHAR, 1, file_basename_disp_chid, &disp);
+      }
       disp = (char)0;
       ca_array_put(DBR_STRING, 1, message_chid, &disp);
     }
@@ -1556,6 +1567,10 @@ LOCAL void fileSubdirMonitor(struct event_handler_args eha)
   sendStringMsgWait(MSG_FILE_SUBDIR, NULL, eha.dbr);
 }
 
+LOCAL void fileBasenameMonitor(struct event_handler_args eha)
+{
+  sendStringMsgWait(MSG_FILE_BASENAME, NULL, eha.dbr);
+}
 
 LOCAL void realTime1DMonitor(struct event_handler_args eha)
 {
@@ -1616,6 +1631,29 @@ LOCAL int connectSubdir(char* sd)
              , sd);
       ca_clear_channel(file_subdir_chid);
       return -1;
+    }
+  }
+  return 0;
+}
+
+LOCAL int connectBasename(char* bn)
+{
+  char bn_disp[80];
+
+  sprintf(bn_disp, "%s.DISP", bn);
+  ca_search(bn, &file_basename_chid);
+  ca_search(bn_disp, &file_basename_disp_chid);
+  if(ca_pend_io(0.5)!=ECA_NORMAL) {
+    printf("saveData: Unable to connect %s\n", bn);
+	file_basename_chid = NULL;
+    return 0;
+  } else {
+    if(ca_add_event(DBR_STRING, file_basename_chid, 
+                    fileBasenameMonitor, NULL, NULL)!=ECA_NORMAL) {
+      printf("saveData: Can't monitor %s\n", bn);
+      ca_clear_channel(file_basename_chid);
+	  file_basename_disp_chid = NULL;
+      return 0;
     }
   }
   return 0;
@@ -1992,16 +2030,27 @@ LOCAL int initSaveDataTask()
   if(connectFileSystem(buff1)==-1) return -1;
 
 
-  /* Connect to saveData_baseName                                       */
+  /* Connect to saveData_subDir                                        */
   if(req_gotoSection(rf, "subdir")!=0) {
     printf("saveData: section [subdir] not found\n");
     return -1;
   }
   if(req_readMacId(rf, buff1, PVNAME_STRINGSZ)==0) {
-    printf("saveData: baseName pv name not defined\n");
+    printf("saveData: subDir pv name not defined\n");
     return -1;
   }
   if(connectSubdir(buff1)==-1) return -1;
+
+  /* Connect to saveData_baseName                                       */
+  if(req_gotoSection(rf, "basename")!=0) {
+    printf("saveData: section [basename] not found\n");
+    return 0;
+  }
+  if(req_readMacId(rf, buff1, PVNAME_STRINGSZ)==0) {
+    printf("saveData: baseName pv name not defined\n");
+    return 0;
+  }
+  if(connectBasename(buff1)==-1) return -1;
 
   /* Connect all scan records.                                          */
   if(req_gotoSection(rf, "scanRecord")==0) {
@@ -2630,6 +2679,10 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
         ca_array_put(DBR_CHAR, 1, file_system_disp_chid, &cval);
         cval=(char)0;
         ca_array_put(DBR_CHAR, 1, file_subdir_disp_chid, &cval);
+        if (file_basename_disp_chid) {
+          cval=(char)0;
+          ca_array_put(DBR_CHAR, 1, file_basename_disp_chid, &cval);
+        }
       }
       Debug1(2,"(save_status inactive) nb_scan_running=%d\n", nb_scan_running);
       if (nb_scan_running < 0) {
@@ -2702,7 +2755,10 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
         pscan->counter = counter;
       }
       /* Make file name */
-      sprintf(pscan->fname, "%s%.4d.mda", ioc_prefix, (int)pscan->counter);
+      if (scanFile_basename[0] == '\0') {
+	    strncpy(scanFile_basename, ioc_prefix, BASENAME_SIZE);
+      }
+      sprintf(pscan->fname, "%s%.4d.mda", scanFile_basename, (int)pscan->counter);
 #ifdef vxWorks
       sprintf(pscan->ffname, "%s%s", local_pathname, pscan->fname);
 #else
@@ -2838,6 +2894,10 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
       ca_array_put(DBR_CHAR, 1, file_system_disp_chid, &cval);
       cval=(char)0;
       ca_array_put(DBR_CHAR, 1, file_subdir_disp_chid, &cval);
+      if (file_basename_disp_chid) {
+        cval=(char)0;
+        ca_array_put(DBR_CHAR, 1, file_basename_disp_chid, &cval);
+      }
     }
     Debug1(2,"(save_status active) nb_scan_running=%d\n", nb_scan_running);
 
@@ -3437,6 +3497,13 @@ LOCAL void proc_file_subdir(STRING_MSG* pmsg)
             (float)epicsTimeDiffInSeconds(&now, &pmsg->time));
 }
 
+LOCAL void proc_file_basename(STRING_MSG* pmsg)
+{
+  strncpy(scanFile_basename, pmsg->string, BASENAME_SIZE-1);
+  scanFile_basename[BASENAME_SIZE-1] = '\0';
+  DebugMsg1(2, "MSG_FILE_BASENAME(%s)\n", pmsg->string);
+}
+
 LOCAL void proc_realTime1D(INTEGER_MSG* pmsg)
 {
   epicsTimeStamp now;
@@ -3556,6 +3623,11 @@ LOCAL int saveDataTask(void *parm)
     case MSG_FILE_SUBDIR:
       Debug1(2, "saveDataTask: MSG_FILE_SUBDIR, val=%s\n", ((STRING_MSG*)pmsg)->string);
       proc_file_subdir((STRING_MSG*)pmsg);
+      break;
+
+    case MSG_FILE_BASENAME:
+      Debug1(2, "saveDataTask: MSG_FILE_BASENAME, val=%s\n", ((STRING_MSG*)pmsg)->string);
+      proc_file_basename((STRING_MSG*)pmsg);
       break;
 
     case MSG_REALTIME1D:
