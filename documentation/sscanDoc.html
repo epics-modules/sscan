@@ -7,9 +7,9 @@
 <meta name="author" content="Tim Mooney">
 </head>
 <body>
-<img src="http://www.aps.anl.gov/aod/bcda/icons/logo101.gif" alt=
+<img src="http://www.aps.anl.gov/bcda/Images/logo101.gif" alt=
 "EPICS" hspace="5" height="101" width="101" align="right">
-<h1>sscanDoc</h1>
+<h1>The sscan module</h1>
 
 <h2>Documentation</h2>
 The following documentation is available:
@@ -76,6 +76,35 @@ example/exampleApp/src/iocexampleInclude.dbd.
 <li>Include the following line in example/exampleApp/src/Makefile.
 <pre>example_LIBS += sscan</pre>
 
+<li>Load the databases standardScans, and saveData, by including the following lines in st.cmd:
+<pre>
+dbLoadRecords("$(SSCAN)/sscanApp/Db/standardScans.db","P=xxx:,MAXPTS1=2000,MAXPTS2=1000,MAXPTS3=1000,MAXPTS4=10,MAXPTSH=2000")
+dbLoadRecords("$(SSCAN)/sscanApp/Db/saveData.db","P=xxx:")
+</pre>
+
+<li>If you use autosave, include standardScans_settings.req, and
+saveData_settings.req in your autosave request file:
+
+<pre>
+file standardScans_settings.req P=$(P)
+file saveData_settings.req P=$(P)
+</pre>
+
+<li>Initialize saveData by including the following line in st.cmd, after iocInit::
+
+<pre>
+saveData_Init("saveData.req", "P=xxx:")
+</pre>
+
+
 </ol>
+
+
+<address>
+    Suggestions and Comments to: <br>
+    <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
+    (mooney@aps.anl.gov) <br>
+    Last modified: Jan 30, 2008 
+</address>
 </body>
 </html>
