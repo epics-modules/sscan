@@ -24,6 +24,10 @@ not execute its forward link) as long as its VAL field remains "Busy".  When VAL
 is set to "Done", and the record is processed, it will execute its forward link,
 notifying EPICS that it is finished, and EPICS will send the callback.
 
+The write that sets a BUSY record to "Busy" (1) must be done by either a
+ca_put_callback(), or a PP link.  The write that resets the record to "Done" (0)
+must be done by either a ca_put() or a CA link.
+
 <P>The busy record has the standard fields (dbCommon.db) for specifying under what
 circumstances the record will be processed, etc.  These fields are listed in the
 EPICS Record Reference Manual.  The BUSY record has four additional fields:
