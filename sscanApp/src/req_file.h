@@ -3,7 +3,8 @@
  *      Original Author: Eric Boucher
  *
  * Modification Log:
- * .01 01-09-901 tmm  Included Ron Sluiter's change for ppc
+ * .01 01-09-01 tmm  Included Ron Sluiter's change for ppc
+ * .02 02-12-08 tmm  isidchar() includes all legal PVname chars
  */
 
 #ifndef __REQ_FILE_H__
@@ -50,7 +51,8 @@ typedef struct req_file {
 
 /*----------------------------------------------------------------------*/
 /* TRUE if c is a valid identifier char.                                */
-#define isidchar(c) (isalnum(c) || (c=='_') || (c=='.') || (c==':'))
+/* #define isidchar(c) (isalnum(c) || (c=='_') || (c=='.') || (c==':')) */
+#define isidchar(c) (isalnum(c) || (c=='_') || (c=='.') || (c==':') || (c=='-') || (c=='[') || (c==']') || (c=='<') || (c=='>') || (c==';'))
 
 /*----------------------------------------------------------------------*/
 /* The current char of the req file.                                    */
