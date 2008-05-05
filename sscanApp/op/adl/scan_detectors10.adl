@@ -486,13 +486,13 @@ text {
 		height=20
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
+		label="Plot Array"
+		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=$(N1)"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=$(N1)"
 	}
 	clr=0
@@ -507,13 +507,13 @@ text {
 		height=20
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
+		label="Plot Array"
+		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=$(N2)"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=$(N2)"
 	}
 	clr=0
@@ -528,13 +528,13 @@ text {
 		height=20
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
+		label="Plot Array"
+		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=$(N4)"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=$(N4)"
 	}
 	clr=0
@@ -549,13 +549,13 @@ text {
 		height=20
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
+		label="Plot Array"
+		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=$(N3)"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=$(N3)"
 	}
 	clr=0
@@ -570,13 +570,13 @@ text {
 		height=20
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
+		label="Plot Array"
+		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=$(N5)"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=$(N5)"
 	}
 	clr=0
@@ -591,13 +591,13 @@ text {
 		height=20
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
+		label="Plot Array"
+		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=$(N6)"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=$(N6)"
 	}
 	clr=0
@@ -612,13 +612,13 @@ text {
 		height=20
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
+		label="Plot Array"
+		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=$(N7)"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=$(N7)"
 	}
 	clr=0
@@ -633,13 +633,13 @@ text {
 		height=20
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
+		label="Plot Array"
+		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=$(N8)"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=$(N8)"
 	}
 	clr=0
@@ -654,13 +654,13 @@ text {
 		height=20
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
+		label="Plot Array"
+		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=$(N9)"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=$(N9)"
 	}
 	clr=0
@@ -675,13 +675,13 @@ text {
 		height=20
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
+		label="Plot Array"
+		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=$(N10)"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=$(N10)"
 	}
 	clr=0

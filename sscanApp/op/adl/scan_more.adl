@@ -982,24 +982,14 @@ polyline {
 		height=22
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
-		args="P=$(P),S=$(S),D=D01,N=01"
-	}
-	display[1] {
-		label="After-scan plot"
+		label="Plot Array"
 		name="scanDetPlot.adl"
 		args="P=$(P),S=$(S),N=01"
 	}
-	display[2] {
-		label="Real-time dets 1-8"
-		name="scanDetPlot8RT.adl"
-		args="P=$(P),S=$(S),N1=01,N2=02,N3=03,N4=04,N5=05,N6=06,N7=07,N8=08"
-	}
-	display[3] {
-		label="After-scan deta 1-8"
-		name="scanDetPlot8.adl"
-		args="P=$(P),S=$(S),N1=01,N2=02,N3=03,N4=04,N5=05,N6=06,N7=07,N8=08"
+	display[1] {
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
+		args="P=$(P),S=$(S),N=01"
 	}
 	clr=0
 	bclr=17
@@ -1289,13 +1279,13 @@ composite {
 		height=22
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
-		args="P=$(P),S=$(S),D=D04,N=04"
+		label="Plot Array"
+		name="scanDetPlot.adl"
+		args="P=$(P),S=$(S),N=04"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=04"
 	}
 	clr=0
@@ -1310,13 +1300,13 @@ composite {
 		height=22
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
-		args="P=$(P),S=$(S),D=D03,N=03"
+		label="Plot Array"
+		name="scanDetPlot.adl"
+		args="P=$(P),S=$(S),N=03"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=03"
 	}
 	clr=0
@@ -1331,13 +1321,13 @@ composite {
 		height=22
 	}
 	display[0] {
-		label="Real-time plot"
-		name="scanDetPlotRT.adl"
-		args="P=$(P),S=$(S),D=D02,N=02"
+		label="Plot Array"
+		name="scanDetPlot.adl"
+		args="P=$(P),S=$(S),N=02"
 	}
 	display[1] {
-		label="After-scan plot"
-		name="scanDetPlot.adl"
+		label="Plot From Scalars"
+		name="scanDetPlotFromScalars.adl"
 		args="P=$(P),S=$(S),N=02"
 	}
 	clr=0

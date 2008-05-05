@@ -1,7 +1,7 @@
 
 file {
-	name="j:\epics\R3.13.1\share\stdApp\op\adl\scanDetPlot.adl"
-	version=020306
+	name="C:\cygwin\home\mooney\epics\synApps\support\all_adl\scanDetPlot.adl"
+	version=030004
 }
 display {
 	object {
@@ -102,8 +102,8 @@ display {
 	style="line"
 	count="2000"
 	trace[0] {
-		xdata="$(P)$(S).P1RA"
-		ydata="$(P)$(S).D$(N)DA"
+		xdata="$(P)$(S).P1CA"
+		ydata="$(P)$(S).D$(N)CA"
 		data_clr=14
 	}
 	x_axis {

@@ -1,7 +1,7 @@
 
 file {
-	name="C:\Program Files\EPICS WIN32 Extensions\synApps_4_3_adl\scanDetPlot8.adl"
-	version=020306
+	name="C:\cygwin\home\mooney\epics\synApps\support\all_adl\scanDetPlot8.adl"
+	version=030004
 }
 display {
 	object {
@@ -116,43 +116,43 @@ display {
 	style="line"
 	count="2000"
 	trace[0] {
-		xdata="$(P)$(S).P1RA"
-		ydata="$(P)$(S).D$(N1)DA"
+		xdata="$(P)$(S).P1CA"
+		ydata="$(P)$(S).D$(N1)CA"
 		data_clr=20
 	}
 	trace[1] {
-		xdata="$(P)$(S).P1RA"
-		ydata="$(P)$(S).D$(N2)DA"
+		xdata="$(P)$(S).P1CA"
+		ydata="$(P)$(S).D$(N2)CA"
 		data_clr=32
 	}
 	trace[2] {
-		xdata="$(P)$(S).P1RA"
-		ydata="$(P)$(S).D$(N3)DA"
+		xdata="$(P)$(S).P1CA"
+		ydata="$(P)$(S).D$(N3)CA"
 		data_clr=30
 	}
 	trace[3] {
-		xdata="$(P)$(S).P1RA"
-		ydata="$(P)$(S).D$(N4)DA"
+		xdata="$(P)$(S).P1CA"
+		ydata="$(P)$(S).D$(N4)CA"
 		data_clr=15
 	}
 	trace[4] {
-		xdata="$(P)$(S).P1RA"
-		ydata="$(P)$(S).D$(N5)DA"
+		xdata="$(P)$(S).P1CA"
+		ydata="$(P)$(S).D$(N5)CA"
 		data_clr=50
 	}
 	trace[5] {
-		xdata="$(P)$(S).P1RA"
-		ydata="$(P)$(S).D$(N6)DA"
+		xdata="$(P)$(S).P1CA"
+		ydata="$(P)$(S).D$(N6)CA"
 		data_clr=35
 	}
 	trace[6] {
-		xdata="$(P)$(S).P1RA"
-		ydata="$(P)$(S).D$(N7)DA"
+		xdata="$(P)$(S).P1CA"
+		ydata="$(P)$(S).D$(N7)CA"
 		data_clr=0
 	}
 	trace[7] {
-		xdata="$(P)$(S).P1RA"
-		ydata="$(P)$(S).D$(N8)DA"
+		xdata="$(P)$(S).P1CA"
+		ydata="$(P)$(S).D$(N8)CA"
 		data_clr=46
 	}
 	x_axis {
@@ -164,8 +164,6 @@ display {
 	y2_axis {
 		rangeStyle="auto-scale"
 	}
-	trigger="$(P)$(S).VAL"
-	erase="$(P)$(S).DATA"
 	eraseMode="if zero"
 }
 text {
