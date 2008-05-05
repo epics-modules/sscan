@@ -280,9 +280,13 @@
  *                      & ABSOLUTE, reset all freeze flags & .FFO, set .SCAN to Passive, set
  *                      RETRACE=stay
  *                      CMND==7: clear positioner and readback PV's without changing anything else.
+ * 5.5  05-05-08  tmm   v5.5: Post data arrays every ATIME seconds during a scan.  For these postings,
+ *                      repeat last data point to user specified array element number, COPYTO.  At
+ *                      end of scan, post data arrays with DBE_LOG, so clients can choose to ignore
+ *                      intermediate postings.
  */
 
-#define VERSION 5.41
+#define VERSION 5.5
 
 
 #include <stddef.h>
@@ -528,6 +532,7 @@ typedef struct posFields {
 	double          p_lr;	/* P1 Low  Oper Range */
 	double         *p_pa;	/* P1 Step Array */
 	double         *p_ra;	/* P1 Readback Array */
+	double         *p_ca;	/* P1 Current Readback Array */
 	unsigned short  p_fs;	/* P1 Freeze Start Pos */
 	unsigned short  p_fi;	/* P1 Freeze Step Inc */
 	unsigned short  p_fe;	/* P1 Freeze End Pos */
@@ -538,7 +543,6 @@ typedef struct posFields {
 	char            p_eu[16];	/* P1 Engineering Units */
 	short           p_pr;	/* P1 Display Precision */
 } posFields;
-#define NUM_POS_FIELDS 25
 
 /* the following structure must match EXACTLY with the order and type of
    fields defined in sscanRecord.h for each detector (even including
@@ -548,13 +552,13 @@ typedef struct detFields {
 	double          d_hr;	/* D1 High Oper Range */
 	double          d_lr;	/* D1 Low  Oper Range */
 	float          *d_da;	/* D1 Data Array */
+	float          *d_ca;	/* D1 Current Data Array */
 	float           d_cv;	/* D1 Current Value */
 	float           d_lv;	/* D1 Last Value Posted */
 	unsigned long   d_ne;	/* D1 # of Elements/Pt */
 	char            d_eu[16];	/* D1 Engineering Units */
 	short           d_pr;	/* D1 Display Precision */
 } detFields;
-#define NUM_DET_FIELDS 8
 
 /* calledBy values */
 #define UNKNOWN					0x00
@@ -630,6 +634,7 @@ static long		initScan(sscanRecord *psscan);
 static void		contScan(sscanRecord *psscan);
 static void		endScan(sscanRecord *psscan);
 static void 	readArrays(sscanRecord *psscan);
+static void		copyLastPoint(sscanRecord *psscan, long pointNumber, long copyTo);
 static void		packData(sscanRecord *psscan, int caller);
 static void		afterScan(sscanRecord *psscan);
 static void		doPuts(CALLBACK *pCB);
@@ -1060,7 +1065,8 @@ process(sscanRecord *psscan)
 		/* use TimeStamp to record beginning of scan */
 		recGblGetTimeStamp(psscan);
 		psscan->dstate = sscanDSTATE_UNPACKED; POST(&psscan->dstate);
-		psscan->data = 0; POST(&psscan->data);
+		psscan->data = 0;
+		db_post_events(psscan, &psscan->data, DBE_VAL_LOG);
 		if (sscanRecordDebug >= 5) printf("%s:process: new sscan\n", psscan->name);
 		if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
 		if (psscan->wcnt) {psscan->wcnt = 0; POST(&psscan->wcnt);}
@@ -1209,6 +1215,7 @@ special(struct dbAddr *paddr, int after)
 				case (sscanRecordWAIT):
 				case (sscanRecordAWCT):
 				case (sscanRecordAWAIT):
+				case (sscanRecordATIME):
 					return(0);
 				default:
 					return(-1);
@@ -1712,30 +1719,33 @@ cvt_dbaddr(struct dbAddr *paddr)
 	posFields	*pPos = (posFields *) & psscan->p1pp;
 	detFields	*pDet = (detFields *) & psscan->d01hr;
     int			i, fieldIndex = dbGetFieldIndex(paddr);
+	unsigned short	numFieldsInGroup;
 
-	if (sscanRecordDebug > 5)
+	if (sscanRecordDebug > 0)
 		printf("sscanRecord:cvt_dbaddr: fieldIndex=%d\n", fieldIndex);
-	i = (fieldIndex - sscanRecordD01HR) / NUM_DET_FIELDS;
+	numFieldsInGroup = sscanRecordD02DA - sscanRecordD01DA;
+	i = (fieldIndex - sscanRecordD01HR) / numFieldsInGroup;
 	if ((i >= 0) && (i < NUM_DET)) {
 		pDet += i;
-		paddr->pfield = pDet->d_da;
+		paddr->pfield = pDet->d_da; /* doesn't matter what goes here, as long as it has the right type */
 		paddr->no_elements = psscan->mpts;
 		paddr->field_type = DBF_FLOAT;
 		paddr->field_size = sizeof(float);
 		paddr->dbr_field_type = DBF_FLOAT;
-		if (sscanRecordDebug > 5)
-			printf("sscanRecord:cvt_dbaddr: field_type=%d\n", paddr->field_type);
 		return (0);
 	}
 
-	i = (fieldIndex - sscanRecordP1PP) / NUM_POS_FIELDS;
+	numFieldsInGroup = sscanRecordP2PP - sscanRecordP1PP;
+	i = (fieldIndex - sscanRecordP1PP) / numFieldsInGroup;
 	if ((i >= 0) && (i < NUM_POS)) {
 		pPos += i;
-		i = (fieldIndex - sscanRecordP1PP) % NUM_POS_FIELDS;
+		i = (fieldIndex - sscanRecordP1PP) % numFieldsInGroup;
 		if (i == (sscanRecordP1PA - sscanRecordP1PP)) {
 			paddr->pfield = (void *) (pPos->p_pa);
 		} else if (i == (sscanRecordP1RA - sscanRecordP1PP)) {
 			paddr->pfield = (void *) (pPos->p_ra);
+		} else if (i == (sscanRecordP1CA - sscanRecordP1PP)) {
+			paddr->pfield = (void *) (pPos->p_ca);
 		} else {
 			return(-1);	/* dbd problem: no cvt_dbaddr support for field */
 		}
@@ -1752,106 +1762,150 @@ cvt_dbaddr(struct dbAddr *paddr)
 static long 
 get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 {
-	sscanRecord *psscan = (sscanRecord *) paddr->precord;
-	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	detFields      *pDet = (detFields *) & psscan->d01hr;
-	posFields      *pPos = (posFields *) & psscan->p1pp;
-	short           fieldOffset;
-	unsigned short *pPvStat;
-	unsigned short  i;
-    int fieldIndex = dbGetFieldIndex(paddr);
+	sscanRecord		*psscan = (sscanRecord *) paddr->precord;
+	recPvtStruct	*precPvt = (recPvtStruct *) psscan->rpvt;
+	unsigned short	numFieldsInGroup, group;
+    int				fieldIndex = dbGetFieldIndex(paddr);
+	int				groupField, groupFieldCA;
 
+
+	if (sscanRecordDebug > 0)
+		printf("sscanRecord:get_array_info: fieldIndex=%d\n", fieldIndex);
 	/*
 	 * This routine is called because someone wants an array. Determine
-	 * which array they are interested by comparing the address of the
-	 * field to the array pointers
+	 * which array they want by comparing fieldIndex to the indices of
+	 * the array fields we host.  Note that these array fields are not
+	 * contiguous, but instead are in groups of fields specific to a
+	 * particular detector or positioner.
 	 */
 
-	fieldOffset = ((dbFldDes *) (paddr->pfldDes))->offset;
-/*printf("get_array_info: fieldIndex=%d\n", fieldIndex);*/
-
 	*offset = 0;
-	pPvStat = &psscan->d01nv;
-	for (i = 0; i < NUM_DET; i++, pDet++, pPvStat++) {
-		if (((char *) &pDet->d_da - (char *) psscan) == fieldOffset) {
-			if ((precPvt->acqDet[i]) ||
-			    ((i < NUM_POS) && (psscan->faze == sscanFAZE_PREVIEW))) {
+	*no_elements = 0;
+
+	/* Is field a detector array? */
+	numFieldsInGroup = sscanRecordD02DA - sscanRecordD01DA;
+	if ((fieldIndex >= sscanRecordD01DA) &&
+	    (fieldIndex < sscanRecordD01DA + NUM_DET*numFieldsInGroup)) {
+		group = (fieldIndex - sscanRecordD01DA)/numFieldsInGroup;
+		groupField = fieldIndex - (sscanRecordD01DA + group*numFieldsInGroup);
+		if (sscanRecordDebug > 0)
+			printf("sscanRecord:get_array_info: groupField=%d\n", groupField);
+		groupFieldCA = sscanRecordD01CA - (sscanRecordD01DA + group*numFieldsInGroup);
+		if (sscanRecordDebug > 0)
+			printf("sscanRecord:get_array_info: groupFieldCA=%d\n", groupFieldCA);
+
+		if ((precPvt->acqDet[group]) ||
+		    	((group < NUM_POS) && (psscan->faze == sscanFAZE_PREVIEW))) {
+			if ((groupField==0) || (psscan->dstate >= sscanDSTATE_PACKED)) {
+				/* e.g., D01DA, or any after buffers have been switched*/
 				if (precPvt->validBuf == B_BUFFER) {
-/*if (fieldIndex==345) printf("get_array_info: returning B (.pBufB[0]=%f)\n", precPvt->detBufPtr[i].pBufB[0]);*/
-					paddr->pfield = precPvt->detBufPtr[i].pBufB;
+					paddr->pfield = precPvt->detBufPtr[group].pBufB;
 				} else {
-/*if (fieldIndex==345) printf("get_array_info: returning A (.pBufA[0]=%f)\n", precPvt->detBufPtr[i].pBufA[0]);*/
-					paddr->pfield = precPvt->detBufPtr[i].pBufA;
+					paddr->pfield = precPvt->detBufPtr[group].pBufA;
 				}
 			} else {
-				paddr->pfield = precPvt->nullArray;
+				/* e.g., D01CA during scan */
+				if (precPvt->validBuf == A_BUFFER) {
+					paddr->pfield = precPvt->detBufPtr[group].pBufB;
+				} else {
+					paddr->pfield = precPvt->detBufPtr[group].pBufA;
+				}
 			}
-			*no_elements = psscan->mpts;
-			return (0);
+		} else {
+			/* Caller is connected to a field whose buffer has not been allocated */
+			paddr->pfield = precPvt->nullArray;
 		}
+		*no_elements = psscan->mpts;
+		/* *no_elements = psscan->cpt; */ /* but we fill arrays for medm */
+		return (0);
 	}
-	for (i = 0; i < NUM_POS; i++, pPos++) {
-		if (((char *) &pPos->p_ra - (char *) psscan) == fieldOffset) {
+
+
+	/* Is field a positioner-readback array? */
+	numFieldsInGroup = sscanRecordP2RA - sscanRecordP1RA;
+	if ((fieldIndex >= sscanRecordP1RA) &&
+	    (fieldIndex < sscanRecordP1RA + NUM_POS*numFieldsInGroup)) {
+		group = (fieldIndex - sscanRecordP1RA)/numFieldsInGroup;
+		groupField = fieldIndex - (sscanRecordP1RA + group*numFieldsInGroup);
+		if (sscanRecordDebug > 0)
+			printf("sscanRecord:get_array_info: groupField=%d\n", groupField);
+		groupFieldCA = sscanRecordP1CA - (sscanRecordP1RA + group*numFieldsInGroup);
+		if (sscanRecordDebug > 0)
+			printf("sscanRecord:get_array_info: groupFieldCA=%d\n", groupFieldCA);
+
+		if ((groupField==0) || (psscan->dstate >= sscanDSTATE_PACKED)) {
+			/* e.g., P1RA, or any after buffers have been switched*/
 			if (precPvt->validBuf == B_BUFFER)
-				paddr->pfield = precPvt->posBufPtr[i].pBufB;
+				paddr->pfield = precPvt->posBufPtr[group].pBufB;
 			else
-				paddr->pfield = precPvt->posBufPtr[i].pBufA;
-
-			*no_elements = psscan->mpts;
-			return (0);
+				paddr->pfield = precPvt->posBufPtr[group].pBufA;
+		} else {
+			/* e.g., P1CA, during scan*/
+			if (precPvt->validBuf == A_BUFFER)
+				paddr->pfield = precPvt->posBufPtr[group].pBufB;
+			else
+				paddr->pfield = precPvt->posBufPtr[group].pBufA;
 		}
+		*no_elements = psscan->mpts;
+		/* *no_elements = psscan->cpt; */ /* but we fill arrays for medm */
+		return (0);
 	}
 
-	*no_elements = 0;
+	/* If field is within positioner section, and not a positioner-readback array,
+	 * then it must be a positioner array.  We don't have to set paddr->pfield,
+	 * because these arrays are not double-buffered. 
+	 */
 	if ((fieldIndex >= sscanRecordP1PA) && (fieldIndex <= sscanRecordP4RA)) {
 		*no_elements = psscan->mpts;
 	}
-
 	return (0);
 }
+
 
 static long 
 put_array_info(struct dbAddr *paddr, long nNew)
 {
 	sscanRecord *psscan = (sscanRecord *) paddr->precord;
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	posFields      *pPos = (posFields *) & psscan->p1pp;
-	short           fieldOffset;
-	unsigned short  i;
+	unsigned short	numFieldsInGroup, group;
+    int				fieldIndex = dbGetFieldIndex(paddr);
 
 	/*
 	 * This routine is called because someone wrote a table to the
 	 * "positioner" array p_pa. Determine which positioner and store
-	 * nelem for future use. Also check against current npts
+	 * nNew for future use. Also check against current npts
 	 */
 
 	/* Make sure npts is reasonable.  Autosave might have  changed it after init_record. */
 	if (psscan->npts > psscan->mpts) {psscan->npts = psscan->mpts; POST(&psscan->npts);}
 	if (psscan->npts <= 0) {psscan->npts = 1; POST(&psscan->npts);}
 
-	fieldOffset = ((dbFldDes *) (paddr->pfldDes))->offset;
 
-	for (i = 0; i < NUM_POS; i++, pPos++) {
-		if (((char *) &pPos->p_pa - (char *) psscan) == fieldOffset) {
-			precPvt->tablePts[i] = nNew;
-			if (nNew < psscan->npts) {
-				sprintf(psscan->smsg, "Pts in P%d Table < # of Steps.", i + 1);
-				POST(&psscan->smsg);
-				if (!psscan->alrt) {
-					psscan->alrt = 1; POST(&psscan->alrt);
-				}
-			} else {
-				strcpy(psscan->smsg, "");
-				POST(&psscan->smsg);
-				if (psscan->alrt) {
-					psscan->alrt = 0; POST(&psscan->alrt);
-				}
+	/* Is field a positioner array? */
+	numFieldsInGroup = sscanRecordP2PA - sscanRecordP1PA;
+	if ((fieldIndex >= sscanRecordP1PA) &&
+	    (fieldIndex < sscanRecordP1PA + NUM_POS*numFieldsInGroup)) {
+		group = (fieldIndex - sscanRecordP1PA)/numFieldsInGroup;
+
+		precPvt->tablePts[group] = nNew;
+		if (nNew < psscan->npts) {
+			sprintf(psscan->smsg, "Pts in P%d Table < # of Steps.", group + 1);
+			POST(&psscan->smsg);
+			if (!psscan->alrt) {
+				psscan->alrt = 1; POST(&psscan->alrt);
 			}
-			return (0);
+		} else {
+			strcpy(psscan->smsg, "");
+			POST(&psscan->smsg);
+			if (psscan->alrt) {
+				psscan->alrt = 0; POST(&psscan->alrt);
+			}
 		}
+		return (0);
 	}
 	return (0);
 }
+
 
 
 static long 
@@ -1952,6 +2006,9 @@ get_precision(struct dbAddr *paddr, long *precision)
 			*precision = MIN(10, MAX(0, pDet[i].d_pr));
 			return(0);
 		}
+	} else if (fieldIndex == sscanRecordATIME) {
+		*precision = 1;
+		return(0);
 	}
 	*precision = 3;
 	return (0);
@@ -2015,7 +2072,7 @@ checkMonitors(sscanRecord *psscan)
 	detFields      *pDet = (detFields *) & psscan->d01hr;
 	posFields      *pPos = (posFields *) & psscan->p1pp;
 	epicsTimeStamp  timeCurrent;
-	int             i;
+	int             i, end_of_scan;
 
 	if (psscan->dstate == sscanDSTATE_POSTED) return;
 	/*
@@ -2023,6 +2080,7 @@ checkMonitors(sscanRecord *psscan)
 	 * fields have changed (also post monitors on end of sscan)
 	 */
 
+	/* post scalars */
 	epicsTimeGetCurrent(&timeCurrent);
 	if ((epicsTimeDiffInSeconds(&timeCurrent, &psscan->tolp) > MIN_MON) ||
 	    ((psscan->pxsc == 1) && (psscan->xsc == 0))) {
@@ -2054,9 +2112,32 @@ checkMonitors(sscanRecord *psscan)
 			if (psscan->cpt) POST(&psscan->val);
 		}
 	}
-	/* if this is the end of a sscan, post data arrays */
-	/* post these with DBE_LOG option for archiver    */
-	if (psscan->dstate == sscanDSTATE_PACKED) {
+
+	end_of_scan = (psscan->dstate == sscanDSTATE_PACKED);
+
+	/* post arrays during scan */
+	if (!end_of_scan && (psscan->atime >= 0.1) &&
+		((epicsTimeDiffInSeconds(&timeCurrent, &psscan->tlap) > psscan->atime) ||
+	    	((psscan->pxsc == 1) && (psscan->xsc == 0)))) {
+		psscan->tlap = timeCurrent;
+		for (i = 0; i < NUM_POS; i++) {
+			db_post_events(psscan, precPvt->posBufPtr[i].pBufA, DBE_VALUE);
+			db_post_events(psscan, precPvt->posBufPtr[i].pBufB, DBE_VALUE);
+		}
+		for (i = 0; i < NUM_DET; i++) {
+			if (precPvt->acqDet[i]) {
+				db_post_events(psscan, precPvt->detBufPtr[i].pBufA, DBE_VALUE);
+				db_post_events(psscan, precPvt->detBufPtr[i].pBufB, DBE_VALUE);
+			}
+		}
+		db_post_events(psscan, precPvt->nullArray, DBE_VALUE);
+	}
+
+	/*
+	 * If this is the end of a scan, post data arrays with DBE_LOG, for
+	 * archiver, and for clients that want arrays only at end of scan.
+	 */
+	if (end_of_scan) {
 		psscan->dstate = sscanDSTATE_POSTED; POST(&psscan->dstate);
 
 		/* Must post events on both pointers, since toggle.  Note that this is
@@ -2078,7 +2159,7 @@ checkMonitors(sscanRecord *psscan)
 		 * I must also post a monitor on the NULL array, because some
 		 * clients connected to D?PV's without valid PV's !
 		 */
-		POST(precPvt->nullArray);
+		db_post_events(psscan, precPvt->nullArray, DBE_VAL_LOG);
 
 		/* post alert if changed */
 		if (precPvt->scanErr) {
@@ -2094,7 +2175,8 @@ checkMonitors(sscanRecord *psscan)
 		POST(&psscan->bcpt);
 
 		/* Tell clients that new array data have been posted */
-		psscan->data = 1; POST(&psscan->data);
+		psscan->data = 1;
+		db_post_events(psscan, &psscan->data, DBE_VAL_LOG);
 		if (psscan->aawait == sscanNOYES_YES) {
 			psscan->await = 1;
 			POST(&psscan->await);
@@ -3056,6 +3138,14 @@ contScan(sscanRecord *psscan)
 			}
 		}
 
+		/*
+		 * If we're posting arrays during scans, and user wants the arrays fixed for plotting
+		 * software that doesn't pay attention to .CPT, then repeat the last data point in all
+		 * arrays.  Note that this can be a very expensive operation if MPTS is large.
+		 */
+		if (psscan->copyto && (psscan->atime >= 0.1))
+			copyLastPoint(psscan, psscan->cpt, psscan->copyto);
+
 		psscan->udf = 0;
 		if (psscan->acqt == sscanACQT_1D_ARRAY) {
 			/*** scan record gets all points in one pass ***/
@@ -3312,6 +3402,44 @@ readArrays(sscanRecord *psscan)
 volatile int sscan_fit_smooth = 3;
 volatile int sscan_test_fit = 0;
 
+static void copyLastPoint(sscanRecord *psscan, long pointNumber, long copyTo)
+{
+	recPvtStruct	*precPvt = (recPvtStruct *) psscan->rpvt;
+	long			i, j;
+	detFields		*pDet;
+	double			d;
+	/*
+	 * It turns out that medm plots the whole array, so for it to look
+	 * right the remainder of the arrays will be filled with the last
+	 * values. This will cause medm to plot the same point over and over
+	 * again, but it will look correct
+	 */
+	/* Fill valid detector arrays with last value */
+	if (copyTo == -1)
+		copyTo = psscan->mpts;
+	else
+		copyTo = MIN(copyTo, psscan->mpts);
+	pointNumber = MAX(0, pointNumber);
+	pDet = (detFields *) & psscan->d01hr;
+	for (i = 0; i < precPvt->valDetPvs; i++, pDet++) {
+		if (precPvt->acqDet[i]) {
+			d = precPvt->detBufPtr[i].pFill[pointNumber];
+			for (j = pointNumber+1; j < copyTo; j++) {
+				precPvt->detBufPtr[i].pFill[j] = d;
+			}
+		}
+	}
+	/* Fill in the readback arrays with last values.  (Make sure we at least do P1.) */
+	for (i = 0; (i == 0) || (i < precPvt->valPosPvs); i++) {
+		d = precPvt->posBufPtr[i].pFill[pointNumber];
+		for (j = pointNumber+1; j < copyTo; j++) {
+			precPvt->posBufPtr[i].pFill[j] = d;
+		}
+	}
+
+}
+
+
 static void 
 packData(sscanRecord *psscan, int caller)
 {
@@ -3371,37 +3499,8 @@ packData(sscanRecord *psscan, int caller)
 	}
 
 	psscan->dstate = sscanDSTATE_PACKED; POST(&psscan->dstate);
-	/*
-	 * It turns out that medm plots the whole array, so for it to look
-	 * right the remainder of the arrays will be filled with the last
-	 * values. This will cause medm to plot the same point over and over
-	 * again, but it will look correct
-	 */
-	/* Fill valid detector arrays with last value */
-	pDet = (detFields *) & psscan->d01hr;
-	for (i = 0; i < precPvt->valDetPvs; i++, pDet++) {
-		if (precPvt->acqDet[i]) {
-			/* last data point acquired */
-			if (psscan->acqt == sscanACQT_1D_ARRAY) {
-				if (psscan->cpt > 0)
-					d = precPvt->detBufPtr[i].pFill[psscan->cpt-1];
-				else
-					d = precPvt->detBufPtr[i].pFill[0];
-			} else {
-				d = pDet->d_cv;
-			}
-			for (j = psscan->cpt; j < psscan->mpts; j++) {
-				precPvt->detBufPtr[i].pFill[j] = d;
-			}
-		}
-	}
-	/* Fill in the readback arrays with last values.  (Make sure we at least do P1.) */
-	for (i = 0; (i == 0) || (i < precPvt->valPosPvs); i++) {
-		for (j = MAX(1,psscan->cpt); j < psscan->mpts; j++) {
-			precPvt->posBufPtr[i].pFill[j] =
-				precPvt->posBufPtr[i].pFill[j - 1];
-		}
-	}
+
+	copyLastPoint(psscan, psscan->cpt-1, -1);
 
 	/* check after-scan move-to-data-feature before trying to do it */
 	if (psscan->pasm >= sscanPASM_Peak_Pos) {
