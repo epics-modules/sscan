@@ -10,6 +10,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
+
 <h2 align="center">Release 2-5-7</h2>
 <ul>
 
@@ -20,7 +21,15 @@ saveData.req contains the section [basename], and the PV named in that section
 exists, and the string value of that PV is not the empty string, then saveData
 will use the string value, instead of the ioc prefix, as the base file name
 (onto which the scan number and the string ".mda" will be appended).
-
+<li> Previously, saveData's init file could not usefully specify PV names
+containing the characters '-', '[', ']', '<', '>', or ';', even though these
+are legal characters for a PV name.
+<li> New documentation files: saveData.req and scanParmRecord.html
+<li> Busy record now pays attention to it's UDF and alarm fields, executes its
+its DOL link only if that link is not CONSTANT.
+<li>If recDynLink encounters a link structure that thinks it has an instance on
+queue, but the queue is in fact empty, then the link structure is corrected.
+<li>saveData's stack size increased.to epicsThreadStackBig.
 </ul>
 
 <h2 align="center">Release 2-5-6</h2>
