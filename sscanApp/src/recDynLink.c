@@ -276,14 +276,20 @@ long epicsShareAPI recDynLinkClear(recDynLink *precDynLink)
 	cmd.cmd = cmdClear;
 	if (precDynLink->onQueue) {
 		if (recDynLinkDebug > 1) 
-                    printf("recDynLinkClear: waiting for queued action on %s\n", pdynLinkPvt->pvname);
+			printf("recDynLinkClear: waiting for queued action on %s\n", pdynLinkPvt->pvname);
 		/* try to wait until queued action is dispatched */
 		for (i=0; i<10 && precDynLink->onQueue; i++) {
 			epicsThreadSleep(epicsThreadSleepQuantum());
 			epicsEventSignal(wakeUpEvt);
 		}
-		if (precDynLink->onQueue && pdynLinkPvt)
+		if (precDynLink->onQueue && pdynLinkPvt) {
 			printf("recDynLinkClear: abandoning queued action on '%s'\n", pdynLinkPvt->pvname);
+			if (pdynLinkPvt->io==ioInput) {
+				if (epicsMessageQueuePending(recDynLinkInpMsgQ) == 0) precDynLink->onQueue = 0;
+			} else {
+				if (epicsMessageQueuePending(recDynLinkOutMsgQ) == 0) precDynLink->onQueue = 0;
+			}
+		}
 	}
 	if (pdynLinkPvt->io==ioInput) {
 		if (epicsMessageQueueTrySend(recDynLinkInpMsgQ, (void *)&cmd, sizeof(cmd))) {
