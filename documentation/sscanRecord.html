@@ -6,7 +6,7 @@
 </head>
 <body>
 <h1>
-The <b>sscan</b> record v5.41</h1>
+The <b>sscan</b> record v5.5</h1>
 Author: Tim M. Mooney<br>
 Based on the scan record, written by Ned D. Arnold.<br>
 <p>&nbsp;Advanced Photon Source
@@ -42,7 +42,7 @@ detector-trigger operations</a>
 
 <br><a href="#HEADING_2"><b>2.&nbsp;&nbsp;&nbsp;</b> <b>sscan</b>-Record Fields</a>
 
-<br><a href="#HEADING_2-1"><b>2.1.</b> Global Fields</a>
+<br><a href="#HEADING_2-1"><b>2.1.</b> Control Fields</a>
 
 <br><a href="#HEADING_2-2"><b>2.2.</b> Positioner Fields</a>
 
@@ -371,24 +371,40 @@ when <tt>PAUS</tt> is rescinded.  The issue is being studied.
 <p><a NAME="HEADING_1-3-4"></a>
 <h3>1.3.4 Displaying scan data</h3>
 
-Scan data is published by the <b>sscan</b> record using EPICS Channel Access, just
-as any other EPICS record would publish the values of its fields.  The act of
-publishing data via Channel Access is frequently referred to as <i>posting</i>,
-because the EPICS function that performs this function is <TT>db_post_events()</TT>.
-After a field has been posted, a client can get the new value by issuing the
-Channel Access call <tt>ca_get()</tt>.  A client can also arrange, in advance,
-to receive posted data from a particular field, whenever it is posted, by
-<i>monitoring</i> -- also called <i>subscribing to</i> -- the field.  See the
-Channel Access Reference Manual for the details of how this is done.  The
-purpose here is simply to introduce the terms <i>post</i> and <i>monitor</i>,
-so that I can use them in this documentation.
+Scan data is published by the <b>sscan</b> record using EPICS Channel Access,
+just as any other EPICS record would publish the values of its fields.  The act
+of publishing data via Channel Access is referred to here as
+<i>posting</i>, because the EPICS function that performs this function is
+<TT>db_post_events()</TT>. After a field has been posted, a client can get the
+new value by issuing the Channel Access call <tt>ca_get()</tt>.  A client can
+also arrange, in advance, to receive posted data from a particular field,
+whenever it is posted, by <i>monitoring</i> -- also called <i>subscribing to</i>
+-- the field.  See the Channel Access Reference Manual (specifically,
+<tt>ca_add_event()</tt> or <tt>ca_create_subscription()</tt>) for the details of
+how this is done.  The purpose here is simply to introduce the terms <i>post</i>
+and <i>monitor</i>, so that I can use them in this documentation.
 
-<P>The <b>sscan</b> record does not post data arrays into which it is acquiring.
-After a scan has completed, acquired data arrays are posted, and those data
-remain available to clients until the next scan completes.   This means that
-only way for a client to get data from a scan in progress is to monitor the
-scalar <i>current-value</i> PVs, such as <tt>R1CV</tt>, <tt>D01CV</tt>, etc.,
-and collect their values into arrays.
+<P>The <b>sscan</b> record maintains two sets of array PV's for scan data: data
+from a completed scan are posted as P<i>n</i>RA and D<i>nn</i>DA (e.g.,
+<tt>P1RA</tt>, <tt>D01DA</tt>); data from a scan in progress are posted as
+P<i>n</i>CA and D<i>nn</i>CA.  During a scan, arrays are posted only if the user
+requests this by setting the array-posting period, <tt>ATIME</tt>, to a value greater than or equal to
+0.1 (seconds).  After a scan has completed, all data arrays are posted, marked with the
+mask <tt>DBE_LOG</tt>, and the completed-scan postings (P<i>n</i>RA and
+D<i>nn</i>DA) remain available to clients until the next scan completes.   
+
+<blockquote>Because the <b>sscan</b> record implements double-buffered data
+arrays, and because of the way in which posting is accomplished in EPICS, the
+posting of scan-in-progress data arrays results unavoidably in useless reposting
+of completed-scan data arrays.  If this presents a problem for a data-display or
+data-storage client, there are two ways to avoid the problem: 1) Tell the sscan
+record not to post arrays during scans by leaving the array-post period, ATIME,
+at its default value of zero; 2) modify the client so that it monitors only
+postings flagged with the DBE_LOG mask.</blockquote>
+
+A more efficient, but more difficult, way for a client to get data from a scan
+in progress is to monitor the scalar current-value PVs, such as <tt>R1CV</tt>,
+<tt>D01CV</tt>, etc., and collect their values into arrays.
 
 <P>Positioners actually have two fields that might be suitable for display while a
 scan is in progress: the positioner's desired value (<tt>P<i>n</i>DV</tt>) and
@@ -442,14 +458,14 @@ numPoints to the cached value received from <tt>CPT</tt>.
 
 <P>1) <B>The new way, using the <tt>AWAIT</tt> and <tt>AAWAIT</tt> fields:</B>
 <P>The data-storage client waits for <tt>DATA==1</tt>, which indicates that the
-<b>sscan</b> record has finished posting all array fields; writes <tt>1</tt> to
-the <tt>AWAIT</tt> field to prevent the <b>sscan</b> record from overwriting
-array fields before the client has read them; and writes <tt>0</tt> to
-<tt>AWAIT</tt> when it is finished reading.  One advantage of this handshake is
-that it allows the <b>sscan</b> record to proceed with the next scan (the
-<b>sscan</b> record's data arrays are double buffered) until it's time to post
-data.  In this way, the data-storage client can be writing one set of scan data
-while the <b>sscan</b> record is acquiring the next set.
+scan is over and the <b>sscan</b> record has finished posting all array fields;
+writes <tt>1</tt> to the <tt>AWAIT</tt> field to prevent the <b>sscan</b> record
+from overwriting array fields before the client has read them; and writes
+<tt>0</tt> to <tt>AWAIT</tt> when it is finished reading.  One advantage of this
+handshake is that it allows the <b>sscan</b> record to proceed with the next
+scan (the <b>sscan</b> record's data arrays are double buffered) until it's time
+to post data.  In this way, the data-storage client can be writing one set of
+scan data while the <b>sscan</b> record is acquiring the next set.
 
 <P>For <em>very</em> fast scans, or a very slow data-storage client, there might
 not be sufficient time, between the posting of one data set and the acquisition
@@ -653,23 +669,23 @@ slow clients must NOT write <tt>1</tt> to <tt>WAIT</tt>.) </DL>
 <h2> 1.4. Completion of positioner and
 detector-trigger operations</h2>
 
-<p>&nbsp;As was mentioned previously, all of
-the process variable names used to identify positioners, detectors, and
-detector triggers are specified using <i>reassignable links</i>.  These links
-are implemented differently than standard EPICS links.  Reassignable links are
-channel-access links implemented with the recDynLink library (originally
-written by Marty Kraimer and Ned Arnold; modified to use callbacks and
-currently maintained by Tim Mooney).  These links perform writes with the channel-access function,
-<tt>ca_put_callback()</tt>, and expect the callback function to be called only
-after all processing caused by the write operation is complete. For simple
-positioners and detectors, this is never a problem.  Individual records using
-either <i>synchronous</i> or <i>asynchronous</i> completion strategies (as
-these terms are defined in the EPICS Application Developer's Guide) always
-satisfy the completion-callback criterion.  Special records (<b>motor</b>, <b>scaler</b>,
-<b>mca</b>, and <b>sscan</b> record) which do not use either synchronous or asynchronous
+<p>&nbsp;As was mentioned previously, all of the process variable names used to
+identify positioners, detectors, and detector triggers are specified using
+<i>reassignable links</i>.  These links are implemented differently than
+standard EPICS links.  Reassignable links are channel-access links implemented
+with the recDynLink library (originally written by Marty Kraimer and Ned Arnold;
+modified to use callbacks and currently maintained by Tim Mooney).  These links
+perform writes with the channel-access function, <tt>ca_put_callback()</tt>, and
+expect the callback function to be called only after all processing caused by
+the write operation is complete. For simple positioners and detectors, this is
+never a problem.  Individual records using either <i>synchronous</i> or
+<i>asynchronous</i> completion strategies (as these terms are defined in the
+EPICS Application Developer's Guide) always satisfy the completion-callback
+criterion.  Special records (<b>motor</b>, <b>scaler</b>, <b>mca</b>, and
+<b>sscan</b> record) which do not use either synchronous or asynchronous
 strategies have been engineered to satisfy the completion-callback criterion
-simply by having them refrain from calling <tt>recGblFwdLink()</tt> (i.e., from firing
-their Forward Links) until the operation they started has finished.
+simply by having them refrain from calling <tt>recGblFwdLink()</tt> (i.e., from
+firing their Forward Links) until the operation they started has finished.
 
 <p>If a positioner or detector is implemented with a collection of linked
 records all of which individually satisfy the completion-callback criterion,
@@ -685,18 +701,18 @@ implemented for this purpose.  Using the <b>busy</b> record, any sort of process
 even processing that involves an external, non-EPICS processor can easily
 satisfy the completion-callback criterion.
 
-<p>Database developers should note that a <tt>PP</tt> link from a record in one crate to
-a record in another crate will silently be converted to a <tt>CA</tt> link, which will
-not satisfy the completion-callback criterion.  In this case, there are two
-options: the <b>busy</b>-record solution, detailed above, and the use of a buffer
-record that can do a <tt>ca_put_callback()</tt> to make the inter-crate link.  Currently,
-I'm aware of six record types that can do a <tt>ca_put_callback()</tt>: the <b>sscan</b>,
-<b>swait</b>, and <b>sseq</b> records; an <b>ai</b> record with soft
-asynchronous device support; and the <b>sCalcout</b> and <b>aCalcout</b>
-records.  (The <b>sscan</b>, <b>swait</b>, <b>sseq</b>, <b>sCalcout</b>, and
-<b>aCalcout</b> records are distributed with synApps.  <b>swait</b>,
-<b>sCalcout</b>, and <b>aCalcout</b> are  variants of the <b>calcout</b> record;
-<b>sseq</b> is a variant of the <b>seq</b> record.)
+<p>Database developers should note that a <tt>PP</tt> link from a record in one
+crate to a record in another crate will silently be converted to a <tt>CA</tt>
+link, which will not satisfy the completion-callback criterion.  In this case,
+there are two options: the <b>busy</b>-record solution, detailed above, and the
+use of a buffer record that can do a <tt>ca_put_callback()</tt> to make the
+inter-crate link.  Currently, I'm aware of six record types that can do a
+<tt>ca_put_callback()</tt>: the <b>sscan</b>, <b>swait</b>, and <b>sseq</b>
+records; an <b>ai</b> record with soft asynchronous device support; and the
+<b>sCalcout</b> and <b>aCalcout</b> records.  (The <b>sscan</b>, <b>swait</b>,
+<b>sseq</b>, <b>sCalcout</b>, and <b>aCalcout</b> records are distributed with
+synApps.  <b>swait</b>, <b>sCalcout</b>, and <b>aCalcout</b> are  variants of
+the <b>calcout</b> record; <b>sseq</b> is a variant of the <b>seq</b> record.)
 
 <!---------------------------------------------------------------------------->
 
@@ -769,7 +785,7 @@ underway.)</dd>
 
 <p><a NAME="HEADING_2-1"></a>
 
-<h2>2.1. Global Fields</h2>
+<h2>2.1. Control Fields</h2>
 
 <table BORDER>
 <tr>
@@ -1137,6 +1153,68 @@ underway.)</dd>
 </tr>
 <tr colspan=9><td colspan=9></td></tr>
 
+<tr>
+<td><tt>ATIME</tt></td>
+<td>Array post time period</td>
+<td>FLOAT</td>
+<td>Yes</td>
+<td>0.0</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+
+<tr>
+<td><tt>COPYTO</tt></td>
+<td>Copy Last Array Point Thru This Element Number</td>
+<td>LONG</td>
+<td>Yes</td>
+<td>0.0</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+
+<tr>
+
+<td colspan=9>
+<blockquote>
+
+	These fields control the posting of array data during a scan. <tt>ATIME</tt>
+	is the minimal time period in seconds between array postings during a scan. 
+	If <tt>ATIME</tt> is greater than 0.1 (seconds), and if more than this time
+	has elapsed since the last array posting of this scan's data, then the
+	current-data arrays will be posted after the next data point has been
+	acquired.
+	
+	<P><b>NOTE</b>: Posting current-data arrays also causes completed-scan data
+	arrays to be posted (uselessly, because they were posted at the end of the
+	previous scan, and the data they contain has not changed).  Some display or
+	storage clients may have a problem with this new behavior of the
+	<b>sscan</b> record.  If so, there are two alternatives: 1) leave
+	<tt>ATIME</tt> at its default value of 0.0, or 2) have the client specify
+	DBE_LOG when it subscribes to the data array (using ca_add_event() or
+	ca_create_subscription()). (If a client does not monitor data arrays, but
+	instead uses ca_get() to read them, then it won't care how often they are
+	posted.)
+	
+	<P>Some data-display clients (notably, MEDM) cannot use a PV to tell them
+	how many valid data points are being sent.  This results in bizarre looking
+	plots that can be made to look correct by repeating the last valid array
+	values to fill the unused array elements.  This can be a time-consuming
+	process, so by default it's only done once, at the end of a scan.  But
+	arrays posted during a scan also will not be plotted correctly by such
+	clients, so you can specify that the last valid array elements be copied for
+	arrays posted during a scan, by setting <tt>COPYTO</tt> to the number of
+	array elements in the client's data buffer.  If <tt>COPYTO</tt> == 0, no
+	copying will be done; if <tt>COPYTO</tt> == -1, the last value will be
+	copied to all unused array elements in the <b>sscan</b> record's data buffers.
+
+</blockquote>
+</td>
+</tr>
 </table>
 
 <!---------------------------------------------------------------------------->
@@ -1450,6 +1528,41 @@ fills the readback array <tt>P<i>n</i>RA</tt> with those values.
 <td>No</td>
 </tr>
 
+<tr>
+<td><tt>P<i>n</i>PA</tt></td>
+<td>P<i>n</i> Step Array</td>
+<td>DOUBLE[]</td>
+<td>No</td>
+<td>0</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+
+<tr>
+<td><tt>P<i>n</i>RA</tt></td>
+<td>P<i>n</i> Readback Array</td>
+<td>DOUBLE[]</td>
+<td>No</td>
+<td>0</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+
+<tr>
+<td><tt>P<i>n</i>CA</tt></td>
+<td>P<i>n</i> Current Readback Array</td>
+<td>DOUBLE ARRAY</td>
+<td>No</td>
+<td>0</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
 
 </table>
 
@@ -2050,7 +2163,7 @@ data will contain every point at the completion of the scan.
 </tr>
 </table>
 
-<p>Data and Execution Flags:<br>
+<p>Data and related PV's:<br>
 <table BORDER>
 <tr>
 <th>Field</th>
@@ -2094,7 +2207,19 @@ data will contain every point at the completion of the scan.
 
 <tr>
 <td><tt>D<i>nn</i>DA</tt></td>
-<td>Detector <i>nn</i> data Array</td>
+<td>Detector <i>nn</i> End-Of-Scan Data Array</td>
+<td>FLOAT[ ]</td>
+<td>No</td>
+<td>Null</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+
+<tr>
+<td><tt>D<i>nn</i>CA</tt></td>
+<td>Detector <i>nn</i> Current-Data Array</td>
 <td>FLOAT[ ]</td>
 <td>No</td>
 <td>Null</td>
@@ -2582,6 +2707,18 @@ data-storage client can read this scan's array data.</td></tr>
 <tr>
 <td><tt>TOLP</tt></td>
 <td>Time of Last Posting&nbsp;</td>
+<td>ULONG</td>
+<td>No</td>
+<td>0</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+
+<tr>
+<td><tt>TLAP</tt></td>
+<td>Time of Last Array Posting&nbsp;</td>
 <td>ULONG</td>
 <td>No</td>
 <td>0</td>
