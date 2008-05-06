@@ -6176,12 +6176,9 @@ recordtype(sscan) {
 		interest(1)
 		menu(sscanDSTATE)
 	}
-	field(READ,DBF_SHORT) {
-		prompt("Post current arrays")
-		special(SPC_MOD)
-	}
 	field(COPYTO,DBF_LONG) {
 		prompt("Copy Last Pt Thru")
+		promptgroup(GUI_COMMON)
 		interest(1)
 	}
 }
