@@ -284,6 +284,8 @@
  *                      repeat last data point to user specified array element number, COPYTO.  At
  *                      end of scan, post data arrays with DBE_LOG, so clients can choose to ignore
  *                      intermediate postings.
+ * 5.51 05-08-08  tmm   v5.51 If no positioner, and no readback, then store current point number
+ *                      where we would have stored positioner value or time.
  */
 
 #define VERSION 5.5
@@ -1732,6 +1734,8 @@ cvt_dbaddr(struct dbAddr *paddr)
 		paddr->field_type = DBF_FLOAT;
 		paddr->field_size = sizeof(float);
 		paddr->dbr_field_type = DBF_FLOAT;
+		if (sscanRecordDebug > 0)
+			printf("sscanRecord:cvt_dbaddr: pfield set to %p\n", paddr->pfield);
 		return (0);
 	}
 
@@ -1753,6 +1757,8 @@ cvt_dbaddr(struct dbAddr *paddr)
 		paddr->field_type = DBF_DOUBLE;
 		paddr->field_size = sizeof(double);
 		paddr->dbr_field_type = DBF_DOUBLE;
+		if (sscanRecordDebug > 0)
+			printf("sscanRecord:cvt_dbaddr: pfield set to %p\n", paddr->pfield);
 		return (0);
 	}
 
@@ -1766,11 +1772,12 @@ get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 	recPvtStruct	*precPvt = (recPvtStruct *) psscan->rpvt;
 	unsigned short	numFieldsInGroup, group;
     int				fieldIndex = dbGetFieldIndex(paddr);
-	int				groupField, groupFieldCA;
+	int				groupField;
 
 
 	if (sscanRecordDebug > 0)
-		printf("sscanRecord:get_array_info: fieldIndex=%d\n", fieldIndex);
+		printf("sscanRecord:get_array_info: fieldIndex=%d, pfield=%p\n", fieldIndex,
+			paddr->pfield);
 	/*
 	 * This routine is called because someone wants an array. Determine
 	 * which array they want by comparing fieldIndex to the indices of
@@ -1790,9 +1797,6 @@ get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 		groupField = fieldIndex - (sscanRecordD01DA + group*numFieldsInGroup);
 		if (sscanRecordDebug > 0)
 			printf("sscanRecord:get_array_info: groupField=%d\n", groupField);
-		groupFieldCA = sscanRecordD01CA - (sscanRecordD01DA + group*numFieldsInGroup);
-		if (sscanRecordDebug > 0)
-			printf("sscanRecord:get_array_info: groupFieldCA=%d\n", groupFieldCA);
 
 		if ((precPvt->acqDet[group]) ||
 		    	((group < NUM_POS) && (psscan->faze == sscanFAZE_PREVIEW))) {
@@ -1822,16 +1826,19 @@ get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 
 
 	/* Is field a positioner-readback array? */
+
 	numFieldsInGroup = sscanRecordP2RA - sscanRecordP1RA;
-	if ((fieldIndex >= sscanRecordP1RA) &&
-	    (fieldIndex < sscanRecordP1RA + NUM_POS*numFieldsInGroup)) {
+/*
+ *	if ((fieldIndex >= sscanRecordP1RA) &&
+ *	    (fieldIndex < sscanRecordP1RA + NUM_POS*numFieldsInGroup)) {
+ */
+	if ((fieldIndex != sscanRecordP1PA) && (fieldIndex != sscanRecordP2PA) &&
+		(fieldIndex != sscanRecordP3PA) && (fieldIndex != sscanRecordP4PA)) {
+
 		group = (fieldIndex - sscanRecordP1RA)/numFieldsInGroup;
 		groupField = fieldIndex - (sscanRecordP1RA + group*numFieldsInGroup);
 		if (sscanRecordDebug > 0)
-			printf("sscanRecord:get_array_info: groupField=%d\n", groupField);
-		groupFieldCA = sscanRecordP1CA - (sscanRecordP1RA + group*numFieldsInGroup);
-		if (sscanRecordDebug > 0)
-			printf("sscanRecord:get_array_info: groupFieldCA=%d\n", groupFieldCA);
+			printf("sscanRecord:get_array_info: group=%d; groupField=%d\n", group, groupField);
 
 		if ((groupField==0) || (psscan->dstate >= sscanDSTATE_PACKED)) {
 			/* e.g., P1RA, or any after buffers have been switched*/
@@ -1851,8 +1858,8 @@ get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 		return (0);
 	}
 
-	/* If field is within positioner section, and not a positioner-readback array,
-	 * then it must be a positioner array.  We don't have to set paddr->pfield,
+	/* If field is not a detector array or a positioner-readback array, then
+	 * it must be a positioner array.  We don't have to set paddr->pfield,
 	 * because these arrays are not double-buffered. 
 	 */
 	if ((fieldIndex >= sscanRecordP1PA) && (fieldIndex <= sscanRecordP4RA)) {
@@ -1870,6 +1877,9 @@ put_array_info(struct dbAddr *paddr, long nNew)
 	unsigned short	numFieldsInGroup, group;
     int				fieldIndex = dbGetFieldIndex(paddr);
 
+	if (sscanRecordDebug > 0)
+		printf("sscanRecord:put_array_info: fieldIndex=%d, pfield=%p\n", fieldIndex,
+			paddr->pfield);
 	/*
 	 * This routine is called because someone wrote a table to the
 	 * "positioner" array p_pa. Determine which positioner and store
@@ -3101,8 +3111,8 @@ contScan(sscanRecord *psscan)
 					pPos->r_cv = precPvt->posBufPtr[i].pFill[psscan->cpt - 1] + pPos->p_si;
 				}
 			} else {
-				/* Neither PV is valid, store a 0 */
-				pPos->r_cv = 0;
+				/* Neither PV is valid, store the current point number */
+				pPos->r_cv = psscan->cpt;
 			}
 			precPvt->posBufPtr[i].pFill[psscan->cpt] = pPos->r_cv;
 		}
