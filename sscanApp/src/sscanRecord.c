@@ -286,9 +286,11 @@
  *                      intermediate postings.
  * 5.51 05-08-08  tmm   v5.51 If no positioner, and no readback, then store current point number
  *                      where we would have stored positioner value or time.
+ * 5.52 06-19-08  tmm   v5.52 Fixed bug in get_array_info().  Calls about PnPA, for n>1,  were getting
+ *               		wrong buffer pointer.
  */
 
-#define VERSION 5.5
+#define VERSION 5.52
 
 
 #include <stddef.h>
