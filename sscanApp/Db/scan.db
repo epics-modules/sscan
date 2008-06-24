@@ -161,6 +161,10 @@ record(stringout, "$(P)saveData_subDir") {
   field(DTYP, "Soft Channel")
 }
 
+record(stringout, "$(P)saveData_baseName") {
+  field(DTYP, "Soft Channel")
+}
+
 record(waveform, "$(P)saveData_config") {
   field(DTYP, "Soft Channel")
   field(NELM, "1000")
