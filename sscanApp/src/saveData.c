@@ -135,10 +135,17 @@
  *     11-13-07  tmm  v1.29 Increased stack size.  Ron Sluiter found an ioc with a stack
  *                    margin of only 616 (of 11720).
  *     01-29-08  tmm  v1.30 Allow end user to specify filename (see "basename")
+ *     06-24-08  tmm  v1.31 If saveData's init file did not have a [basename]
+ *                    section, or the database did not have the specified PV,
+ *                    saveData would fail to complete initialization, and then
+ *                    fail to store data files, but it would not make this
+ *                    obvious to users, and it would not cause scans to hang.
+ *                    Now, basename-related failures disable the use of basename,
+ *                    but saveData still functions.
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.30.0"
+#define SAVE_DATA_VERSION   "1.31.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -786,7 +793,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-  printf("saveData CVS: $Id: saveData.c,v 1.36 2008-01-30 19:26:21 mooney Exp $\n");
+  printf("saveData CVS: $Id: saveData.c,v 1.37 2008-06-24 17:53:12 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -2041,16 +2048,18 @@ LOCAL int initSaveDataTask()
   }
   if(connectSubdir(buff1)==-1) return -1;
 
-  /* Connect to saveData_baseName                                       */
-  if(req_gotoSection(rf, "basename")!=0) {
+  /* Connect to saveData_baseName.  We can run without this PV.        */
+  if (req_gotoSection(rf, "basename")!=0) {
     printf("saveData: section [basename] not found\n");
-    return 0;
+  } else {
+    if (req_readMacId(rf, buff1, PVNAME_STRINGSZ)==0) {
+      printf("saveData: baseName pv name not defined\n");
+	} else {
+      if (connectBasename(buff1)==-1) {
+	    printf("saveData: failed to connect to baseName pv\n");
+	  }
+	}
   }
-  if(req_readMacId(rf, buff1, PVNAME_STRINGSZ)==0) {
-    printf("saveData: baseName pv name not defined\n");
-    return 0;
-  }
-  if(connectBasename(buff1)==-1) return -1;
 
   /* Connect all scan records.                                          */
   if(req_gotoSection(rf, "scanRecord")==0) {
