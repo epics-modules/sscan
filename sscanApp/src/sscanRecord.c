@@ -573,7 +573,7 @@ typedef struct detFields {
 #define NOTIFY_TRIG				0x05
 #define NOTIFY_READ_ARRAY_TRIG	0x06
 #define NOTIFY					0x07
-#define GET						0x08
+#define USERGETCALLBACK			0x08
 #define SEARCH					0x09
 #define POSMON					0x0a
 #define DO_PUTS					0x0b
@@ -928,7 +928,7 @@ process(sscanRecord *psscan)
 			sprintf(psscan->smsg, "NOTE: array-read still active");
 			POST(&psscan->smsg);
 		} else if (precPvt->numGetCallbacks) {
-			sprintf(psscan->smsg, "NOTE: array-read still active");
+			sprintf(psscan->smsg, "NOTE: outstanding getCallback(s)");
 			POST(&psscan->smsg);
 		}
 		psscan->alrt = 0; POST(&psscan->alrt);
@@ -2423,7 +2423,7 @@ userGetCallback(recDynLink * precDynLink)
 		linkNames[puserPvt->linkIndex]);
 
 	if (precDynLink->status) {
-		if (sscanRecordDebug >= 1) printf("%s:userGetCallback: error %d on link '%s'.  Retrying.\n",
+		/*if (sscanRecordDebug >= 1)*/ printf("%s:userGetCallback: error %d on link '%s'.  Retrying.\n",
 			psscan->name, precDynLink->status, linkNames[puserPvt->linkIndex]);
 		/* Retry. */
 		nRequest = (psscan->faze == sscanFAZE_RECORD_SCALAR_DATA) ? 1 : psscan->npts;
@@ -2441,7 +2441,7 @@ userGetCallback(recDynLink * precDynLink)
 		}
 	} else {
 		/* why did we get an extra callback? */
-		if (sscanRecordDebug >= 5)
+		/*if (sscanRecordDebug)*/
 			printf("%s:userGetCallback:callback while getCallbackInProgress==0 ignored\n", psscan->name);
 		return;
 	}
@@ -2463,7 +2463,7 @@ userGetCallback(recDynLink * precDynLink)
 			printf("%s:userGetCallback: calling scanOnce(), faze='%s', data_state='%s'\n",
 				psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
 		}
-		precPvt->calledBy = GET;
+		precPvt->calledBy = USERGETCALLBACK;
 		scanOnce(psscan);
 		return;
 	}
