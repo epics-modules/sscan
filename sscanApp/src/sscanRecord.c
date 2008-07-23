@@ -288,9 +288,12 @@
  *                      where we would have stored positioner value or time.
  * 5.52 06-19-08  tmm   v5.52 Fixed bug in get_array_info().  Calls about PnPA, for n>1,  were getting
  *               		wrong buffer pointer.
+ * 5.53 07-22-08  tmm   v5.53 Removed race conditions affecting callback counters, and added mutex to
+ *                      protect them.  Changed timing of when to renew positioner links from
+ *                      now-last_scan_start to now-last_scan_end.
  */
 
-#define VERSION 5.52
+#define VERSION 5.53
 
 
 #include <stddef.h>
@@ -577,6 +580,7 @@ typedef struct detFields {
 #define SEARCH					0x09
 #define POSMON					0x0a
 #define DO_PUTS					0x0b
+#define DO_PUTS_TRIG			0x0c
 #define DELAY					0x10
 
 typedef struct recPvtStruct {
@@ -604,7 +608,7 @@ typedef struct recPvtStruct {
 	float          *nullArray;
 	float          *nullArray2;
 	epicsTimeStamp  timeStart;			/* used to time the scan */
-	epicsTimeStamp  lastTimeStart;		/* to determine whether we should renew positioner links */
+	epicsTimeStamp  lastScanEndTime;	/* to determine whether we should renew positioner links */
 	unsigned char   scanErr;
 	unsigned char   badOutputPv;	/* positioner, detector trig, readbk */
 	unsigned char   badInputPv;		/* detector BAD_PV */
@@ -622,6 +626,7 @@ typedef struct recPvtStruct {
 	double			*dataBuffer;
 	short			userSetAWAIT;
 	short			calledBy;
+	epicsMutexId	numCallbacksSem;
 } recPvtStruct;
 
 /* enum strings */
@@ -730,6 +735,7 @@ init_record(sscanRecord *psscan, int pass)
 		precPvt->numPositionerCallbacks = 0;
 		precPvt->numTriggerCallbacks = 0;
 		precPvt->numAReadCallbacks = 0;
+		precPvt->numGetCallbacks = 0;
 		precPvt->userSetAWAIT = 0;
 
 		precPvt->prevSm[0] = psscan->p1sm;
@@ -822,6 +828,11 @@ init_record(sscanRecord *psscan, int pass)
 			return(-1);
 		}
 
+		if ((precPvt->numCallbacksSem = epicsMutexCreate()) == 0) {
+			printf("%s:init_record: could not create semaphore\n", psscan->name);
+			return(-1);
+		}
+
 		/* allocate data buffer for array operations (when .acqm = scanACQM_ARRAY) */
 		precPvt->dataBuffer = (double *) calloc(psscan->mpts, sizeof(double));
 
@@ -829,7 +840,7 @@ init_record(sscanRecord *psscan, int pass)
 	}
 	precPvt = (recPvtStruct *) psscan->rpvt; /* pass 1 will not have done this */
 	epicsTimeGetCurrent(&precPvt->timeStart);
-	precPvt->lastTimeStart = precPvt->timeStart;
+	epicsTimeGetCurrent(&precPvt->lastScanEndTime);
 
 	/* Make sure npts is reasonable */
 	if (psscan->npts > psscan->mpts) psscan->npts = psscan->mpts;
@@ -901,12 +912,19 @@ process(sscanRecord *psscan)
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	long            status = 0;
 	epicsTimeStamp	timeCurrent;
+	int numPosCb, numTrigCb, numAReadCb, numGetCb;
+
+	epicsMutexLock(precPvt->numCallbacksSem);
+	numPosCb = precPvt->numPositionerCallbacks;
+	numTrigCb = precPvt->numTriggerCallbacks;
+	numAReadCb = precPvt->numAReadCallbacks;
+	numGetCb = precPvt->numGetCallbacks;
+	epicsMutexUnlock(precPvt->numCallbacksSem);
 
 	if (sscanRecordDebug) {
-		printf("%s:process:entry:faze='%s', nPTR_CBs=%1d%1d%1d, xsc=%d, pxsc=%d, calledBy 0x%x\n",
-			psscan->name, sscanFAZE_strings[psscan->faze], precPvt->numPositionerCallbacks,
-			precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, psscan->xsc, psscan->pxsc,
-			precPvt->calledBy);
+		epicsPrintf("%s:process:entry:faze='%s', nPTRG_CBs=%1d_%1d_%1d_%2d, xsc=%d, pxsc=%d, calledBy 0x%x\n",
+			psscan->name, sscanFAZE_strings[psscan->faze], numPosCb, numTrigCb, numAReadCb, numGetCb,
+			psscan->xsc, psscan->pxsc, precPvt->calledBy);
 	}
 
 	/* Make sure npts is reasonable.  Autosave might have  changed it after init_record. */
@@ -918,24 +936,27 @@ process(sscanRecord *psscan)
 		if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
 		if (psscan->wcnt) {psscan->wcnt = 0; POST(&psscan->wcnt);}
 		if (psscan->wtng) {psscan->wtng = 0; POST(&psscan->wtng);}
-		if (precPvt->numPositionerCallbacks) {
+		if (numPosCb) {
 			sprintf(psscan->smsg, "NOTE: positioner still active");
 			POST(&psscan->smsg);
-		} else if (precPvt->numTriggerCallbacks) {
+		} else if (numTrigCb) {
 			sprintf(psscan->smsg, "NOTE: detector still active");
 			POST(&psscan->smsg);
-		} else if (precPvt->numAReadCallbacks) {
+		} else if (numAReadCb) {
 			sprintf(psscan->smsg, "NOTE: array-read still active");
 			POST(&psscan->smsg);
-		} else if (precPvt->numGetCallbacks) {
+		} else if (numGetCb) {
 			sprintf(psscan->smsg, "NOTE: outstanding getCallback(s)");
 			POST(&psscan->smsg);
 		}
 		psscan->alrt = 0; POST(&psscan->alrt);
-		precPvt->numPositionerCallbacks = 0;
-		precPvt->numTriggerCallbacks = 0;
-		precPvt->numAReadCallbacks = 0;
-		precPvt->numGetCallbacks = 0;
+		epicsMutexLock(precPvt->numCallbacksSem);
+		numPosCb = (precPvt->numPositionerCallbacks = 0);
+		numTrigCb = (precPvt->numTriggerCallbacks = 0);
+		numAReadCb = (precPvt->numAReadCallbacks = 0);
+		numGetCb = (precPvt->numGetCallbacks = 0);
+		epicsMutexUnlock(precPvt->numCallbacksSem);
+
 		if (psscan->dstate <= sscanDSTATE_PACKED) {
 			if (psscan->await && !(precPvt->userSetAWAIT)) {
 				/*
@@ -974,7 +995,7 @@ process(sscanRecord *psscan)
 			checkMonitors(psscan);
 		}
 		if (psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) {
-			precPvt->calledBy = UNKNOWN;
+			/*precPvt->calledBy = UNKNOWN;*/
 			return(status);
 		}
 
@@ -986,7 +1007,7 @@ process(sscanRecord *psscan)
 
 		psscan->kill = 0;
 		psscan->pact = FALSE;
-		precPvt->calledBy = UNKNOWN;
+		/*precPvt->calledBy = UNKNOWN;*/
 		return (status);
 	}
 
@@ -995,13 +1016,13 @@ process(sscanRecord *psscan)
 		if (psscan->paus) {
 			sprintf(psscan->smsg, "Scan is paused ...");
 			POST(&psscan->smsg);
-			precPvt->calledBy = UNKNOWN;
+			/*precPvt->calledBy = UNKNOWN;*/
 			return(-1);
 		}
 		if (psscan->wtng) {
 			sprintf(psscan->smsg, "waiting for client ...");
 			POST(&psscan->smsg);
-			precPvt->calledBy = UNKNOWN;
+			/*precPvt->calledBy = UNKNOWN;*/
 			return(-1);
 		}
 	}
@@ -1024,7 +1045,7 @@ process(sscanRecord *psscan)
 		if (sscanRecordDebug >= 2) printf("%s:process: processed by pvSearchCallback\n", psscan->name);
 		precPvt->scanBySearchCallback = 0;
 		if (psscan->faze != sscanFAZE_SCAN_PENDING) {
-			precPvt->calledBy = UNKNOWN;
+			printf("%s:process: Ignoring redundant scanBySearchCallback\n", psscan->name);
 			return(status);
 		}
 	}
@@ -1032,7 +1053,7 @@ process(sscanRecord *psscan)
 	if (psscan->faze == sscanFAZE_SCAN_PENDING) {
 		checkConnections(psscan);
 		if (!psscan->xsc || precPvt->badOutputPv || precPvt->badInputPv) {
-			precPvt->calledBy = UNKNOWN;
+			/*precPvt->calledBy = UNKNOWN;*/
 			return (status);
 		} else {
 			if (sscanRecordDebug >= 2) printf("%s:process: unpending scan\n", psscan->name);
@@ -1040,30 +1061,29 @@ process(sscanRecord *psscan)
 		}
 	}
 
-	if (psscan->busy && psscan->xsc &&
-			(precPvt->numPositionerCallbacks || precPvt->numTriggerCallbacks || precPvt->numAReadCallbacks)) {
+	if (psscan->busy && psscan->xsc && (numPosCb || numTrigCb || numAReadCb || numGetCb)) {
 		if (sscanRecordDebug >= 2) {
-			printf("%s:process already busy faze='%s', nPCBs=%d, nTCBs=%d, nRCBs=%d, xsc=%d, pxsc=%d\n",
-				psscan->name, sscanFAZE_strings[psscan->faze], precPvt->numPositionerCallbacks,
-				precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, psscan->xsc, psscan->pxsc);
+			printf("%s:process already busy faze='%s', nPCBs=%d, nTCBs=%d, nRCBs=%d, nGCBs=%d, xsc=%d, pxsc=%d\n",
+				psscan->name, sscanFAZE_strings[psscan->faze], numPosCb,
+				numTrigCb, numAReadCb, numGetCb, psscan->xsc, psscan->pxsc);
 		}
 		if (psscan->paus) {
 			sprintf(psscan->smsg, "Scan is paused");
 		} else {
-			sprintf(psscan->smsg, "Already busy! PTA=%1d%1d%1d; CB=0x%x", precPvt->numPositionerCallbacks,
-				precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, precPvt->calledBy);
+			sprintf(psscan->smsg, "Already busy! PTAG_CBs=%1d_%1d_%1d_%02d; CB=0x%x", numPosCb,
+				numTrigCb, numAReadCb, numGetCb, precPvt->calledBy);
 		}
 		POST(&psscan->smsg);
-		precPvt->calledBy = UNKNOWN;
+		/*precPvt->calledBy = UNKNOWN;*/
 		return(0);
 	}
 
 	if ((psscan->pxsc == 0) && (psscan->xsc == 1)) {
 		/* Brand new scan */
 		if (psscan->busy) {
-			sprintf(psscan->smsg, "Still busy! PTA=%1d%1d%1d; CB=0x%x", precPvt->numPositionerCallbacks,
-				precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, precPvt->calledBy);
-			precPvt->calledBy = UNKNOWN;
+			sprintf(psscan->smsg, "Still busy! PTAG_CBs=%1d_%1d_%1d_%02d; CB=0x%x", numPosCb,
+				numTrigCb, numAReadCb, numGetCb, precPvt->calledBy);
+			/*precPvt->calledBy = UNKNOWN;*/
 			return (status);
 		}
 		/* use TimeStamp to record beginning of scan */
@@ -1075,15 +1095,20 @@ process(sscanRecord *psscan)
 		if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
 		if (psscan->wcnt) {psscan->wcnt = 0; POST(&psscan->wcnt);}
 		if (psscan->wtng) {psscan->wtng = 0; POST(&psscan->wtng);}
-		precPvt->numPositionerCallbacks = 0;
-		precPvt->numTriggerCallbacks = 0;
-		precPvt->numAReadCallbacks = 0;
+
+		epicsMutexLock(precPvt->numCallbacksSem);
+		numPosCb = (precPvt->numPositionerCallbacks = 0);
+		numTrigCb = (precPvt->numTriggerCallbacks = 0);
+		numAReadCb = (precPvt->numAReadCallbacks = 0);
+		numGetCb = (precPvt->numGetCallbacks = 0);
+		epicsMutexUnlock(precPvt->numCallbacksSem);
+
 		psscan->faze = sscanFAZE_INIT_SCAN; POST(&psscan->faze);
 		psscan->busy = 1; POST(&psscan->busy);
 		status = initScan(psscan);
 	} else if ((psscan->pxsc == 1) && (psscan->xsc == 0)) {
 		/* Operator abort */
-		if (precPvt->numPositionerCallbacks || precPvt->numTriggerCallbacks) {
+		if (numPosCb || numTrigCb || numAReadCb || numGetCb) {
 			/*
 			 * Don't actually have to wait for numTriggerCallbacks==0.
 			 * Don't actually have to wait for numPositionerCallbacks==0 unless psscan->pasm:
@@ -1097,9 +1122,9 @@ process(sscanRecord *psscan)
 				packData(psscan, 1);
 				checkMonitors(psscan);
 			}
-			sprintf(psscan->smsg, "Abort: waiting for callback");
+			sprintf(psscan->smsg, "Abort: waiting for callback(s)");
 			POST(&psscan->smsg);
-			precPvt->calledBy = UNKNOWN;
+			/*precPvt->calledBy = UNKNOWN;*/
 			return(status);
 		} else {
 			sprintf(psscan->smsg, "Scan aborted by operator");
@@ -1138,7 +1163,7 @@ process(sscanRecord *psscan)
 			packData(psscan, 2);
 			if (psscan->dstate < sscanDSTATE_PACKED) {
 				sprintf(psscan->smsg, "waiting for packData"); POST(&psscan->smsg);
-				precPvt->calledBy = UNKNOWN;
+				/*precPvt->calledBy = UNKNOWN;*/
 				return(status);
 			}
 		}
@@ -1170,7 +1195,7 @@ process(sscanRecord *psscan)
 	recGblResetAlarms(psscan);
 
 	psscan->pact = FALSE;
-	precPvt->calledBy = UNKNOWN;
+	/*precPvt->calledBy = UNKNOWN;*/
 	if (psscan->rpro) printf("%s:process:atexit: rpro=%d\n", psscan->name, psscan->rpro);
 	return (status);
 }
@@ -1310,7 +1335,7 @@ special(struct dbAddr *paddr, int after)
 					 * and NUM_PVS..NUM_PVS+3 (outputs) in the caLinkStruct array.
 					 */
 					epicsTimeGetCurrent(&timeCurrent);
-					if (epicsTimeDiffInSeconds(&timeCurrent, &precPvt->lastTimeStart) >= sscanRecordLookupTime) {
+					if (epicsTimeDiffInSeconds(&timeCurrent, &precPvt->lastScanEndTime) >= sscanRecordLookupTime) {
 						for (i=0; i<NUM_POS; i++) {
 							puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i].puserPvt;
 							pPosOut_userPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i + NUM_PVS].puserPvt;
@@ -1392,6 +1417,7 @@ special(struct dbAddr *paddr, int after)
 			POST(&psscan->pdly);
 			break;
 		case sscanRecordPAUS:
+
 			if (sscanRecordDebug) {
 				printf("%s:special:paus: faze='%s', nPTR_CBs=%1d%1d%1d, xsc=%d, pxsc=%d, calledBy 0x%x\n",
 					psscan->name, sscanFAZE_strings[psscan->faze], precPvt->numPositionerCallbacks,
@@ -1400,12 +1426,20 @@ special(struct dbAddr *paddr, int after)
 			}
 			if (psscan->paus != psscan->lpau) {
 				if (psscan->paus == 0) {
+					int numPosCb, numTrigCb, numAReadCb, numGetCb;
+
+					epicsMutexLock(precPvt->numCallbacksSem);
+					numPosCb = precPvt->numPositionerCallbacks;
+					numTrigCb = precPvt->numTriggerCallbacks;
+					numAReadCb = precPvt->numAReadCallbacks;
+					numGetCb = precPvt->numGetCallbacks;
+					epicsMutexUnlock(precPvt->numCallbacksSem);
+
+
 					sprintf(psscan->smsg, "Scan pause rescinded");
 					POST(&psscan->smsg);
-					if ((precPvt->numTriggerCallbacks == 0) &&
-						(precPvt->numPositionerCallbacks == 0) &&
-						(precPvt->numAReadCallbacks == 0)) {
-						/* The P, T, or R callback that would have sent us to the next scan
+					if ((numTrigCb == 0) && (numPosCb == 0) && (numAReadCb == 0) && (numGetCb == 0)) {
+						/* The P, T, R, or G callback that would have sent us to the next scan
 						 * phase came in while we were paused, so we must get the record processed.
 						 */
 						if (psscan->wtng || psscan->await) {
@@ -2342,10 +2376,18 @@ notifyCallback(recDynLink * precDynLink)
 	recDynLinkPvt *puserPvt = (recDynLinkPvt *) precDynLink->puserPvt;
 	sscanRecord   *psscan = puserPvt->psscan;
 	recPvtStruct  *precPvt = (recPvtStruct *) psscan->rpvt;
+	int numPosCb, numTrigCb, numAReadCb, numGetCb;
+
+	epicsMutexLock(precPvt->numCallbacksSem);
+	numPosCb = precPvt->numPositionerCallbacks;
+	numTrigCb = precPvt->numTriggerCallbacks;
+	numAReadCb = precPvt->numAReadCallbacks;
+	numGetCb = precPvt->numGetCallbacks;
+	epicsMutexUnlock(precPvt->numCallbacksSem);
 
 	if (sscanRecordDebug >= 10)
-		printf("%s: notifyCallback: num{P,T,R}Callbacks = %d, %d, %d\n", psscan->name, 
-		       precPvt->numPositionerCallbacks, precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks);
+		printf("%s: notifyCallback: num{P,T,R,G}Callbacks = %d, %d, %d, %d\n", psscan->name, 
+		       numPosCb, numTrigCb, numAReadCb, numGetCb);
 
 	if (psscan->faze == sscanFAZE_IDLE) {
 		/* we must have been aborted */
@@ -2357,52 +2399,65 @@ notifyCallback(recDynLink * precDynLink)
 	if (precDynLink->status) printf("%s: notifyCallback: error %d\n", psscan->name, 
 		precDynLink->status);
 
+
 	if (puserPvt->linkType == TRIGGER) {
-		if (precPvt->numTriggerCallbacks &&
-		    (--(precPvt->numTriggerCallbacks) == 0)) {
-			if (psscan->paus) {
-				sprintf(psscan->smsg, "Scan paused by operator");
-				POST(&psscan->smsg);
-				return;
-			}
-			if (psscan->ddly < .001) {
-				if (psscan->wcnt) {
-					psscan->wtng = 1; POST(&psscan->wtng);
-					sprintf(psscan->smsg, "Waiting for client");
+		if (numTrigCb) {
+			epicsMutexLock(precPvt->numCallbacksSem);
+			numTrigCb = --(precPvt->numTriggerCallbacks);
+			epicsMutexUnlock(precPvt->numCallbacksSem);
+			if (numTrigCb == 0) {
+				if (psscan->paus) {
+					sprintf(psscan->smsg, "Scan paused by operator");
 					POST(&psscan->smsg);
+					return;
+				}
+				if (psscan->ddly < .001) {
+					if (psscan->wcnt) {
+						psscan->wtng = 1; POST(&psscan->wtng);
+						sprintf(psscan->smsg, "Waiting for client");
+						POST(&psscan->smsg);
+					} else {
+						precPvt->calledBy = NOTIFY_TRIG;
+						(void) scanOnce((void *)psscan);
+					}
 				} else {
 					precPvt->calledBy = NOTIFY_TRIG;
-					(void) scanOnce((void *)psscan);
+					callbackRequestDelayed(&precPvt->dlyCallback, psscan->ddly);
 				}
-			} else {
-				precPvt->calledBy = NOTIFY_TRIG;
-				callbackRequestDelayed(&precPvt->dlyCallback, psscan->ddly);
 			}
 		}
 	} else if (puserPvt->linkType == READ_ARRAY_TRIG) {
-		if (precPvt->numAReadCallbacks &&
-		    (--(precPvt->numAReadCallbacks) == 0)) {
-			if (psscan->paus) {
-				sprintf(psscan->smsg, "Scan paused by operator");
-				POST(&psscan->smsg);
-				return;
+		if (numAReadCb) {
+			epicsMutexLock(precPvt->numCallbacksSem);
+			numAReadCb = --(precPvt->numAReadCallbacks);
+			epicsMutexUnlock(precPvt->numCallbacksSem);
+			if (numAReadCb == 0) {
+				if (psscan->paus) {
+					sprintf(psscan->smsg, "Scan paused by operator");
+					POST(&psscan->smsg);
+					return;
+				}
+				precPvt->calledBy = NOTIFY_READ_ARRAY_TRIG;
+				scanOnce((void *)psscan);
 			}
-			precPvt->calledBy = NOTIFY_READ_ARRAY_TRIG;
-			scanOnce((void *)psscan);
 		}
 	} else {	/* POSITIONER_OUT, BS_AS_LINK */
-		if (precPvt->numPositionerCallbacks &&
-		    (--(precPvt->numPositionerCallbacks) == 0)) {
-			if (psscan->paus) {
-				sprintf(psscan->smsg, "Scan paused by operator");
-				POST(&psscan->smsg);
-				return;
-			}
-			precPvt->calledBy = NOTIFY;
-			if ((psscan->faze != sscanFAZE_CHECK_MOTORS) || (psscan->pdly == 0.)) {
-				scanOnce(psscan);
-			} else {
-				callbackRequestDelayed(&precPvt->dlyCallback, psscan->pdly);
+		if (numPosCb) {
+			epicsMutexLock(precPvt->numCallbacksSem);
+			numPosCb = --(precPvt->numPositionerCallbacks);
+			epicsMutexUnlock(precPvt->numCallbacksSem);
+			if (numPosCb == 0) {
+				if (psscan->paus) {
+					sprintf(psscan->smsg, "Scan paused by operator");
+					POST(&psscan->smsg);
+					return;
+				}
+				precPvt->calledBy = NOTIFY;
+				if ((psscan->faze != sscanFAZE_CHECK_MOTORS) || (psscan->pdly == 0.)) {
+					scanOnce(psscan);
+				} else {
+					callbackRequestDelayed(&precPvt->dlyCallback, psscan->pdly);
+				}
 			}
 		}
 	} 
@@ -2417,13 +2472,14 @@ userGetCallback(recDynLink * precDynLink)
 	recPvtStruct	*precPvt = (recPvtStruct *) psscan->rpvt;
 	size_t			nRequest;
 	long			status;
+	int				numGetCb;
 
-	if (sscanRecordDebug >= 5) printf("%s:userGetCallback, faze='%s', data_state='%s', link='%s'\n",
+	if (sscanRecordDebug >= 5) epicsPrintf("%s:userGetCallback, faze='%s', data_state='%s', link='%s'\n",
 		psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate],
 		linkNames[puserPvt->linkIndex]);
 
 	if (precDynLink->status) {
-		/*if (sscanRecordDebug >= 1)*/ printf("%s:userGetCallback: error %d on link '%s'.  Retrying.\n",
+		epicsPrintf("%s:userGetCallback: error %d on link '%s'.  Retrying.\n",
 			psscan->name, precDynLink->status, linkNames[puserPvt->linkIndex]);
 		/* Retry. */
 		nRequest = (psscan->faze == sscanFAZE_RECORD_SCALAR_DATA) ? 1 : psscan->npts;
@@ -2434,42 +2490,41 @@ userGetCallback(recDynLink * precDynLink)
 	if (precDynLink->getCallbackInProgress) {
 		/* mark this one off */
 		precDynLink->getCallbackInProgress = 0;
-		if (--(precPvt->numGetCallbacks) < 0) {
-			printf("%s:userGetCallback:ERROR:, numGetCallbacks=%d\n",
-				psscan->name, precPvt->numGetCallbacks);
-			precPvt->numGetCallbacks = 0;
-		}
 	} else {
 		/* why did we get an extra callback? */
-		/*if (sscanRecordDebug)*/
-			printf("%s:userGetCallback:callback while getCallbackInProgress==0 ignored\n", psscan->name);
+		epicsPrintf("%s:userGetCallback:callback while getCallbackInProgress==0 ignored\n", psscan->name);
 		return;
 	}
 
-	if (precPvt->numGetCallbacks == 0) {
+	epicsMutexLock(precPvt->numCallbacksSem);
+	precPvt->numGetCallbacks -= 1;
+	if (precPvt->numGetCallbacks < 0) {
+		epicsPrintf("%s:userGetCallback:ERROR: numGetCallbacks<0 (%d)\n", psscan->name, precPvt->numGetCallbacks);
+		precPvt->numGetCallbacks = 0;
+	}
+	numGetCb = precPvt->numGetCallbacks;
+	epicsMutexUnlock(precPvt->numCallbacksSem);
+
+	if (numGetCb == 0) {
 		if (psscan->paus) {
 			sprintf(psscan->smsg, "Scan paused by operator");
 			POST(&psscan->smsg);
 			return;
 		}
-		/*
-		 * At this point, faze == sscanFAZE_RECORD_SCALAR_DATA or sscanFAZE_SCAN_DONE
-		 * 
-		 */
+		/* At this point, faze == sscanFAZE_RECORD_SCALAR_DATA or sscanFAZE_SCAN_DONE */
 		if (psscan->dstate == sscanDSTATE_ARRAY_GET_CALLBACK_WAIT) {
 			psscan->dstate = sscanDSTATE_RECORD_ARRAY_DATA;
 		}
 		if (sscanRecordDebug >= 5) {
-			printf("%s:userGetCallback: calling scanOnce(), faze='%s', data_state='%s'\n",
+			epicsPrintf("%s:userGetCallback: calling scanOnce(), faze='%s', data_state='%s'\n",
 				psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
 		}
 		precPvt->calledBy = USERGETCALLBACK;
 		scanOnce(psscan);
 		return;
 	}
-	if (sscanRecordDebug >= 5) printf("%s:userGetCallback:exit, numGetCallbacks=%d\n",
-		psscan->name, precPvt->numGetCallbacks);
-
+	if (sscanRecordDebug >= 5) epicsPrintf("%s:userGetCallback:exit, numGetCallbacks=%d\n",
+		psscan->name, numGetCb);
 }
 
 
@@ -2824,7 +2879,6 @@ initScan(sscanRecord *psscan)
 
 
 	/* General initialization ... */
-	precPvt->lastTimeStart = precPvt->timeStart;
 	epicsTimeGetCurrent(&precPvt->timeStart);
 	psscan->cpt = 0;		/* reset point counter */
 	precPvt->scanErr = 0;
@@ -3037,6 +3091,12 @@ contScan(sscanRecord *psscan)
 		if (sscanRecordDebug >= 5) {
 			printf("%s:contScan:READ_DETCTRS - Point %ld\n", psscan->name, (long)psscan->cpt);
 		}
+
+		/* Preset numGetCallbacks so callback routine can't decrement to zero before we're done launching all. */
+		epicsMutexLock(precPvt->numCallbacksSem);
+		precPvt->numGetCallbacks = 1;
+		epicsMutexUnlock(precPvt->numCallbacksSem);
+
 		/* Positioner readbacks */
 		pPvStat = &psscan->r1nv;
 		pPvStatPos = &psscan->p1nv;
@@ -3046,9 +3106,11 @@ contScan(sscanRecord *psscan)
 			puserPvt = precPvt->caLinkStruct[i + NUM_POS].puserPvt;
 			if (*pPvStat == PV_OK) {
 				if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+					epicsMutexLock(precPvt->numCallbacksSem);
+					precPvt->numGetCallbacks++;
+					epicsMutexUnlock(precPvt->numCallbacksSem);
 					status = recDynLinkGetCallback(&precPvt->caLinkStruct[i + NUM_POS],
 								&nRequest, userGetCallback);
-					precPvt->numGetCallbacks++;
 				}
 			}
 		}
@@ -3061,19 +3123,28 @@ contScan(sscanRecord *psscan)
 				if (*pPvStat == PV_OK) {
 					puserPvt = precPvt->caLinkStruct[i + D1_IN].puserPvt;
 					if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+						epicsMutexLock(precPvt->numCallbacksSem);
+						precPvt->numGetCallbacks++;
+						epicsMutexUnlock(precPvt->numCallbacksSem);
 						status = recDynLinkGetCallback(&precPvt->caLinkStruct[i + D1_IN],
 									&nRequest, userGetCallback);
-						precPvt->numGetCallbacks++;
 					}
 				}
 			}
 		}
 
 		psscan->faze = sscanFAZE_RECORD_SCALAR_DATA; POST(&psscan->faze);
+
+		/* Remove the preset we started with. */
+		epicsMutexLock(precPvt->numCallbacksSem);
+		precPvt->numGetCallbacks -= 1;
 		if (precPvt->numGetCallbacks) {
 			/* Wait for callbacks */
+			epicsMutexUnlock(precPvt->numCallbacksSem);
 			return;
 		}
+		epicsMutexUnlock(precPvt->numCallbacksSem);
+
 		/* else fall through */
 
 	case sscanFAZE_RECORD_SCALAR_DATA:
@@ -3219,6 +3290,7 @@ endScan(sscanRecord *psscan)
 	}
 
 	psscan->xsc = 0;	/* done with scan */
+	epicsTimeGetCurrent(&precPvt->lastScanEndTime);
 
 	if (psscan->pasm && precPvt->valPosPvs) {
 		psscan->faze = sscanFAZE_RETRACE_MOVE; POST(&psscan->faze);
@@ -3280,7 +3352,9 @@ readArrays(sscanRecord *psscan)
 					if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
 						status = recDynLinkGetCallback(&precPvt->caLinkStruct[i + NUM_POS],
 								       &nRequest, userGetCallback);
+						epicsMutexLock(precPvt->numCallbacksSem);
 						precPvt->numGetCallbacks++;
+						epicsMutexUnlock(precPvt->numCallbacksSem);
 					}
 				}
 			}
@@ -3304,17 +3378,22 @@ readArrays(sscanRecord *psscan)
 						if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
 							status |= recDynLinkGetCallback(&precPvt->caLinkStruct[i + D1_IN],
 										&nRequest, userGetCallback);
+							epicsMutexLock(precPvt->numCallbacksSem);
 							precPvt->numGetCallbacks++;
+							epicsMutexUnlock(precPvt->numCallbacksSem);
 						} 
 					}
 				}
 			}
 		}
 
+		epicsMutexLock(precPvt->numCallbacksSem);
 		if (precPvt->numGetCallbacks) {
 			psscan->dstate = sscanDSTATE_ARRAY_GET_CALLBACK_WAIT;
+			epicsMutexUnlock(precPvt->numCallbacksSem);
 			return;
 		}
+		epicsMutexUnlock(precPvt->numCallbacksSem);
 		psscan->dstate = sscanDSTATE_RECORD_ARRAY_DATA;
 	}
 
@@ -3780,12 +3859,20 @@ doPuts(CALLBACK *pCB)
 		linkIndex = A1_OUT;
 		for (i=0; i<NUM_ATRGS; i++, tcd++, pPvStat++, linkIndex++) {
 			if (*pPvStat == 0) {
+				epicsMutexLock(precPvt->numCallbacksSem);
 				precPvt->numAReadCallbacks++;
+				epicsMutexUnlock(precPvt->numCallbacksSem);
 				status = recDynLinkPutCallback(&precPvt->caLinkStruct[linkIndex],
 						tcd, 1, notifyCallback);
-				if (status) precPvt->numAReadCallbacks--;
-				if (status == NOTIFY_IN_PROGRESS) {
+				if (status) {
+					epicsMutexLock(precPvt->numCallbacksSem);
 					precPvt->numAReadCallbacks--;
+					epicsMutexUnlock(precPvt->numCallbacksSem);
+				}
+				if (status == NOTIFY_IN_PROGRESS) {
+					epicsMutexLock(precPvt->numCallbacksSem);
+					precPvt->numAReadCallbacks--;
+					epicsMutexUnlock(precPvt->numCallbacksSem);
 					if (sscanRecordDebug >= 5) {
 						printf("%s:doPuts:...TRIG_ARRAY_READ: notify in progress\n", psscan->name);
 					}
@@ -3804,35 +3891,40 @@ doPuts(CALLBACK *pCB)
 	case sscanFAZE_BEFORE_SCAN:
 		if (sscanRecordDebug >= 5)
 			printf("%s:doPuts:BEFORE_SCAN Link\n", psscan->name);
-		numPutCallbacks = 0;
 		if (psscan->bsnv == OK) {
 			if (psscan->bswait == sscanLINKWAIT_YES) {
 				psscan->faze = sscanFAZE_BEFORE_SCAN_WAIT; POST(&psscan->faze);
+				epicsMutexLock(precPvt->numCallbacksSem);
 				precPvt->numPositionerCallbacks++;
+				epicsMutexUnlock(precPvt->numCallbacksSem);
 				status = recDynLinkPutCallback(&precPvt->caLinkStruct[BS_OUT],
 						&(psscan->bscd), 1, notifyCallback);
 				if (status) {
+					epicsMutexLock(precPvt->numCallbacksSem);
 					precPvt->numPositionerCallbacks--;
+					epicsMutexUnlock(precPvt->numCallbacksSem);
 					if (status == NOTIFY_IN_PROGRESS) {
 						psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
 						sprintf(psscan->smsg, "Before-scan link is busy");
 						POST(&psscan->smsg);
 					}
-				} else {
-					numPutCallbacks++;
 				}
 			} else {
 				status = recDynLinkPut(&precPvt->caLinkStruct[BS_OUT],
 						&(psscan->bscd), 1);
 			}
 		}
-		if (numPutCallbacks) {
+
+		epicsMutexLock(precPvt->numCallbacksSem);
+		if (precPvt->numPositionerCallbacks) {
+			epicsMutexUnlock(precPvt->numCallbacksSem);
 			/* wait for callback */
-			break;
+			return;
 		} else {
 			/* Fall through to MOVE_MOTORS if we didn't do a putCallback. */
 			psscan->faze = sscanFAZE_MOVE_MOTORS;
 		}
+		epicsMutexUnlock(precPvt->numCallbacksSem);
 
 	case sscanFAZE_START_FLY:
 	case sscanFAZE_MOVE_MOTORS:
@@ -3843,11 +3935,18 @@ doPuts(CALLBACK *pCB)
 		pPos = (posFields *) & psscan->p1pp;
 		pPvStat = &psscan->p1nv;
 
+		/*
+		 * Before we start, preset numPositionerCallbacks, so notifyCallback can't possibly
+		 * decrement to zero (and think all positioners are done) before we've started them all.
+		 */		
+		epicsMutexLock(precPvt->numCallbacksSem);
+		precPvt->numPositionerCallbacks = 1;
+		epicsMutexUnlock(precPvt->numCallbacksSem);
+
 		/* For each valid positioner, write the desired position.
 		 * If positioner is "on-the-fly", move motors only if the current point is 0:
 		 * do a PutCallback on move-to-start-point but just a Put on start-fly.
 		 */
- 		numPutCallbacks = 0;
 		for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
 			if ((*pPvStat == PV_OK) && ((pPos->p_sm != sscanP1SM_On_The_Fly) || (psscan->cpt == 0))) {
 				if ((psscan->faze == sscanFAZE_START_FLY) && (pPos->p_sm == sscanP1SM_On_The_Fly)) {
@@ -3856,29 +3955,35 @@ doPuts(CALLBACK *pCB)
 						printf("%s:doPuts:start_fly to %f\n", psscan->name, pPos->p_dv);
 					precPvt->flying = 1;
 				} else {
+					epicsMutexLock(precPvt->numCallbacksSem);
 					precPvt->numPositionerCallbacks++;
+					epicsMutexUnlock(precPvt->numCallbacksSem);
 					psscan->faze = sscanFAZE_CHECK_MOTORS; /* post when we get out of the loop */
 					status = recDynLinkPutCallback(&precPvt->caLinkStruct[i + P1_OUT],
 						    &(pPos->p_dv), 1, notifyCallback);
 					if (status) {
+						epicsMutexLock(precPvt->numCallbacksSem);
 						precPvt->numPositionerCallbacks--;
+						epicsMutexUnlock(precPvt->numCallbacksSem);
 						if (status == NOTIFY_IN_PROGRESS) {
 							psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
 							sprintf(psscan->smsg, "Positioner %1d is already busy", i);
 							POST(&psscan->smsg);
 						}
-					} else {
-						numPutCallbacks++;
 					}
 				}
 			}
 		}
 
-		if (numPutCallbacks) {
+		epicsMutexLock(precPvt->numCallbacksSem);
+		--precPvt->numPositionerCallbacks; /* Take out that preset we did before writing to positioners */
+		if (precPvt->numPositionerCallbacks > 0) {
+			epicsMutexUnlock(precPvt->numCallbacksSem);
 			POST(&psscan->faze);
-			if (!precPvt->flying)
-				break;
+			return;
 		}
+		epicsMutexUnlock(precPvt->numCallbacksSem);
+
 
 		/*
 		 * Fall through to TRIG_DETCTRS if we did no putCallbacks
@@ -3909,21 +4014,33 @@ doPuts(CALLBACK *pCB)
 			} else {
 				callbackRequestDelayed(&precPvt->dlyCallback, psscan->ddly);
 			}
-			break;
+			return;
 		}
 
 		/* for each valid detector trigger, write the desired value */
+
+		/*
+		 * Before we start, preset numTriggerCallbacks, so notifyCallback can't possibly
+		 * decrement to zero (and think all triggers are done) before we've started them all.
+		 */		
+		epicsMutexLock(precPvt->numCallbacksSem);
+		precPvt->numTriggerCallbacks = 1;
+		epicsMutexUnlock(precPvt->numCallbacksSem);
+
 		tcd = &psscan->t1cd;	/* value to write */
 		pPvStat = &psscan->t1nv;	/* link status */
 		linkIndex = T1_OUT;
 		for (i=0; i<NUM_TRGS; i++, tcd++, pPvStat++, linkIndex++) {
 			if (*pPvStat == 0) {
+				epicsMutexLock(precPvt->numCallbacksSem);
 				precPvt->numTriggerCallbacks++;
+				epicsMutexUnlock(precPvt->numCallbacksSem);
 				status = recDynLinkPutCallback(&precPvt->caLinkStruct[linkIndex],
 						tcd, 1, notifyCallback);
-				if (status) precPvt->numTriggerCallbacks--;
-				if (status == NOTIFY_IN_PROGRESS) {
+				if (status) {
+					epicsMutexLock(precPvt->numCallbacksSem);
 					precPvt->numTriggerCallbacks--;
+					epicsMutexUnlock(precPvt->numCallbacksSem);
 					if (sscanRecordDebug >= 5) {
 						printf("%s:doPuts:...TRIG_DETCTRS: notify in progress\n", psscan->name);
 					}
@@ -3933,11 +4050,52 @@ doPuts(CALLBACK *pCB)
 				}
 			}
 		}
-		break;
+
+		epicsMutexLock(precPvt->numCallbacksSem);
+		--precPvt->numTriggerCallbacks; /* Take out that preset we did before writing to triggers */
+		if (precPvt->numTriggerCallbacks > 0) {
+			/* There will be a callback from the trigger, so we can leave. */
+			epicsMutexUnlock(precPvt->numCallbacksSem);
+			return;
+		}
+		epicsMutexUnlock(precPvt->numCallbacksSem);
+
+		/* We reach this point only if all trigger callbacks came in while our preset to
+		 * numTriggerCallbacks was preventing notifyCallback from scheduling the next step
+		 * of the scan.  In this case, we have to do what notifyCallback would have done
+		 * if it had decremented numTriggerCallbacks to 0.
+		 */ 
+		if (psscan->paus) {
+			sprintf(psscan->smsg, "Scan paused by operator");
+			POST(&psscan->smsg);
+			return;
+		}
+		if (psscan->ddly < .001) {
+			if (psscan->wcnt) {
+				psscan->wtng = 1; POST(&psscan->wtng);
+				sprintf(psscan->smsg, "Waiting for client");
+				POST(&psscan->smsg);
+			} else {
+				precPvt->calledBy = DO_PUTS_TRIG;
+				(void) scanOnce((void *)psscan);
+			}
+		} else {
+			precPvt->calledBy = DO_PUTS_TRIG;
+			callbackRequestDelayed(&precPvt->dlyCallback, psscan->ddly);
+		}
+		return;
 
 	case sscanFAZE_RETRACE_MOVE:
 		/* If Retrace indicates motors must move ... */
-		numPutCallbacks = 0;
+
+		/*
+		 * Before we start, preset numPositionerCallbacks, so notifyCallback can't possibly
+		 * decrement to zero (and think all positioners are done) before we've started them all.
+		 */		
+		epicsMutexLock(precPvt->numCallbacksSem);
+		precPvt->numPositionerCallbacks = 1;
+		epicsMutexUnlock(precPvt->numCallbacksSem);
+
 		if (psscan->pasm) {
 			if (sscanRecordDebug >= 5) {printf("%s:doPuts:RETRACE\n", psscan->name);}
 			pPos = (posFields *) & psscan->p1pp;
@@ -3967,27 +4125,33 @@ doPuts(CALLBACK *pCB)
 
 					psscan->faze = sscanFAZE_RETRACE_WAIT; POST(&psscan->faze);
 					/* Command motor */
+					epicsMutexLock(precPvt->numCallbacksSem);
 					precPvt->numPositionerCallbacks++;
+					epicsMutexUnlock(precPvt->numCallbacksSem);
 					status = recDynLinkPutCallback(&precPvt->caLinkStruct[i + P1_OUT],
 					    &(pPos->p_dv), 1, notifyCallback);
 					if (status) {
 						/* nonzero return means we failed to tell the motor to move */
+						epicsMutexLock(precPvt->numCallbacksSem);
 						precPvt->numPositionerCallbacks--;
+						epicsMutexUnlock(precPvt->numCallbacksSem);
 						psscan->alrt = 1; POST(&psscan->alrt);
 						sprintf(psscan->smsg, "Can't retrace positioner %1d", i);
 						POST(&psscan->smsg);
-					} else {
-						numPutCallbacks++;
 					}
 				}
 			}
 		}
-		if (numPutCallbacks == 0) {
-			 /* Didn't have to (or failed completely to) do any retrace. */
+
+		epicsMutexLock(precPvt->numCallbacksSem);
+		--precPvt->numPositionerCallbacks; /* Take out that preset we did before writing to positioners*/
+		if (precPvt->numPositionerCallbacks > 0) {
+			epicsMutexUnlock(precPvt->numCallbacksSem);
+			return;
+		} else {
+			epicsMutexUnlock(precPvt->numCallbacksSem);
 			psscan->faze = sscanFAZE_AFTER_SCAN_DO; POST(&psscan->faze);
 			/* Fall through to sscanFAZE_AFTER_SCAN_DO */
-		} else {
-			break;
 		}
 
 	case sscanFAZE_AFTER_SCAN_DO:
@@ -3998,11 +4162,15 @@ doPuts(CALLBACK *pCB)
 				printf("%s:doPuts:AFTER_SCAN Fwd Lnk\n", psscan->name);
 			if (psscan->aswait == sscanLINKWAIT_YES) {
 				psscan->faze = sscanFAZE_AFTER_SCAN_WAIT; POST(&psscan->faze);
+				epicsMutexLock(precPvt->numCallbacksSem);
 				precPvt->numPositionerCallbacks++;
+				epicsMutexUnlock(precPvt->numCallbacksSem);
 				status = recDynLinkPutCallback(&precPvt->caLinkStruct[AS_OUT],
 						&(psscan->ascd), 1, notifyCallback);
 				if (status) {
+					epicsMutexLock(precPvt->numCallbacksSem);
 					precPvt->numPositionerCallbacks--;
+					epicsMutexUnlock(precPvt->numCallbacksSem);
 					psscan->alrt = 1; POST(&psscan->alrt);
 					sprintf(psscan->smsg, "Can't fire After-scan link");
 					POST(&psscan->smsg);
@@ -4021,7 +4189,7 @@ doPuts(CALLBACK *pCB)
 			precPvt->calledBy = DO_PUTS;
 			scanOnce(psscan);
 		}
-		break;
+		return;
 
 	case sscanFAZE_IDLE:
 	case sscanFAZE_PREVIEW:
@@ -4030,15 +4198,15 @@ doPuts(CALLBACK *pCB)
 		 * We don't do this anymore.
 		 */
 
-		break;
+		return;
 
 	case sscanFAZE_SCAN_PENDING:
-		if (sscanRecordDebug)
-			printf("%s:doPuts:SCAN_PENDING -- we shouldn't be here.\n", psscan->name);
-		break;
+		printf("%s:doPuts:SCAN_PENDING -- we shouldn't be here.\n", psscan->name);
+		return;
 
 	default:
-		break;
+		printf("%s:doPuts:default -- we shouldn't be here.\n", psscan->name);
+		return;
 	}
 }
 
