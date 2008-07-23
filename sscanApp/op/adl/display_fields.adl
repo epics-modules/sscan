@@ -1,7 +1,7 @@
 
 file {
-	name="/home/oxygen4/MOONEY/epics/synApps_4_6/support/std/stdApp/op/adl/display_fields.adl"
-	version=030004
+	name="/home/oxygen/MOONEY/epics/synApps/support/sscan/sscanApp/op/adl/display_fields.adl"
+	version=030102
 }
 display {
 	object {
@@ -749,7 +749,12 @@ composite {
 		height=20
 	}
 	display[0] {
-		name="linkHelp.adl"
+		label="Input links"
+		name="inlinkHelp.adl"
+	}
+	display[1] {
+		label="Output links"
+		name="outlinkHelp.adl"
 	}
 	clr=0
 	bclr=17
