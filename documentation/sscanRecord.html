@@ -1424,6 +1424,19 @@ fills the readback array <tt>P<i>n</i>RA</tt> with those values.
 <td>No</td>
 <td>No</td>
 </tr>
+
+<tr>
+<td><tt>P<i>n</i>PA</tt></td>
+<td>P<i>n</i> Step Array</td>
+<td>DOUBLE[]</td>
+<td>No</td>
+<td>0</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+
 </table>
 
 
@@ -1529,18 +1542,6 @@ fills the readback array <tt>P<i>n</i>RA</tt> with those values.
 </tr>
 
 <tr>
-<td><tt>P<i>n</i>PA</tt></td>
-<td>P<i>n</i> Step Array</td>
-<td>DOUBLE[]</td>
-<td>No</td>
-<td>0</td>
-<td>Yes</td>
-<td>Yes</td>
-<td>No</td>
-<td>No</td>
-</tr>
-
-<tr>
 <td><tt>P<i>n</i>RA</tt></td>
 <td>P<i>n</i> Readback Array</td>
 <td>DOUBLE[]</td>
@@ -1555,7 +1556,7 @@ fills the readback array <tt>P<i>n</i>RA</tt> with those values.
 <tr>
 <td><tt>P<i>n</i>CA</tt></td>
 <td>P<i>n</i> Current Readback Array</td>
-<td>DOUBLE ARRAY</td>
+<td>DOUBLE[]</td>
 <td>No</td>
 <td>0</td>
 <td>Yes</td>
@@ -1565,6 +1566,26 @@ fills the readback array <tt>P<i>n</i>RA</tt> with those values.
 </tr>
 
 </table>
+
+<P>Clients that display scan data will most likely be interested in only one of
+the two positioner-array fields: <tt>P<i>n</i>CA</tt> or <tt>P<i>n</i>RA</tt>.
+These array fields are backed by the same double-buffered arrays, so they cannot
+be posted separately.
+
+<P><tt>P<i>n</i>CA</tt> will yield data from the scan that currently is
+executing. This array can be read at any time during the scan, and it may be
+posted with the mask, DBE_VALUE, while the scan is in progress. (<tt>ATIME</tt>
+controls this.)  When the scan completes, <tt>P<i>n</i>CA</tt> will be posted
+with the mask, DBE_VALUE|DBE_LOG.
+
+<P><tt>P<i>n</i>RA</tt> will yield data from the most recently completed scan.
+This array's data will remain available while the next scan's data are being
+acquired, and will become unavailable when that scan completes.  Clients
+interested only in completed-scan data should use this field.  Clients that
+monitor this field should always specify the mask, DBE_LOG, in their
+ca_add_event() or ca_create_subscription() call.  If this field is monitored
+with the mask, DBE_VALUE, the client may receive multiple postings of the same
+data.
 
 <!---------------------------------------------------------------------------->
 
@@ -2074,16 +2095,19 @@ detector signals, <tt>D01</tt>-<tt>D70</tt>, and four positioner readbacks,
 <tt>R1</tt>-<tt>R4</tt>) at each point in the scan. These data will most
 commonly be from a detector or from a position readback (which would record the
 actual motor positions at each point and could then be compared to the desired
-position array).  Although positioner readbacks are normally used to confirm
-the position at which data actually were acquired (as opposed to the position
-to which the <b>sscan</b> record <i>told</i> a positioner to go), they can be used to
-record any data.  These four variables are the only place to record
-double-precision scan data.
+position array).
+
+<P>Although positioner readbacks, <tt>R1</tt>-<tt>R4</tt>, are normally used to
+confirm the position at which data actually were acquired (as opposed to the
+position to which the <b>sscan</b> record <i>told</i> a positioner to go), they
+can be used to record any data.  These four variables are the only place to
+record double-precision scan data.  Note that these readbacks are not
+full-fledged detectors, because the sscan record currently cannot read into them
+from a array-valued PV's, as it can for actual detectors.
 
 <p>The scan results will most frequently be read as position arrays
-(<tt>P1RA</tt>-<tt>P4RA</tt>) and arrays of detector data
-(<tt>D01DA</tt>-<tt><tt>D70DA</tt></tt>) where each detector data element
-corresponds to the position element.
+(<tt>P1RA</tt>-<tt>P4RA</tt>) and detector arrays 
+(<tt>D01DA</tt>-<tt><tt>D70DA</tt></tt>).
 
 <p>A one-dimensional scan is complete when the <tt>BUSY</tt> field
 goes back to zero (during the scan its value is 1). A client program monitoring
