@@ -10,6 +10,29 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
+<h2 align="center">Release 2-6-2</h2>
+<ul>
+
+<li>Removed race conditions affecting callback counters, and added mutex to
+protect them.  Changed timing of when to renew positioner links from
+now-last_scan_start to now-last_scan_end.
+
+<li>display_fields.adl uses new link-help displays from std R2.6
+
+</ul>
+
+<h2 align="center">Release 2-6-1</h2>
+<ul>
+
+<li>The sscan record didn't correctly handle reads or writes to PnPA, for n>1.
+As a result, table scans did not work with positioners 2-4.
+
+<li>saveData didn't fail correctly when it could not find the [basename] section
+in its initialization file, and when it failed to connect to the basename PV.
+Instead, it aborted its initialization, and failed to connect to sscan records.
+
+</ul>
+
 <h2 align="center">Release 2-6</h2>
 <ul>
 <li>The sscan record can now post current-data arrays during a scan.  While
@@ -267,7 +290,7 @@ evidently no longer does; replaced with ca_flush_io.
     Suggestions and Comments to: <br>
     <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
     (mooney@aps.anl.gov) <br>
-    Last modified: May 7, 2008
+    Last modified: May 26, 2008
 </address>
 </body>
 </html>
