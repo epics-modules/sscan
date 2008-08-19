@@ -323,6 +323,7 @@
 #include <epicsTimer.h>		/* access to timers for delayed callbacks */
 #include <epicsThread.h>	/* for epicsThreadSleepQuantum() */
 #include <dbStaticLib.h>	/* for enumStrings stuff */
+#include <epicsVersion.h>       /* for LT_EPICSBASE macro */
 
 #include	"recDynLink.h"
 #include "epicsExport.h"
@@ -353,6 +354,8 @@
 #define NINT(f)	(long)((f)>0 ? (f)+0.5 : (f)-0.5)
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #define MIN(a,b) ((a)<(b)?(a):(b))
+/* Less than EPICS base version test.*/
+#define LT_EPICSBASE(v,r,l) ((EPICS_VERSION<=(v)) && (EPICS_REVISION<=(r)) && (EPICS_MODIFICATION<(l)))
 
 /***************************
   Declare constants
@@ -2610,7 +2613,11 @@ pvSearchCallback(recDynLink * precDynLink)
 					&options, &nRequest, NULL);
 			if (status == OK) {
 				strcpy(pPos->p_eu, precPvt->pDynLinkInfo->units);
+#if LT_EPICSBASE(3,14,10)
 				pPos->p_pr = precPvt->pDynLinkInfo->precision;
+#else
+				pPos->p_pr = precPvt->pDynLinkInfo->precision.dp;
+#endif
 				pPos->p_hr = precPvt->pDynLinkInfo->upper_ctrl_limit;
 				pPos->p_lr = precPvt->pDynLinkInfo->lower_ctrl_limit;
 			}
@@ -2640,7 +2647,11 @@ pvSearchCallback(recDynLink * precDynLink)
 					&options, &nRequest, NULL);
 			if (status == OK) {
 				strcpy(pDet->d_eu, precPvt->pDynLinkInfo->units);
-				pDet->d_pr = precPvt->pDynLinkInfo->precision;
+#if LT_EPICSBASE(3,14,10)
+				pPos->p_pr = precPvt->pDynLinkInfo->precision;
+#else
+				pDet->d_pr = precPvt->pDynLinkInfo->precision.dp;
+#endif
 				pDet->d_hr = precPvt->pDynLinkInfo->upper_disp_limit;
 				pDet->d_lr = precPvt->pDynLinkInfo->lower_disp_limit;
 			}
