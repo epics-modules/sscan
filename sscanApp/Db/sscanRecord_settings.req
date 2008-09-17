@@ -1,5 +1,7 @@
 # sscanRecord_settings.req
 # Settings for a single sscan record
+$(P)$(S).ATIME
+$(P)$(S).COPYTO
 $(P)$(S).AAWAIT
 $(P)$(S).FLNK
 $(P)$(S).NPTS
