@@ -6,5 +6,5 @@ DIRS := $(DIRS) $(filter-out $(DIRS), $(wildcard *App))
 DIRS := $(DIRS) $(filter-out $(DIRS), $(wildcard *app))
 DIRS := $(DIRS) $(filter-out $(DIRS), $(wildcard iocBoot))
 DIRS := $(DIRS) $(filter-out $(DIRS), $(wildcard iocboot))
-sscanAPP_DEPEND_DIRS = configure
+sscanApp_DEPEND_DIRS = configure
 include $(TOP)/configure/RULES_TOP
