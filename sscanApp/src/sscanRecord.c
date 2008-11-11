@@ -1451,7 +1451,7 @@ special(struct dbAddr *paddr, int after)
 						} else {
 							precPvt->calledBy = SPECIAL_PAUS;
 							if (psscan->rdly < .001) {
-								scanOnce(psscan);
+								scanOnce((struct dbCommon *)psscan);
 							} else {
 								callbackRequestDelayed(&precPvt->dlyCallback, psscan->rdly);
 							}
@@ -1573,7 +1573,7 @@ special(struct dbAddr *paddr, int after)
 						sprintf(psscan->smsg, "Scanning ...");
 						POST(&psscan->smsg);
 						precPvt->calledBy = SPECIAL_WAIT;
-						(void) scanOnce((void *)psscan);
+						(void) scanOnce((struct dbCommon *)psscan);
 					}
 				}
 			}
@@ -1585,7 +1585,7 @@ special(struct dbAddr *paddr, int after)
 					psscan->name, psscan->await, sscanDSTATE_strings[psscan->dstate]);
 			if ((psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) && (psscan->await == 0)) {
 				precPvt->calledBy = SPECIAL_AWAIT;
-				scanOnce(psscan);
+				scanOnce((struct dbCommon *)psscan);
 			}
 			break;
 
@@ -2368,7 +2368,7 @@ delayCallback(CALLBACK *pCB)
 		POST(&psscan->smsg);
 	} else {
 		precPvt->calledBy |= DELAY;
-		(void) scanOnce((void *) psscan);
+		(void) scanOnce((struct dbCommon *) psscan);
 	}
 }
 
@@ -2421,7 +2421,7 @@ notifyCallback(recDynLink * precDynLink)
 						POST(&psscan->smsg);
 					} else {
 						precPvt->calledBy = NOTIFY_TRIG;
-						(void) scanOnce((void *)psscan);
+						(void) scanOnce((struct dbCommon *)psscan);
 					}
 				} else {
 					precPvt->calledBy = NOTIFY_TRIG;
@@ -2441,7 +2441,7 @@ notifyCallback(recDynLink * precDynLink)
 					return;
 				}
 				precPvt->calledBy = NOTIFY_READ_ARRAY_TRIG;
-				scanOnce((void *)psscan);
+				scanOnce((struct dbCommon *)psscan);
 			}
 		}
 	} else {	/* POSITIONER_OUT, BS_AS_LINK */
@@ -2457,7 +2457,7 @@ notifyCallback(recDynLink * precDynLink)
 				}
 				precPvt->calledBy = NOTIFY;
 				if ((psscan->faze != sscanFAZE_CHECK_MOTORS) || (psscan->pdly == 0.)) {
-					scanOnce(psscan);
+					scanOnce((struct dbCommon *)psscan);
 				} else {
 					callbackRequestDelayed(&precPvt->dlyCallback, psscan->pdly);
 				}
@@ -2523,7 +2523,7 @@ userGetCallback(recDynLink * precDynLink)
 				psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
 		}
 		precPvt->calledBy = USERGETCALLBACK;
-		scanOnce(psscan);
+		scanOnce((struct dbCommon *)psscan);
 		return;
 	}
 	if (sscanRecordDebug >= 5) epicsPrintf("%s:userGetCallback:exit, numGetCallbacks=%d\n",
@@ -2751,7 +2751,7 @@ pvSearchCallback(recDynLink * precDynLink)
 					psscan->name);
 			precPvt->scanBySearchCallback = 1;
 			precPvt->calledBy = SEARCH;
-			scanOnce(psscan);
+			scanOnce((struct dbCommon *)psscan);
 		}
 	}
 	return;
@@ -2826,7 +2826,7 @@ posMonCallback(recDynLink * precDynLink)
 				psscan->name);
 		precPvt->scanBySearchCallback = 1;
 		precPvt->calledBy = POSMON;
-		scanOnce(psscan);
+		scanOnce((struct dbCommon *)psscan);
 	}
 }
 
@@ -4021,7 +4021,7 @@ doPuts(CALLBACK *pCB)
 			 */
 			precPvt->calledBy = DO_PUTS;
 			if (psscan->ddly == 0.) {
-				scanOnce(psscan);
+				scanOnce((struct dbCommon *)psscan);
 			} else {
 				callbackRequestDelayed(&precPvt->dlyCallback, psscan->ddly);
 			}
@@ -4088,7 +4088,7 @@ doPuts(CALLBACK *pCB)
 				POST(&psscan->smsg);
 			} else {
 				precPvt->calledBy = DO_PUTS_TRIG;
-				(void) scanOnce((void *)psscan);
+				(void) scanOnce((struct dbCommon *)psscan);
 			}
 		} else {
 			precPvt->calledBy = DO_PUTS_TRIG;
@@ -4198,7 +4198,7 @@ doPuts(CALLBACK *pCB)
 			psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze);
 			/* Scan must end in the process() routine. */
 			precPvt->calledBy = DO_PUTS;
-			scanOnce(psscan);
+			scanOnce((struct dbCommon *)psscan);
 		}
 		return;
 
