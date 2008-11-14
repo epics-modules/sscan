@@ -154,7 +154,12 @@
 #ifdef vxWorks
 #include <usrLib.h>
 #include <ioLib.h>
-#include <nfsDrv.h>
+
+/* nfsDrv.h was renamed nfsDriver.h in Tornado 2.2.2 */
+/* #include	<nfsDrv.h> */
+extern STATUS nfsMount(char *host, char *fileSystem, char *localName);
+extern STATUS nfsUnmount(char *localName);
+
 #else
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -793,7 +798,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-	printf("saveData CVS: $Id: saveData.c,v 1.38 2008-07-23 18:42:24 mooney Exp $\n");
+	printf("saveData CVS: $Id: saveData.c,v 1.39 2008-11-14 18:04:22 mooney Exp $\n");
 }
 
 void saveData_Info() {
