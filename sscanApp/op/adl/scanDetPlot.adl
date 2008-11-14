@@ -1,7 +1,7 @@
 
 file {
-	name="C:\cygwin\home\mooney\epics\synApps\support\all_adl\scanDetPlot.adl"
-	version=030004
+	name="/home/oxygen/MOONEY/epics/synApps/support/sscan/sscanApp/op/adl/scanDetPlot.adl"
+	version=030102
 }
 display {
 	object {
@@ -115,6 +115,7 @@ display {
 	y2_axis {
 		rangeStyle="auto-scale"
 	}
+	countPvName="2000"
 	eraseMode="if zero"
 }
 text {
