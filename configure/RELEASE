@@ -8,7 +8,7 @@ TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 #SNCSEQ=$(SUPPORT)/seq
 
 # EPICS_BASE usually appears last so other apps can override stuff:
-EPICS_BASE=/APSshare/epics/base-3.14.8.2a
+EPICS_BASE=/home/oxygen/MOONEY/epics/base-3.14.10
 
 #Capfast users may need the following definitions
 #CAPFAST_TEMPLATES=
