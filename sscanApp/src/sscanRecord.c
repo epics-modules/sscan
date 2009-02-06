@@ -2394,7 +2394,7 @@ notifyCallback(recDynLink * precDynLink)
 
 	if (psscan->faze == sscanFAZE_IDLE) {
 		/* we must have been aborted */
-		sprintf(psscan->smsg, "callback while can record is idle");
+		sprintf(psscan->smsg, "callback while scan record is idle");
 		POST(&psscan->smsg);
 		return;
 	}
