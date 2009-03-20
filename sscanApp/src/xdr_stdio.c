@@ -45,19 +45,39 @@ static char sccsid[] = "@(#)xdr_stdio.c 1.16 87/08/11 Copyr 1984 Sun Micro";
 #include <stdio.h>
 #include <rpc/xdr.h>
 
+static bool_t	xdrstdio_getlonglong();
+static bool_t	xdrstdio_putlonglong();
 static bool_t	xdrstdio_getlong();
 static bool_t	xdrstdio_putlong();
 static bool_t	xdrstdio_getbytes();
 static bool_t	xdrstdio_putbytes();
+static bool_t	xdrstdio_putwords();
+static bool_t	xdrstdio_putlongs();
 static u_int	xdrstdio_getpos();
 static bool_t	xdrstdio_setpos();
 static long *	xdrstdio_inline();
 static void	xdrstdio_destroy();
 
+int size_of_struct_xdr_ops = sizeof(struct xdr_ops);
+
 /*
  * Ops vector for stdio type XDR
  */
-static struct xdr_ops	xdrstdio_ops = {
+
+/* Tornado 5.4 and earlier ****************************************/
+struct xdr_ops_32 {
+	bool_t	(*x_getlong)();	/* get a long from underlying stream */
+	bool_t	(*x_putlong)();	/* put a long to " */
+	bool_t	(*x_getbytes)();/* get some bytes from " */
+	bool_t	(*x_putbytes)();/* put some bytes to " */
+	u_int	(*x_getpostn)();/* returns bytes off from beginning */
+	bool_t  (*x_setpostn)();/* lets you reposition the stream */
+	long *	(*x_inline)();	/* buf quick ptr to buffered data */
+	void	(*x_destroy)();	/* free privates of this xdr_stream */
+};
+
+/*static struct xdr_ops	xdrstdio_ops_32 = {*/
+static struct xdr_ops_32	xdrstdio_ops_32 = {
 	xdrstdio_getlong,	/* deseraialize a long int */
 	xdrstdio_putlong,	/* seraialize a long int */
 	xdrstdio_getbytes,	/* deserialize counted bytes */
@@ -67,6 +87,38 @@ static struct xdr_ops	xdrstdio_ops = {
 	xdrstdio_inline,	/* prime stream for inline macros */
 	xdrstdio_destroy	/* destroy stream */
 };
+/*****************************************************************/
+
+/* Tornado 5.5 and later ****************************************/
+struct xdr_ops_48 {
+	bool_t	(*x_getlonglong)();	/* get a long long from underlying stream */
+	bool_t	(*x_putlonglong)();	/* put a long long to */
+	bool_t	(*x_getlong)();	/* get a long from underlying stream */
+	bool_t	(*x_putlong)();	/* put a long to " */
+	bool_t	(*x_getbytes)();/* get some bytes from " */
+	bool_t	(*x_putbytes)();/* put some bytes to " */
+	bool_t	(*x_putwords)();/* put some words to " */
+	bool_t	(*x_putlongs)();/* put some longs to " */
+	u_int	(*x_getpostn)();/* returns bytes off from beginning */
+	bool_t  (*x_setpostn)();/* lets you reposition the stream */
+	long *	(*x_inline)();	/* buf quick ptr to buffered data */
+	void	(*x_destroy)();	/* free privates of this xdr_stream */
+};
+static struct xdr_ops_48	xdrstdio_ops_48 = {
+	xdrstdio_getlonglong,	/* deseraialize a longlong int */
+	xdrstdio_putlonglong,	/* seraialize a longlong int */
+	xdrstdio_getlong,	/* deseraialize a long int */
+	xdrstdio_putlong,	/* seraialize a long int */
+	xdrstdio_getbytes,	/* deserialize counted bytes */
+	xdrstdio_putbytes,	/* serialize counted bytes */
+	xdrstdio_putwords,	/* put some words to underlying stream */
+	xdrstdio_putlongs,	/* put some longs to underlying stream */
+	xdrstdio_getpos,	/* get offset in the stream */
+	xdrstdio_setpos,	/* set offset in the stream */
+	xdrstdio_inline,	/* prime stream for inline macros */
+	xdrstdio_destroy	/* destroy stream */
+};
+/*****************************************************************/
 
 /*
  * Initialize a stdio xdr stream.
@@ -80,8 +132,13 @@ xdrstdio_create(xdrs, file, op)
 	enum xdr_op op;
 {
 
+	printf("xdrstdio_create: size_of_struct_xdr_ops=%d\n", size_of_struct_xdr_ops);
 	xdrs->x_op = op;
-	xdrs->x_ops = &xdrstdio_ops;
+	if (sizeof(struct xdr_ops) == 32) {
+		xdrs->x_ops = (struct xdr_ops *) &xdrstdio_ops_32;
+	} else {
+		xdrs->x_ops = (struct xdr_ops *) &xdrstdio_ops_48;
+	}
 	xdrs->x_private = (caddr_t)file;
 	xdrs->x_handy = 0;
 	xdrs->x_base = 0;
@@ -190,4 +247,27 @@ xdrstdio_inline(xdrs, len)
 	 * management on this buffer, so we don't do this.
 	 */
 	return (NULL);
+}
+
+
+/*** stubs for new routines, which we don't use, in tornado 5.5 and later ***/
+
+static bool_t xdrstdio_getlonglong(xdrs, llp)
+{
+	return (FALSE);
+}
+
+static bool_t xdrstdio_putlonglong(xdrs, llp)
+{
+	return (FALSE);
+}
+
+static bool_t xdrstdio_putwords(xdrs, addr, len)
+{
+	return (FALSE);
+}
+
+static bool_t xdrstdio_putlongs(xdrs, addr, len)
+{
+	return (FALSE);
 }
