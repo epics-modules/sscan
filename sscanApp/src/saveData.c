@@ -798,7 +798,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-	printf("saveData CVS: $Id: saveData.c,v 1.39 2008-11-14 18:04:22 mooney Exp $\n");
+	printf("saveData CVS: $Id: saveData.c,v 1.40 2009-03-26 18:30:22 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -2731,7 +2731,7 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 			if (pscan->dxnv[i]==XXNV_OK) {
 				pscan->nb_det++;
 				/* request ctrl info for the detector (unit) */
-				if (pscan->cdxeu) ca_array_get(DBR_CTRL_FLOAT, 1, pscan->cdxeu[i], &pscan->dxeu[i]);
+				if (pscan->cdxeu[i]) ca_array_get(DBR_CTRL_FLOAT, 1, pscan->cdxeu[i], &pscan->dxeu[i]);
 				/* compute the number of valid det in the scan */
 			}
 		}
