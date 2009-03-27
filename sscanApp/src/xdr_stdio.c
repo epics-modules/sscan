@@ -132,7 +132,7 @@ xdrstdio_create(xdrs, file, op)
 	enum xdr_op op;
 {
 
-	#printf("xdrstdio_create: size_of_struct_xdr_ops=%d\n", size_of_struct_xdr_ops);
+	/* printf("xdrstdio_create: size_of_struct_xdr_ops=%d\n", size_of_struct_xdr_ops);*/
 	xdrs->x_op = op;
 	if (sizeof(struct xdr_ops) == 32) {
 		xdrs->x_ops = (struct xdr_ops *) &xdrstdio_ops_32;
