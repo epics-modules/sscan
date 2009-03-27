@@ -798,7 +798,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-	printf("saveData CVS: $Id: saveData.c,v 1.41 2009-03-27 19:19:24 mooney Exp $\n");
+	printf("saveData CVS: $Id: saveData.c,v 1.42 2009-03-27 19:58:46 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -1178,7 +1178,7 @@ LOCAL int monitorScan(SCAN* pscan)
 	if (pscan->name[0] == 0) return(-1);
 	
 	if (pscan->cnpts == NULL) {
-		Debug1(2, "Unable to monitor %s npts field\n", pscan->name));
+		Debug1(2, "Unable to monitor %s npts field\n", pscan->name);
 		return -1;
 	}
 	if (ca_add_event(DBR_LONG, pscan->cnpts, 
@@ -2644,7 +2644,7 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
 			 * Extra PV's get tacked on at the end of the file.  Remember where that is,
 			 * in case we run into trouble and have to retry.
 			 */
-			if (fseek(fd, 0, SEEK_END)==EOF) {fclose(fd); return(-1);;}
+			if (fseek(fd, 0, SEEK_END)==EOF) {fclose(fd); return(-1);}
 			pscan->savedSeekPos = ftell(fd);
 			if (pscan->savedSeekPos == EOF) {pscan->savedSeekPos = 0; fclose(fd); return(-1);}
 		}
@@ -2716,7 +2716,6 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 				if (file_subdir_disp_chid) ca_array_put(DBR_CHAR, 1, file_subdir_disp_chid, &cval);
 				cval=(char)0;
 				if (file_basename_disp_chid) ca_array_put(DBR_CHAR, 1, file_basename_disp_chid, &cval);
-				}
 			}
 			Debug1(2,"(save_status inactive) nb_scan_running=%d\n", nb_scan_running);
 			if (nb_scan_running < 0) {
