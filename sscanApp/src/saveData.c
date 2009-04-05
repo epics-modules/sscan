@@ -142,10 +142,15 @@
  *                    obvious to users, and it would not cause scans to hang.
  *                    Now, basename-related failures disable the use of basename,
  *                    but saveData still functions.
+ *     11-14-08  tmm  Instead of including nfsDrv.h (which is renamed in tornado 2.2, define
+ *                    nfsMount, nfsUnmount by hand.
+ *     03-26-09  tmm  Chid check before ca_array_get was wrong.  Added more chid checks.
+ *     04-04-09  tmm  v1.32 If file exists, use <base>_nnnn_mm.mda instead of <base>_nnnn.mda_mm
+
  */
 
 #define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.31.0"
+#define SAVE_DATA_VERSION   "1.32.0"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -597,9 +602,9 @@ typedef struct pv_node {
 LOCAL char  req_file[40];
 LOCAL char  req_macros[40];
 
-LOCAL char  server_pathname[80];
+LOCAL char  server_pathname[200];
 LOCAL char* server_subdir;
-LOCAL char  local_pathname[80];
+LOCAL char  local_pathname[200];
 LOCAL char* local_subdir;
 
 #define STATUS_INACTIVE         0
@@ -798,7 +803,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-	printf("saveData CVS: $Id: saveData.c,v 1.42 2009-03-27 19:58:46 mooney Exp $\n");
+	printf("saveData CVS: $Id: saveData.c,v 1.43 2009-04-05 19:53:01 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -2684,7 +2689,6 @@ cleanup:
 LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 {
 	char  msg[200];
-	char  *cptr;
 	SCAN  *pscan, *pnxt;
 	int   i, status;
 
@@ -2799,13 +2803,20 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 #else
 			sprintf(pscan->ffname, "%s%s", server_pathname, pscan->fname);
 #endif
-			cptr= &pscan->ffname[strlen(pscan->ffname)];
+
+			/* If pscan->ffname already exists, insert '_nn' into file name and try again */
 			duplicate_scan_number = 0;
-			while ((fileStatus(pscan->ffname)==OK) && (duplicate_scan_number < 99)) {
-				sprintf(cptr, "_%.2d", ++duplicate_scan_number);
+			while ((fileStatus(pscan->ffname) == 0) && (duplicate_scan_number < 99)) {
+#ifdef vxWorks
+				sprintf(pscan->ffname, "%s%s%.4d_%.2d.mda", local_pathname, scanFile_basename, (int)pscan->counter, ++duplicate_scan_number);
+#else
+				sprintf(pscan->ffname, "%s%s%.4d_%.2d.mda", server_pathname, scanFile_basename, (int)pscan->counter, ++duplicate_scan_number);
+#endif
 			}
 			if (duplicate_scan_number) {
-				sprintf(&pscan->fname[strlen(pscan->fname)], "_%.2d", duplicate_scan_number);
+				/* sprintf(&pscan->fname[strlen(pscan->fname)], "_%.2d", duplicate_scan_number); */
+				sprintf(pscan->fname, "%s%.4d_%.2d.mda", scanFile_basename, (int)pscan->counter, duplicate_scan_number);
+
 			}
 
 			/* Tell user what we're doing */
