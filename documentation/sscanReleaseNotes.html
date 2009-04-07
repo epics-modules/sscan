@@ -10,11 +10,23 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
+
+<h2 align="center">Release 2-6-5</h2>
+<ul>
+<li>Modified saveData so that, when it finds the filename it would like to use
+(e.g., base_0001.mda) already in use, it writes, e.g., base_0001_01.mda,
+instead of base_0001.mda_01, as it used to do.
+</ul>
+
+
 <h2 align="center">Release 2-6-4</h2>
 <ul>
 <li>In 2.6.3, saveData crashed under tornado 2.2, because a vxWorks XDR
 structure changed.  Now we define an old and a new structure, and identify the
 correct structure by its size.
+<li>Modified saveData so that, when it finds the filename it would like to use
+(e.g., base_0001.mda) already in use, it writes, e.g., base_0001_01.mda,
+instead of base_0001.mda_01, as it used to do.
 </ul>
 
 <h2 align="center">Release 2-6-3</h2>
