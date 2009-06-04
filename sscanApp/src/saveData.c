@@ -146,6 +146,9 @@
  *                    nfsMount, nfsUnmount by hand.
  *     03-26-09  tmm  Chid check before ca_array_get was wrong.  Added more chid checks.
  *     04-04-09  tmm  v1.32 If file exists, use <base>_nnnn_mm.mda instead of <base>_nnnn.mda_mm
+ *     06-04-09  dmk  Moved the strncpy() calls in saveData_Init() to inside the
+ *                    brackets as to not overwrite the existing values if the
+ *                    method is called multiple times.
 
  */
 
@@ -746,10 +749,10 @@ LOCAL void sendUserMessage(char* msg) {
 
 void saveData_Init(char* fname, char* macros)
 {
-	strncpy(req_file, fname, 39);
-	strncpy(req_macros, macros, 39);
-
 	if (msg_queue==NULL) {
+        strncpy(req_file, fname, 39);
+        strncpy(req_macros, macros, 39);
+
 		msg_queue = epicsMessageQueueCreate(MAX_MSG, MAX_SIZE);
 		if (msg_queue==NULL) {
 			Debug0(1, "Unable to create message queue\n");
@@ -769,6 +772,9 @@ void saveData_Init(char* fname, char* macros)
 			epicsThreadSuspendSelf();
 		}
 	}
+    else
+        printf("saveData already initialized\n");
+    
 	return;
 }
 
@@ -803,7 +809,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-	printf("saveData CVS: $Id: saveData.c,v 1.43 2009-04-05 19:53:01 mooney Exp $\n");
+	printf("saveData CVS: $Id: saveData.c,v 1.44 2009-06-04 17:02:13 dkline Exp $\n");
 }
 
 void saveData_Info() {
