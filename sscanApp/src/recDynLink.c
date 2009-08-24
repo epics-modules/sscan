@@ -47,6 +47,7 @@ of this distribution.
 #include <caerr.h>
 #include <caeventmask.h>
 #include <tsDefs.h>
+#include <errlog.h>
 #include <epicsExport.h>
 #include <epicsExit.h>
 #include "recDynLink.h"
