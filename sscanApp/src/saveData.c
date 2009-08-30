@@ -158,6 +158,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <unistd.h>
 
 #ifdef vxWorks
 #include <usrLib.h>
@@ -809,7 +810,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-	printf("saveData CVS: $Id: saveData.c,v 1.44 2009-06-04 17:02:13 dkline Exp $\n");
+	printf("saveData CVS: $Id: saveData.c,v 1.45 2009-08-30 13:33:05 rivers Exp $\n");
 }
 
 void saveData_Info() {
@@ -1201,7 +1202,7 @@ LOCAL int monitorScan(SCAN* pscan)
 	for (i=0; i<SCAN_NBP; i++) { 
 		if (pscan->cpxnv[i]!=NULL && pscan->cpxsm[i]!=NULL && pscan->crxnv[i]!=NULL) {
 			if (ca_add_event(DBR_SHORT, pscan->cpxnv[i], pxnvMonitor, 
-					(void*)i, 0)!=ECA_NORMAL) {
+					(void*)(long)i, 0)!=ECA_NORMAL) {
 				Debug1(2, "Unable to monitor %s\n", ca_name(pscan->cpxnv[i]));
 				return -1;
 			}
@@ -1211,7 +1212,7 @@ LOCAL int monitorScan(SCAN* pscan)
 				return -1;
 			}
 			if (ca_add_event(DBR_SHORT, pscan->crxnv[i], rxnvMonitor, 
-					(void*)i, 0)!=ECA_NORMAL) {
+					(void*)(long)i, 0)!=ECA_NORMAL) {
 				Debug1(2, "Unable to monitor %s\n", ca_name(pscan->crxnv[i]));
 				return -1;
 			}
@@ -1224,7 +1225,7 @@ LOCAL int monitorScan(SCAN* pscan)
 	for (i=0; i<SCAN_NBD; i++) {
 		if (pscan->cdxnv[i]!=NULL) {
 			if (ca_add_event(DBR_SHORT, pscan->cdxnv[i], dxnvMonitor, 
-					(void*)i, 0)!=ECA_NORMAL) {
+					(void*)(long)i, 0)!=ECA_NORMAL) {
 				Debug1(2, "Unable to monitor %s\n", ca_name(pscan->cdxnv[i]));
 				return -1;
 			}
@@ -1237,12 +1238,12 @@ LOCAL int monitorScan(SCAN* pscan)
 	for (i=0; i<SCAN_NBT; i++) {
 		if (pscan->ctxnv[i]!=NULL && pscan->ctxcd[i]!=NULL) {
 			if (ca_add_event(DBR_SHORT, pscan->ctxnv[i], txnvMonitor, 
-					(void*)i, 0)!=ECA_NORMAL) {
+					(void*)(long)i, 0)!=ECA_NORMAL) {
 				Debug1(2, "Unable to monitor %s\n", ca_name(pscan->ctxnv[i]));
 				return -1;
 			}
 			if (ca_add_event(DBR_FLOAT, pscan->ctxcd[i], txcdMonitor, 
-					(void*)i, 0)!=ECA_NORMAL) {
+					(void*)(long)i, 0)!=ECA_NORMAL) {
 				Debug1(2, "Unable to monitor %s\n", ca_name(pscan->ctxcd[i]));
 				return -1;
 			}
@@ -1286,7 +1287,7 @@ LOCAL void updateScan(SCAN* pscan)
 	}
 	if (!(pscan->nxt) && (realTime1D==0)) {
 		if (pscan->cpt_monitored==TRUE) {
-			Debug2(2, "updateScan:%s: clear .CPT subscription (cpt_evid = 0x%x)\n", pscan->name, (int)pscan->cpt_evid);
+			Debug2(2, "updateScan:%s: clear .CPT subscription (cpt_evid = %p)\n", pscan->name, pscan->cpt_evid);
 			if (pscan->cpt_evid) ca_clear_subscription(pscan->cpt_evid);
 			pscan->cpt_monitored= FALSE;
 		}
@@ -1294,7 +1295,7 @@ LOCAL void updateScan(SCAN* pscan)
 		if (pscan->cpt_monitored==FALSE) {
 			Debug1(2, "updateScan:%s: subscribe to .CPT\n", pscan->name);
 			if (ca_create_subscription(DBR_LONG, 1, pscan->ccpt, DBE_VALUE, cptMonitor, NULL, &pscan->cpt_evid) == ECA_NORMAL) {
-				Debug2(2, "updateScan:%s: cpt_evid=%x\n", pscan->name, (int)pscan->cpt_evid);
+				Debug2(2, "updateScan:%s: cpt_evid=%p\n", pscan->name, pscan->cpt_evid);
 				pscan->cpt_monitored=TRUE;
 			} else {
 				Debug1(2, "Unable to monitor %s\n", ca_name(pscan->ccpt));
@@ -1414,7 +1415,7 @@ LOCAL void infoScan(SCAN* pscan)
 		}
 	}
 	for (i=0; i<SCAN_NBP; i++)
-		if (pscan->cpxra[i]!=NULL) printf("%s.%s[%s]= %d\n", pscan->name, pxra[i], cs[ca_state(pscan->cpxra[i])], (int)pscan->pxra[i]);
+		if (pscan->cpxra[i]!=NULL) printf("%s.%s[%s]= %p\n", pscan->name, pxra[i], cs[ca_state(pscan->cpxra[i])], pscan->pxra[i]);
 	for (i=0; i<SCAN_NBP; i++)
 		if (pscan->crxcv[i]!=NULL) printf("%s.%s[%s]= %f\n", pscan->name, rxcv[i], cs[ca_state(pscan->crxcv[i])], pscan->rxcv[i]);
 
@@ -1537,7 +1538,7 @@ LOCAL void cptMonitor(struct event_handler_args eha)
 /*                                                                      */
 LOCAL void pxnvMonitor(struct event_handler_args eha)
 {
-	sendScanIndexMsgWait(MSG_SCAN_PXNV, (SCAN *) ca_puser(eha.chid), (int) eha.usr, *((short *) eha.dbr));
+	sendScanIndexMsgWait(MSG_SCAN_PXNV, (SCAN *) ca_puser(eha.chid), (long) eha.usr, *((short *) eha.dbr));
 }
 
 /*----------------------------------------------------------------------*/
@@ -1553,7 +1554,7 @@ LOCAL void pxsmMonitor(struct event_handler_args eha)
 /*                                                                      */
 LOCAL void rxnvMonitor(struct event_handler_args eha)
 {
-	sendScanIndexMsgWait(MSG_SCAN_RXNV, (SCAN *) ca_puser(eha.chid), (int) eha.usr, *((short *) eha.dbr));
+	sendScanIndexMsgWait(MSG_SCAN_RXNV, (SCAN *) ca_puser(eha.chid), (long) eha.usr, *((short *) eha.dbr));
 }
 
 /*----------------------------------------------------------------------*/
@@ -1561,7 +1562,7 @@ LOCAL void rxnvMonitor(struct event_handler_args eha)
 /*                                                                      */
 LOCAL void dxnvMonitor(struct event_handler_args eha)
 {
-	sendScanIndexMsgWait(MSG_SCAN_DXNV, (SCAN *) ca_puser(eha.chid), (int) eha.usr, *((short *) eha.dbr));
+	sendScanIndexMsgWait(MSG_SCAN_DXNV, (SCAN *) ca_puser(eha.chid), (long) eha.usr, *((short *) eha.dbr));
 }
 
 
@@ -1570,7 +1571,7 @@ LOCAL void dxnvMonitor(struct event_handler_args eha)
 /*                                                                      */
 LOCAL void txnvMonitor(struct event_handler_args eha)
 {
-	sendScanIndexMsgWait(MSG_SCAN_TXNV, (SCAN *) ca_puser(eha.chid), (int) eha.usr, *((short *) eha.dbr));
+	sendScanIndexMsgWait(MSG_SCAN_TXNV, (SCAN *) ca_puser(eha.chid), (long) eha.usr, *((short *) eha.dbr));
 }
 
 /*----------------------------------------------------------------------*/
@@ -1578,7 +1579,7 @@ LOCAL void txnvMonitor(struct event_handler_args eha)
 /*                                                                      */
 LOCAL void txcdMonitor(struct event_handler_args eha)
 {
-	sendScanIndexMsgWait(MSG_SCAN_TXCD, (SCAN *) ca_puser(eha.chid), (int) eha.usr, *((float *) eha.dbr));
+	sendScanIndexMsgWait(MSG_SCAN_TXCD, (SCAN *) ca_puser(eha.chid), (long) eha.usr, *((float *) eha.dbr));
 }
 
 /*----------------------------------------------------------------------*/
@@ -2216,27 +2217,27 @@ LOCAL int saveExtraPV(XDR* pxdrs)
 				cptr= pval->cchrval.units;
 				writeFailed |= !xdr_counted_string(pxdrs, &cptr);
 				/* xdr_bytes(pxdrs,(char**)&pval->cchrval.value,&count, count); */
-				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->cchrval.value,count,sizeof(char),xdr_char);
+				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->cchrval.value,count,sizeof(char),(xdrproc_t)xdr_char);
 				break;
 			case DBR_CTRL_SHORT:
 				cptr= pval->cshrtval.units;
 				writeFailed |= !xdr_counted_string(pxdrs, &cptr);
-				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->cshrtval.value,count,sizeof(short),xdr_short);
+				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->cshrtval.value,count,sizeof(short),(xdrproc_t)xdr_short);
 				break;
 			case DBR_CTRL_LONG:
 				cptr= pval->clngval.units;
 				writeFailed |= !xdr_counted_string(pxdrs, &cptr);
-				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->clngval.value,count, sizeof(long),xdr_long);
+				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->clngval.value,count, sizeof(long),(xdrproc_t)xdr_long);
 				break;
 			case DBR_CTRL_FLOAT:
 				cptr= pval->cfltval.units;
 				writeFailed |= !xdr_counted_string(pxdrs, &cptr);
-				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->cfltval.value,count, sizeof(float),xdr_float);
+				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->cfltval.value,count, sizeof(float),(xdrproc_t)xdr_float);
 				break;
 			case DBR_CTRL_DOUBLE:
 				cptr= pval->cdblval.units;
 				writeFailed |= !xdr_counted_string(pxdrs, &cptr);
-				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->cdblval.value,count, sizeof(double),xdr_double);
+				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->cdblval.value,count, sizeof(double),(xdrproc_t)xdr_double);
 				break;
 			}
 
@@ -2619,7 +2620,7 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
 				writeFailed |= !xdr_setpos(&xdrs, pscan->pxra_fpos[i]);
 				if (writeFailed) goto cleanup;
 				writeFailed |= !xdr_vector(&xdrs, (char*)pscan->pxra[i], pscan->npts, 
-					sizeof(double), xdr_double);
+					sizeof(double), (xdrproc_t)xdr_double);
 			}
 		}
 	}
@@ -2630,7 +2631,7 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
 				writeFailed |= !xdr_setpos(&xdrs, pscan->dxda_fpos[i]);
 				if (writeFailed) goto cleanup;
 				writeFailed |= !xdr_vector(&xdrs, (char*)pscan->dxda[i], pscan->npts,
-					sizeof(float), xdr_float);
+					sizeof(float), (xdrproc_t)xdr_float);
 			}
 		}
 	}
