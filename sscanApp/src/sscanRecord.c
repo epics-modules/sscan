@@ -693,21 +693,6 @@ static int isBlank(char *name)
 	return((i>0));
 }
 
-/* safe double to float conversion -- stolen from dbConvert.c */
-static void safeDoubleToFloat(double *pd,float *pf)
-{
-    double abs = fabs(*pd);
-    if (*pd==0.0) {
-        *pf = 0.0;
-    } else if(abs>=FLT_MAX) {
-        if(*pd>0.0) *pf = FLT_MAX; else *pf = -FLT_MAX;
-    } else if(abs<=FLT_MIN) {
-        if(*pd>0.0) *pf = FLT_MIN; else *pf = -FLT_MIN;
-    } else {
-        *pf = *pd;
-    }
-}
-
 static long 
 init_record(sscanRecord *psscan, int pass)
 {
