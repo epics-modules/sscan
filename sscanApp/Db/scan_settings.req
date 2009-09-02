@@ -1,6 +1,8 @@
 # FILE... scan_settings.req
 # USAGE.. scan.db fields autosave'd.
 $(P)$(S).AAWAIT
+$(P)$(S).ATIME
+$(P)$(S).COPYTO
 $(P)$(S).FLNK
 $(P)$(S).NPTS
 $(P)$(S).ACQT
