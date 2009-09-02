@@ -527,32 +527,32 @@ typedef struct detBuffers {
    the "Created Pad"s  */
 
 typedef struct posFields {
-	double          p_pp;	/* P1 Previous Position */
-	double          p_cv;	/* P1 Current Value */
-	double          p_dv;	/* P1 Desired Value */
-	double          p_lv;	/* P1 Last Value Posted */
-	double          p_sp;	/* P1 Start Position */
-	double          p_si;	/* P1 Step Increment */
-	double          p_ep;	/* P1 End Position */
-	double          p_cp;	/* P1 Center Position */
-	double          p_wd;	/* P1 Scan Width */
-	double          r_cv;	/* P1 Readback Value */
-	double          r_lv;	/* P1 Rdbk Last Val Pst */
-	double          r_dl;	/* P1 Readback Delta */
-	double          p_hr;	/* P1 High Oper Range */
-	double          p_lr;	/* P1 Low  Oper Range */
-	double         *p_pa;	/* P1 Step Array */
-	double         *p_ra;	/* P1 Readback Array */
-	double         *p_ca;	/* P1 Current Readback Array */
-	unsigned short  p_fs;	/* P1 Freeze Start Pos */
-	unsigned short  p_fi;	/* P1 Freeze Step Inc */
-	unsigned short  p_fe;	/* P1 Freeze End Pos */
-	unsigned short  p_fc;	/* P1 Freeze Center Pos */
-	unsigned short  p_fw;	/* P1 Freeze Width */
-	unsigned short  p_sm;	/* P1 Step Mode */
-	unsigned short  p_ar;	/* P1 Absolute/Relative */
-	char            p_eu[16];	/* P1 Engineering Units */
-	short           p_pr;	/* P1 Display Precision */
+	epicsFloat64        p_pp;	/* P1 Previous Position */
+	epicsFloat64        p_cv;	/* P1 Current Value */
+	epicsFloat64        p_dv;	/* P1 Desired Value */
+	epicsFloat64        p_lv;	/* P1 Last Value Posted */
+	epicsFloat64        p_sp;	/* P1 Start Position */
+	epicsFloat64        p_si;	/* P1 Step Increment */
+	epicsFloat64        p_ep;	/* P1 End Position */
+	epicsFloat64        p_cp;	/* P1 Center Position */
+	epicsFloat64        p_wd;	/* P1 Scan Width */
+	epicsFloat64        r_cv;	/* P1 Readback Value */
+	epicsFloat64        r_lv;	/* P1 Rdbk Last Val Pst */
+	epicsFloat64        r_dl;	/* P1 Readback Delta */
+	epicsFloat64        p_hr;	/* P1 High Oper Range */
+	epicsFloat64        p_lr;	/* P1 Low  Oper Range */
+	double         	    *p_pa;	/* P1 Step Array */
+	double              *p_ra;	/* P1 Readback Array */
+	double              *p_ca;	/* P1 Current Readback Array */
+	epicsEnum16         p_fs;	/* P1 Freeze Start Pos */
+	epicsEnum16         p_fi;	/* P1 Freeze Step Inc */
+	epicsEnum16         p_fe;	/* P1 Freeze End Pos */
+	epicsEnum16         p_fc;	/* P1 Freeze Center Pos */
+	epicsEnum16         p_fw;	/* P1 Freeze Width */
+	epicsEnum16         p_sm;	/* P1 Step Mode */
+	epicsEnum16         p_ar;	/* P1 Absolute/Relative */
+	char                p_eu[16];	/* P1 Engineering Units */
+	epicsInt16          p_pr;	/* P1 Display Precision */
 } posFields;
 
 /* the following structure must match EXACTLY with the order and type of
@@ -560,15 +560,15 @@ typedef struct posFields {
    the "Created Pad"s  */
 
 typedef struct detFields {
-	double          d_hr;	/* D1 High Oper Range */
-	double          d_lr;	/* D1 Low  Oper Range */
-	float          *d_da;	/* D1 Data Array */
-	float          *d_ca;	/* D1 Current Data Array */
-	float           d_cv;	/* D1 Current Value */
-	float           d_lv;	/* D1 Last Value Posted */
-	unsigned long   d_ne;	/* D1 # of Elements/Pt */
+	epicsFloat64    d_hr;	/* D1 High Oper Range */
+	epicsFloat64    d_lr;	/* D1 Low  Oper Range */
+	float           *d_da;	/* D1 Data Array */
+	float           *d_ca;	/* D1 Current Data Array */
+	epicsFloat32    d_cv;	/* D1 Current Value */
+	epicsFloat32    d_lv;	/* D1 Last Value Posted */
+	epicsUInt32     d_ne;	/* D1 # of Elements/Pt */
 	char            d_eu[16];	/* D1 Engineering Units */
-	short           d_pr;	/* D1 Display Precision */
+	epicsInt16      d_pr;	/* D1 Display Precision */
 } detFields;
 
 /* calledBy values */
