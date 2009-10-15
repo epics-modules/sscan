@@ -158,6 +158,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
+/* #include <osiUnistd.h> 3.14.11 */
 #include <unistd.h>
 
 #ifdef vxWorks
@@ -810,7 +811,7 @@ void saveData_Version()
 
 void saveData_CVS() 
 {
-	printf("saveData CVS: $Id: saveData.c,v 1.45 2009-08-30 13:33:05 rivers Exp $\n");
+	printf("saveData CVS: $Id: saveData.c,v 1.46 2009-10-15 19:23:02 mooney Exp $\n");
 }
 
 void saveData_Info() {
@@ -1281,17 +1282,27 @@ LOCAL void updateScan(SCAN* pscan)
 			/* we're linked to another sscan record, and the link will cause that record to start a scan */
 			Debug2(2, "updateScan:%s: calling searchScan(%s)\n",
 				pscan->name, pscan->txpvRec[i]);
+			/*
+			 * Is the sscan record we're linked to in our list of sscan records to monitor?   If so,
+			 * we'll receive it's SCAN* pointer; else, we'll receive NULL. 
+			 */
 			pscan->nxt= searchScan(pscan->txpvRec[i]);
+			/* If we have a SCAN* pointer, stop looking for one. */
 			if (pscan->nxt) break;
 		}
 	}
 	if (!(pscan->nxt) && (realTime1D==0)) {
+		/*
+		 * We're not monitoring an inner scan, and we're not writing data point-by-point, so we don't
+		 * want to receive monitor events from this sscan record's .CPT field.
+		 */
 		if (pscan->cpt_monitored==TRUE) {
 			Debug2(2, "updateScan:%s: clear .CPT subscription (cpt_evid = %p)\n", pscan->name, pscan->cpt_evid);
 			if (pscan->cpt_evid) ca_clear_subscription(pscan->cpt_evid);
 			pscan->cpt_monitored= FALSE;
 		}
 	} else {
+		/* Make sure we will receive .CPT monitors. */
 		if (pscan->cpt_monitored==FALSE) {
 			Debug1(2, "updateScan:%s: subscribe to .CPT\n", pscan->name);
 			if (ca_create_subscription(DBR_LONG, 1, pscan->ccpt, DBE_VALUE, cptMonitor, NULL, &pscan->cpt_evid) == ECA_NORMAL) {
@@ -3509,11 +3520,12 @@ LOCAL void proc_file_subdir(STRING_MSG* pmsg)
 
 	if (file_system_state==FS_MOUNTED) {
 
-		save_status= STATUS_ACTIVE_FS_ERROR;
 		cin= pmsg->string;
 
 		/* the new directory should be different from the previous one */
 		if (strcmp(cin, local_subdir)==0) return;
+		/* assume failure until we prove that we can create a file. */
+		save_status= STATUS_ACTIVE_FS_ERROR;
 
 		server= server_subdir;
 		local= local_subdir;
