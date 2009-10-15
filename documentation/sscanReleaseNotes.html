@@ -10,6 +10,13 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
+<h2 align="center">Release x-x-x</h2>
+<ul>
+<li>Previously, a monitor on the file_subdir PV could leave savaData in the
+STATUS_ACTIVE_FS_ERROR state, if the PV hadn't actually changed.  As a result,
+saveData booted up into the error state when the file_subdir PV was blank.
+</ul>
+
 
 <h2 align="center">Release 2-6-5</h2>
 <ul>
