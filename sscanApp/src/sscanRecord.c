@@ -427,16 +427,6 @@ static char linkNames[NUM_LINKS][6] =
 #define A_BUFFER        0
 #define B_BUFFER        1
 
-/* CMND field */
-#define CLEAR_MSG           	0
-#define CHECK_LIMITS        	1
-#define PREVIEW_SCAN        	2	/* Preview the SCAN positions */
-#define CLEAR_RECORD        	3	/* Clear PV's, frzFlags, modes, abs/rel, etc */
-#define CLEAR_POSITIONERS   	4	/* Clear positioner PV's, frzFlags, modes, abs/rel, etc */
-#define CLEAR_POSITIONER_PVS	5	/* Clear positioner PV's */
-#define CLEAR_POSandRDBK		6	/* Clear positioner and readback PV's, frzFlags, modes, abs/rel, etc */
-#define CLEAR_POSandRDBK_PVS	7	/* Clear positioner and readback PV's */
-
 #define DBE_VAL_LOG     (DBE_VALUE | DBE_LOG)
 
 
@@ -452,9 +442,9 @@ static long     get_array_info();
 static long     put_array_info();
 static long     get_units();
 static long     get_precision();
-static long     get_enum_str();
-static long     get_enum_strs();
-static long     put_enum_str();
+#define get_enum_str NULL
+#define get_enum_strs NULL
+#define put_enum_str NULL
 static long     get_graphic_double();
 static long     get_control_double();
 static long     get_alarm_double();
@@ -1227,7 +1217,7 @@ special(struct dbAddr *paddr, int after)
 				/* We're in the scan loop; almost nothing is permitted now */
 				switch (fieldIndex) {
 				case (sscanRecordCMND):
-					return (psscan->cmnd == CLEAR_MSG) ? 0 : -1;
+					return (psscan->cmnd == sscanCMND_CLEAR_MSG) ? 0 : -1;
 				case (sscanRecordEXSC):
 				case (sscanRecordPAUS):
 				case (sscanRecordWAIT):
@@ -1453,31 +1443,31 @@ special(struct dbAddr *paddr, int after)
 			psscan->lpau = psscan->paus;
 			break;
 		case sscanRecordCMND:
-			if (psscan->cmnd == CLEAR_MSG) {
+			if (psscan->cmnd == sscanCMND_CLEAR_MSG) {
 				psscan->alrt = 0; POST(&psscan->alrt);
 				strcpy(psscan->smsg, "");
 				POST(&psscan->smsg);
 			}
 			if (psscan->xsc || psscan->busy) {
-				psscan->cmnd = 0;
+				psscan->cmnd = sscanCMND_CLEAR_MSG;
 				break;
 			}
 			switch (psscan->cmnd) {
-			case CHECK_LIMITS:
+			case sscanCMND_CHECK_LIMITS:
 				prevAlrt = psscan->alrt;
 				psscan->alrt = 0;
 				checkScanLimits(psscan);
 				POST(&psscan->smsg);
 				if (psscan->alrt != prevAlrt) POST(&psscan->alrt);
 				break;
-			case PREVIEW_SCAN:
+			case sscanCMND_PREVIEW_SCAN:
 				/* get_array_info() needs to know that we're just previewing */
 				psscan->faze = sscanFAZE_PREVIEW; POST(&psscan->faze);
 				previewScan(psscan);
 				break;
-			case CLEAR_RECORD:
-			case CLEAR_POSITIONERS:
-			case CLEAR_POSandRDBK:
+			case sscanCMND_CLEAR_ALL_PVS:
+			case sscanCMND_CLEAR_POS_PVS_ETC:
+			case sscanCMND_CLEAR_POS_RDBK_PVS_ETC:
 				/* clear PV's, frzFlags, modes, etc */
 				psscan->scan = 0; POST(&psscan->scan);
 				resetFrzFlags(psscan);
@@ -1492,17 +1482,17 @@ special(struct dbAddr *paddr, int after)
 				psscan->pasm = 0; POST(&psscan->pasm);
 				psscan->ffo = 0; POST(&psscan->ffo);
 				/* fall through */
-			case CLEAR_POSITIONER_PVS:
-			case CLEAR_POSandRDBK_PVS:
+			case sscanCMND_CLEAR_POS_PVS:
+			case sscanCMND_CLEAR_POS_RDBK_PVS:
 				for (i = 0; i < NUM_PVS; i++) {
 					puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i].puserPvt;
-					clearThisPV = (psscan->cmnd == CLEAR_RECORD);
-					clearThisPV |= ((psscan->cmnd == CLEAR_POSITIONERS)    && (puserPvt->linkType == POSITIONER));
-					clearThisPV |= ((psscan->cmnd == CLEAR_POSandRDBK)     && (puserPvt->linkType == POSITIONER));
-					clearThisPV |= ((psscan->cmnd == CLEAR_POSandRDBK)     && (puserPvt->linkType == READBACK));
-					clearThisPV |= ((psscan->cmnd == CLEAR_POSITIONER_PVS) && (puserPvt->linkType == POSITIONER));
-					clearThisPV |= ((psscan->cmnd == CLEAR_POSandRDBK_PVS) && (puserPvt->linkType == POSITIONER));
-					clearThisPV |= ((psscan->cmnd == CLEAR_POSandRDBK_PVS) && (puserPvt->linkType == READBACK));
+					clearThisPV = (psscan->cmnd == sscanCMND_CLEAR_ALL_PVS);
+					clearThisPV |= ((psscan->cmnd == sscanCMND_CLEAR_POS_PVS_ETC)    && (puserPvt->linkType == POSITIONER));
+					clearThisPV |= ((psscan->cmnd == sscanCMND_CLEAR_POS_RDBK_PVS_ETC)     && (puserPvt->linkType == POSITIONER));
+					clearThisPV |= ((psscan->cmnd == sscanCMND_CLEAR_POS_RDBK_PVS_ETC)     && (puserPvt->linkType == READBACK));
+					clearThisPV |= ((psscan->cmnd == sscanCMND_CLEAR_POS_PVS) && (puserPvt->linkType == POSITIONER));
+					clearThisPV |= ((psscan->cmnd == sscanCMND_CLEAR_POS_RDBK_PVS) && (puserPvt->linkType == POSITIONER));
+					clearThisPV |= ((psscan->cmnd == sscanCMND_CLEAR_POS_RDBK_PVS) && (puserPvt->linkType == READBACK));
 					if (clearThisPV) {
 						/* clear this PV */
 						epicsMutexLock(precPvt->pvStatSem);
@@ -1942,59 +1932,6 @@ put_array_info(struct dbAddr *paddr, long nNew)
 }
 
 
-
-static long 
-get_enum_str(struct dbAddr *paddr, char *pstring)
-{
-	sscanRecord *psscan = (sscanRecord *) paddr->precord;
-
-	if (paddr->pfield == (void *) &psscan->cmnd) {
-		sprintf(pstring, "%d", psscan->cmnd);
-	} else {
-		strcpy(pstring, "No string");
-	}
-	return (0);
-}
-
-static long 
-get_enum_strs(struct dbAddr *paddr, struct dbr_enumStrs *pes)
-{
-	sscanRecord *psscan = (sscanRecord *) paddr->precord;
-
-	if (paddr->pfield == (void *) &psscan->cmnd) {
-		memset(pes->strs, '\0', sizeof(pes->strs));
-		strncpy(pes->strs[0], "0-Clear msg", sizeof("0-Clear msg"));
-		strncpy(pes->strs[1], "1-Check limits", sizeof("1-Check limits"));
-		strncpy(pes->strs[2], "2-Preview scan", sizeof("2-Preview scan"));
-		strncpy(pes->strs[3], "3-Clear all PV's", sizeof("3-Clear all PV's"));
-		strncpy(pes->strs[4], "4-Clear positioner PV's, etc", sizeof("4-Clear positioner PV's, etc"));
-		strncpy(pes->strs[5], "5-Clear positioner PV's", sizeof("5-Clear positioner PV's"));
-		strncpy(pes->strs[6], "6-Clear pos&rdbk PV's, etc", sizeof("6-Clear pos&rdbk PV's, etc"));
-		strncpy(pes->strs[7], "7-Clear pos&rdbk PV's", sizeof("7-Clear pos&rdbk PV's"));
-		pes->no_str = 8;
-	} else {
-		strcpy(pes->strs[0], "No string");
-		pes->no_str = 1;
-	}
-
-	return (0);
-}
-
-static long 
-put_enum_str(struct dbAddr *paddr, char *pstring)
-{
-	sscanRecord *psscan = (sscanRecord *) paddr->precord;
-
-	if (paddr->pfield == (void *) &psscan->cmnd) {
-		if (sscanf(pstring, "%hu", &psscan->cmnd) <= 0)
-			return (S_db_badChoice);
-	} else {
-		return (S_db_badChoice);
-	}
-
-	return (0);
-}
-
 static long 
 get_units(struct dbAddr *paddr, char *units)
 {
