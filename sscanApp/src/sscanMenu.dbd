@@ -88,3 +88,13 @@ menu(sscanACQT) {
 	choice(sscanACQT_SCALAR,"SCALAR")
 	choice(sscanACQT_1D_ARRAY,"1D ARRAY")
 }
+menu(sscanCMND) {
+	choice(sscanCMND_CLEAR_MSG,"Clear msg")
+	choice(sscanCMND_CHECK_LIMITS,"Check limits")
+	choice(sscanCMND_PREVIEW_SCAN,"Preview scan")
+	choice(sscanCMND_CLEAR_ALL_PVS,"Clear all PV's")
+	choice(sscanCMND_CLEAR_POS_PVS_ETC,"Clear pos PV's, etc")
+	choice(sscanCMND_CLEAR_POS_PVS,"Clear pos PV's")
+	choice(sscanCMND_CLEAR_POS_RDBK_PVS_ETC,"Clear pos&rdbk PV's, etc")
+	choice(sscanCMND_CLEAR_POS_RDBK_PVS,"Clear pos&rdbk PV's")
+}
