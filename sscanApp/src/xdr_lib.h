@@ -3,7 +3,7 @@
 #define __XDR_LIB_H__
 
 
-#include <rpc/rpc.h>
+#include <rpc/xdr.h>
 
 #ifdef vxWorks
 struct complex {
