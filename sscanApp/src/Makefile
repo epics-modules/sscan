@@ -5,6 +5,8 @@ include $(TOP)/configure/CONFIG
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 #=============================
 
+# Cygwin rpc is in tirpc
+USR_INCLUDES_cygwin32 += -I/usr/include/tirpc
 
 #PROD_HOST += caExample
 #caExample_SRCS	+= caExample.c
@@ -48,7 +50,7 @@ sscan_SRCS += saveData.c
 sscan_SRCS_vxWorks += xdr_stdio.c
 endif
 
-sscan_SYS_LIBS_cygwin32 += rpc
+sscan_SYS_LIBS_cygwin32 += $(CYGWIN_RPC_LIB)
 sscan_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 include $(TOP)/configure/RULES
