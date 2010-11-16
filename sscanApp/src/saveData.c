@@ -225,6 +225,9 @@ volatile int saveData_MessagePolicy = 0;
 #define Debug1(d,s,p) ;
 #define Debug2(d,s,p1,p2) ;
 #define Debug3(d,s,p1,p2,p3) ;
+#define Debug4(d,s,p1,p2,p3,p4) ;
+#define Debug5(d,s,p1,p2,p3,p4,p5) ;
+#define Debug6(d,s,p1,p2,p3,p4,p5,p6) ;
 #define DebugMsg0(d,s) ;
 #define DebugMsg1(d,s,p) ;
 #define DebugMsg2(d,s,p1,p2) ;
@@ -234,6 +237,9 @@ volatile int saveData_MessagePolicy = 0;
 #define Debug1(d,s,p)     {if (d<=debug_saveData) {printf(s,p);}}
 #define Debug2(d,s,p1,p2) {if (d<=debug_saveData) {printf(s,p1,p2);}}
 #define Debug3(d,s,p1,p2,p3) {if (d<=debug_saveData) {printf(s,p1,p2,p3);}}
+#define Debug4(d,s,p1,p2,p3,p4) {if (d<=debug_saveData) {printf(s,p1,p2,p3,p4);}}
+#define Debug5(d,s,p1,p2,p3,p4,p5) {if (d<=debug_saveData) {printf(s,p1,p2,p3,p4,p5);}}
+#define Debug6(d,s,p1,p2,p3,p4,p5,p6) {if (d<=debug_saveData) {printf(s,p1,p2,p3,p4,p5,p6);}}
 #define DebugMsg0(d,s)       {if (d<=debug_saveDataMsg) {printf(s);}}
 #define DebugMsg1(d,s,p)     {if (d<=debug_saveDataMsg) {printf(s,p);}}
 #define DebugMsg2(d,s,p1,p2) {if (d<=debug_saveDataMsg) {printf(s,p1,p2);}}
@@ -669,7 +675,7 @@ LOCAL int          nb_extraPV=0;
 
 LOCAL int connectScan(char* name, char* handShake, char* autoHandShake);
 LOCAL int disconnectScan(SCAN* pscan);
-LOCAL int monitorScan(SCAN* pscan);
+LOCAL int monitorScan(SCAN* pscan, int pass);
 LOCAL void monitorScans();
 LOCAL SCAN* searchScan(char* name);
 LOCAL int  scan_getDim(SCAN* pscan);
@@ -1182,14 +1188,23 @@ LOCAL int disconnectScan(SCAN* pscan)
 /* pscan: a pointer to the SCAN structure connected to the scan record. */
 /* return 0 if all monitors have been successfuly added.                */
 /*        -1 otherwise.                                                 */
-LOCAL int monitorScan(SCAN* pscan)
+LOCAL int monitorScan(SCAN* pscan, int pass)
 {
 	int i;
 
 	if (pscan == NULL) return(-1);
 	Debug1(1, "monitorScan(%s)...\n", pscan->name);
 	if (pscan->name[0] == 0) return(-1);
-	
+
+	if (pass==0) {
+		if (ca_add_event(DBR_TIME_SHORT, pscan->cdata, 
+				dataMonitor, (void*)NULL, 0)!=ECA_NORMAL) {
+			Debug1(2, "Unable to monitor %s\n", ca_name(pscan->cdata));
+			return -1;
+		}
+		return 0;
+	}
+
 	if (pscan->cnpts == NULL) {
 		Debug1(2, "Unable to monitor %s npts field\n", pscan->name);
 		return -1;
@@ -1252,14 +1267,6 @@ LOCAL int monitorScan(SCAN* pscan)
 			Debug2(2, "Unable to monitor %s trigger %d\n", pscan->name, i);
 			return -1;
 		}
-	}
-
-
-
-	if (ca_add_event(DBR_TIME_SHORT, pscan->cdata, 
-			dataMonitor, (void*)NULL, 0)!=ECA_NORMAL) {
-		Debug1(2, "Unable to monitor %s\n", ca_name(pscan->cdata));
-		return -1;
 	}
 
 	Debug1(1, "monitorScan(%s) OK\n", pscan->name);
@@ -1334,10 +1341,23 @@ LOCAL void monitorScans()
 {
 	SCAN_NODE* pnode;
 
-	pnode= list_scan;
+	/*
+	 * Make two passes through list of sscan records.  On first pass, monitor
+	 * only DATA fields.  This ensures that all DATA fields will be in the same
+	 * event-queue segment, which in turn ensures that DATA events will be
+	 * ordered correctly in time, at least with respect to other DATA events,
+	 * regardless of when the event queue is read, and regardless of any
+	 * discarded events.  
+	 */
+	pnode = list_scan;
 	while (pnode) {
-		monitorScan(&pnode->scan);
-		pnode= pnode->nxt;
+		monitorScan(&pnode->scan, 0);
+		pnode = pnode->nxt;
+	}
+	pnode = list_scan;
+	while (pnode) {
+		monitorScan(&pnode->scan, 1);
+		pnode = pnode->nxt;
 	}
 	updateScans();
 }
@@ -1464,7 +1484,11 @@ LOCAL void dataMonitor(struct event_handler_args eha)
 	SCAN* pscan;
 	short newData, sval;
 	char  disp;
+	/* diagnostics */
+	epicsTimeStamp currtime;
+	char currtimestr[MAX_STRING_SIZE]; 
 
+	epicsTimeGetCurrent(&currtime);
 	pscan= (SCAN*)ca_puser(eha.chid);
 
 if (pscan->nxt) {
@@ -1473,7 +1497,8 @@ if (pscan->nxt) {
 }
 	pval = (struct dbr_time_short *) eha.dbr;
 	sval = pval->value;
-	/*printf("dataMonitor(%s): (DATA=%d)\n", pscan->name, sval);*/
+	Debug2(5,"dataMonitor(%s): (DATA=%d)\n", pscan->name, sval);
+
 	if (pscan->data != -1) {
 		if (sval == 1) {
 			/* hand shaking notify */
@@ -1496,9 +1521,11 @@ if (pscan->nxt) {
 		}
 		Debug1(2,"\n nb_scan_running=%d\n", nb_scan_running);
 	}
-
 	epicsTimeToStrftime(pscan->stamp, MAX_STRING_SIZE, "%b %d, %Y %H:%M:%S.%06f", &pval->stamp);
 	sendScanTSShortMsgWait(MSG_SCAN_DATA, (SCAN*)ca_puser(eha.chid), pval->stamp, pval->value);
+	epicsTimeToStrftime(currtimestr, MAX_STRING_SIZE, "%b %d, %Y %H:%M:%S.%06f", &currtime);
+	Debug6(1,"dataMonitor(%s)tid=%p(%s): (DATA=%d) eha time:%s, currtime=%s\n", pscan->name,
+		epicsThreadGetIdSelf(), epicsThreadGetNameSelf(), sval, pscan->stamp, currtimestr);
 }
 
 /*----------------------------------------------------------------------*/
@@ -2355,6 +2382,8 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
 
 	/* the offset of this scan                                          */
 	scan_offset = xdr_getpos(&xdrs);
+	Debug2(2, "saveData:writeScanRecInProgress:(%s) scan_offset=%ld\n",
+			pscan->name, scan_offset);
 	if (scan_offset == (u_int)(-1)) {writeFailed = TRUE; goto cleanup;}
 
 	/*------------------------------------------------------------------*/
