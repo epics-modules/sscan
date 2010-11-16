@@ -597,7 +597,7 @@ typedef struct recPvtStruct {
 	unsigned short  prevSm[NUM_POS];	/* previous states of p_sm */
 	posFields       posParms[NUM_POS];	/* backup copy of all pos parms */
 	unsigned long   tablePts[NUM_POS];	/* # of pts loaded in P_PA */
-	short           onTheFly;
+	short           haveFlyModePositioner;
 	short           flying;
 	float          *nullArray;
 	float          *nullArray2;
@@ -900,7 +900,7 @@ process(sscanRecord *psscan)
 	numGetCb = precPvt->numGetCallbacks;
 	epicsMutexUnlock(precPvt->numCallbacksSem);
 
-	if (sscanRecordDebug) {
+	if (sscanRecordDebug>=2) {
 		epicsPrintf("%s:process:entry:faze='%s', nPTRG_CBs=%1d_%1d_%1d_%2d, xsc=%d, pxsc=%d, calledBy 0x%x\n",
 			psscan->name, sscanFAZE_strings[psscan->faze], numPosCb, numTrigCb, numAReadCb, numGetCb,
 			psscan->xsc, psscan->pxsc, precPvt->calledBy);
@@ -1069,6 +1069,10 @@ process(sscanRecord *psscan)
 		recGblGetTimeStamp(psscan);
 		psscan->dstate = sscanDSTATE_UNPACKED; POST(&psscan->dstate);
 		psscan->data = 0;
+		if (sscanRecordDebug >= 1) {
+			printf("%s:process:tid=%p(%s): posting DATA=0\n", psscan->name,
+				epicsThreadGetIdSelf(), epicsThreadGetNameSelf());
+		}
 		db_post_events(psscan, &psscan->data, DBE_VAL_LOG);
 		if (sscanRecordDebug >= 5) printf("%s:process: new sscan\n", psscan->name);
 		if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
@@ -1164,7 +1168,7 @@ process(sscanRecord *psscan)
 		psscan->busy = 0; POST(&psscan->busy);
 		psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
 		recGblFwdLink(psscan);
-		if (sscanRecordDebug) {
+		if (sscanRecordDebug>=2) {
 			epicsTimeGetCurrent(&timeCurrent);
 			printf("%s:Scan Time = %.5f s\n\n", psscan->name, 
 			       epicsTimeDiffInSeconds(&timeCurrent, &precPvt->timeStart));
@@ -1196,7 +1200,7 @@ special(struct dbAddr *paddr, int after)
 	epicsTimeStamp	timeCurrent;
 	int				clearThisPV;
 
-	if (sscanRecordDebug) {
+	if (sscanRecordDebug>=2) {
 		printf("%s:special:entry for fieldIx %d, after=%d.\n", psscan->name, fieldIndex, after);
 	}
 
@@ -1397,7 +1401,7 @@ special(struct dbAddr *paddr, int after)
 			break;
 		case sscanRecordPAUS:
 
-			if (sscanRecordDebug) {
+			if (sscanRecordDebug>=2) {
 				printf("%s:special:paus: faze='%s', nPTR_CBs=%1d%1d%1d, xsc=%d, pxsc=%d, calledBy 0x%x\n",
 					psscan->name, sscanFAZE_strings[psscan->faze], precPvt->numPositionerCallbacks,
 					precPvt->numTriggerCallbacks, precPvt->numAReadCallbacks, psscan->xsc, psscan->pxsc,
@@ -1556,7 +1560,7 @@ special(struct dbAddr *paddr, int after)
 			break;
 		case sscanRecordAWAIT:
 			if (psscan->await) precPvt->userSetAWAIT = 1;
-			if (sscanRecordDebug)
+			if (sscanRecordDebug>=2)
 				printf("%s:special await=%d, dstate='%s'\n",
 					psscan->name, psscan->await, sscanDSTATE_strings[psscan->dstate]);
 			if ((psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) && (psscan->await == 0)) {
@@ -1738,7 +1742,7 @@ cvt_dbaddr(struct dbAddr *paddr)
     int			i, fieldIndex = dbGetFieldIndex(paddr);
 	unsigned short	numFieldsInGroup;
 
-	if (sscanRecordDebug > 0)
+	if (sscanRecordDebug >= 2)
 		printf("sscanRecord:cvt_dbaddr: fieldIndex=%d\n", fieldIndex);
 	numFieldsInGroup = sscanRecordD02DA - sscanRecordD01DA;
 	i = (fieldIndex - sscanRecordD01HR) / numFieldsInGroup;
@@ -1749,7 +1753,7 @@ cvt_dbaddr(struct dbAddr *paddr)
 		paddr->field_type = DBF_FLOAT;
 		paddr->field_size = sizeof(float);
 		paddr->dbr_field_type = DBF_FLOAT;
-		if (sscanRecordDebug > 0)
+		if (sscanRecordDebug >= 2)
 			printf("sscanRecord:cvt_dbaddr: pfield set to %p\n", paddr->pfield);
 		return (0);
 	}
@@ -1772,7 +1776,7 @@ cvt_dbaddr(struct dbAddr *paddr)
 		paddr->field_type = DBF_DOUBLE;
 		paddr->field_size = sizeof(double);
 		paddr->dbr_field_type = DBF_DOUBLE;
-		if (sscanRecordDebug > 0)
+		if (sscanRecordDebug >= 2)
 			printf("sscanRecord:cvt_dbaddr: pfield set to %p\n", paddr->pfield);
 		return (0);
 	}
@@ -1790,7 +1794,7 @@ get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 	int				groupField;
 
 
-	if (sscanRecordDebug > 0)
+	if (sscanRecordDebug >=2 )
 		printf("sscanRecord:get_array_info: fieldIndex=%d, pfield=%p\n", fieldIndex,
 			paddr->pfield);
 	/*
@@ -1810,7 +1814,7 @@ get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 	    (fieldIndex < sscanRecordD01DA + NUM_DET*numFieldsInGroup)) {
 		group = (fieldIndex - sscanRecordD01DA)/numFieldsInGroup;
 		groupField = fieldIndex - (sscanRecordD01DA + group*numFieldsInGroup);
-		if (sscanRecordDebug > 0)
+		if (sscanRecordDebug >= 2)
 			printf("sscanRecord:get_array_info: groupField=%d\n", groupField);
 
 		if ((precPvt->acqDet[group]) ||
@@ -1852,7 +1856,7 @@ get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 
 		group = (fieldIndex - sscanRecordP1RA)/numFieldsInGroup;
 		groupField = fieldIndex - (sscanRecordP1RA + group*numFieldsInGroup);
-		if (sscanRecordDebug > 0)
+		if (sscanRecordDebug >= 2)
 			printf("sscanRecord:get_array_info: group=%d; groupField=%d\n", group, groupField);
 
 		if ((groupField==0) || (psscan->dstate >= sscanDSTATE_PACKED)) {
@@ -1892,7 +1896,7 @@ put_array_info(struct dbAddr *paddr, long nNew)
 	unsigned short	numFieldsInGroup, group;
     int				fieldIndex = dbGetFieldIndex(paddr);
 
-	if (sscanRecordDebug > 0)
+	if (sscanRecordDebug >= 2)
 		printf("sscanRecord:put_array_info: fieldIndex=%d, pfield=%p\n", fieldIndex,
 			paddr->pfield);
 	/*
@@ -2879,7 +2883,7 @@ initScan(sscanRecord *psscan)
 	}
 
 	/* Then calculate the starting position */
-	precPvt->onTheFly = precPvt->flying = 0;	/* clear onTheFly flag */
+	precPvt->haveFlyModePositioner = precPvt->flying = 0;	/* clear haveFlyModePositioner flag */
 	pPvStat = &psscan->p1nv;
 	pPos = (posFields *) & psscan->p1pp;
 	for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
@@ -2893,7 +2897,7 @@ initScan(sscanRecord *psscan)
 
 			POST(&pPos->p_dv);
 			if (pPos->p_sm == sscanP1SM_On_The_Fly) {
-				precPvt->onTheFly |= 1;	/* set flag if onTheFly */
+				precPvt->haveFlyModePositioner |= 1;	/* at least one positioner is in fly mode */
 			}
 		}
 	}
@@ -2927,7 +2931,7 @@ contScan(sscanRecord *psscan)
 	size_t          nRequest = 1;
 	double			oldPos;
 
-	if (sscanRecordDebug) printf("%s:contScan, faze='%s', data_state='%s'\n",
+	if (sscanRecordDebug>=2) printf("%s:contScan, faze='%s', data_state='%s'\n",
 		psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
 
 	switch ((int)psscan->faze) {
@@ -2978,46 +2982,31 @@ contScan(sscanRecord *psscan)
 			}
 		}
 
-		if (precPvt->onTheFly && !precPvt->flying) {
-			/* determine next desired position for each positioner */
+		if (precPvt->haveFlyModePositioner && !precPvt->flying) {
+			/* determine target position for fly-mode positioners. */
 			pPos = (posFields *) & psscan->p1pp;
 			pPvStat = &psscan->p1nv;
 			for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
-				if (*pPvStat == PV_OK) {
+				if ((*pPvStat == PV_OK) && (pPos->p_sm == sscanP1SM_On_The_Fly)) {
 					oldPos = pPos->p_dv;
-					switch (pPos->p_sm) {
-					case sscanP1SM_Linear:
-						pPos->p_dv = pPos->p_dv + pPos->p_si;
-						break;
-					case sscanP1SM_Table:
-						if (pPos->p_ar) {
-							pPos->p_dv = pPos->p_pp + pPos->p_pa[psscan->cpt];
-						} else {
-							pPos->p_dv = pPos->p_pa[psscan->cpt];
-						}
-						break;
-					case sscanP1SM_On_The_Fly:
-						if (pPos->p_ar) {
-							pPos->p_dv = pPos->p_pp + pPos->p_ep;
-						} else {
-							pPos->p_dv = pPos->p_ep;
-						}
-						break;
+					if (pPos->p_ar) {
+						pPos->p_dv = pPos->p_pp + pPos->p_ep;
+					} else {
+						pPos->p_dv = pPos->p_ep;
 					}
 					if (pPos->p_dv == oldPos) pPos->p_dv *= (1 + DBL_EPSILON);
 				}
 			}
 		}
 
-		if (precPvt->valTrigPvs && !precPvt->flying) {
-			/* do detector trigger fields */
-			psscan->faze = precPvt->onTheFly ? sscanFAZE_START_FLY : sscanFAZE_TRIG_DETCTRS;
+		if (precPvt->valTrigPvs || (precPvt->haveFlyModePositioner && (psscan->cpt==0))) {
+			/* Do detector trigger fields.  If first point, launch fly-mode positioners. */
+			psscan->faze = sscanFAZE_TRIG_DETCTRS;
 			POST(&psscan->faze);
 			callbackRequest(&precPvt->doPutsCallback);
 			return;
 		}
-		/* if no validTrigPvs, fall through to READ_DETCTRS */
-		/* if on-the-fly mode and flying, fall through to READ_DETCTRS */
+		/* if no validTrigPvs, and no need to launch fly-mode positioners, fall through to READ_DETCTRS */
 		psscan->faze = sscanFAZE_READ_DETCTRS; POST(&psscan->faze);
 
 	case sscanFAZE_READ_DETCTRS:
@@ -3111,10 +3100,11 @@ contScan(sscanRecord *psscan)
 			/* Is the positioner PV valid ? */
 			else if (*pPvStatPos == PV_OK) {
 				/* stuff array with desired value */
-				/* If onTheFly and flying, add the step increment to the previous */
 				if ((pPos->p_sm != sscanP1SM_On_The_Fly) || !precPvt->flying) {
+					/* normal positioner */
 					pPos->r_cv = pPos->p_dv;
 				} else {
+					/* launched fly-mode positioner */
 					pPos->r_cv = precPvt->posBufPtr[i].pFill[psscan->cpt - 1] + pPos->p_si;
 				}
 			} else {
@@ -3178,7 +3168,7 @@ contScan(sscanRecord *psscan)
 			pPos = (posFields *) & psscan->p1pp;
 			pPvStat = &psscan->p1nv;
 
-			/* figure out next position (if on-the-fly, we're already going there) */
+			/* Figure out next position for non-fly-mode positioners. */
 			for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
 				if (*pPvStat == PV_OK && (pPos->p_sm != sscanP1SM_On_The_Fly)) {
 					oldPos = pPos->p_dv;
@@ -3194,7 +3184,7 @@ contScan(sscanRecord *psscan)
 
 			/* request callback to move motors to new positions */
 			psscan->faze = sscanFAZE_MOVE_MOTORS; POST(&psscan->faze);
-			/* For onTheFly, doPuts will fall through to TRIG_DETCTRS after MOVE_MOTORS */
+			/* For haveFlyModePositioner, doPuts will fall through to TRIG_DETCTRS after MOVE_MOTORS */
 			callbackRequest(&precPvt->doPutsCallback);
 			return;
 		} else {
@@ -3212,7 +3202,7 @@ endScan(sscanRecord *psscan)
 {
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 
-	if (sscanRecordDebug) printf("%s:endScan, faze='%s', data_state='%s'\n",
+	if (sscanRecordDebug>=2) printf("%s:endScan, faze='%s', data_state='%s'\n",
 		psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
 
 	if (psscan->dstate == sscanDSTATE_UNPACKED) packData(psscan, 3);
@@ -3479,7 +3469,7 @@ packData(sscanRecord *psscan, int caller)
 	float			*pDBuf, *pf, *pf1, *pf2;
 	unsigned short	*pPvStat;
 
-	if (sscanRecordDebug >= 1) printf("%s:packData, caller=%d, faze='%s', data_state='%s'\n",
+	if (sscanRecordDebug >= 2) printf("%s:packData, caller=%d, faze='%s', data_state='%s'\n",
 		psscan->name, caller, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
 
 	if (psscan->dstate == sscanDSTATE_PACKED) return;
@@ -3860,7 +3850,6 @@ doPuts(CALLBACK *pCB)
 		}
 		epicsMutexUnlock(precPvt->numCallbacksSem);
 
-	case sscanFAZE_START_FLY:
 	case sscanFAZE_MOVE_MOTORS:
 		if (sscanRecordDebug >= 5) {
 			printf("%s:doPuts:MOVE_MOTORS  - Point %ld\n", psscan->name, (long)psscan->cpt);
@@ -3877,33 +3866,26 @@ doPuts(CALLBACK *pCB)
 		precPvt->numPositionerCallbacks = 1;
 		epicsMutexUnlock(precPvt->numCallbacksSem);
 
-		/* For each valid positioner, write the desired position.
-		 * If positioner is "on-the-fly", move motors only if the current point is 0:
-		 * do a PutCallback on move-to-start-point but just a Put on start-fly.
+		/* For each valid non-fly-mode positioner, write the desired position.
+		 * For each valid fly-mode positioner, write the desired position only to send the
+		 * positioner to the start point.  (We launch fly-mode positioners to the end point elsewhere.)
 		 */
 		for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
 			if ((*pPvStat == PV_OK) && ((pPos->p_sm != sscanP1SM_On_The_Fly) || (psscan->cpt == 0))) {
-				if ((psscan->faze == sscanFAZE_START_FLY) && (pPos->p_sm == sscanP1SM_On_The_Fly)) {
-					status = recDynLinkPut(&precPvt->caLinkStruct[i + P1_OUT], &(pPos->p_dv), 1);
-					if (sscanRecordDebug >= 5)
-						printf("%s:doPuts:start_fly to %f\n", psscan->name, pPos->p_dv);
-					precPvt->flying = 1;
-				} else {
+				epicsMutexLock(precPvt->numCallbacksSem);
+				precPvt->numPositionerCallbacks++;
+				epicsMutexUnlock(precPvt->numCallbacksSem);
+				psscan->faze = sscanFAZE_CHECK_MOTORS; /* post when we get out of the loop */
+				status = recDynLinkPutCallback(&precPvt->caLinkStruct[i + P1_OUT],
+					    &(pPos->p_dv), 1, notifyCallback);
+				if (status) {
 					epicsMutexLock(precPvt->numCallbacksSem);
-					precPvt->numPositionerCallbacks++;
+					precPvt->numPositionerCallbacks--;
 					epicsMutexUnlock(precPvt->numCallbacksSem);
-					psscan->faze = sscanFAZE_CHECK_MOTORS; /* post when we get out of the loop */
-					status = recDynLinkPutCallback(&precPvt->caLinkStruct[i + P1_OUT],
-						    &(pPos->p_dv), 1, notifyCallback);
-					if (status) {
-						epicsMutexLock(precPvt->numCallbacksSem);
-						precPvt->numPositionerCallbacks--;
-						epicsMutexUnlock(precPvt->numCallbacksSem);
-						if (status == NOTIFY_IN_PROGRESS) {
-							psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
-							sprintf(psscan->smsg, "Positioner %1d is already busy", i);
-							POST(&psscan->smsg);
-						}
+					if (status == NOTIFY_IN_PROGRESS) {
+						psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
+						sprintf(psscan->smsg, "Positioner %1d is already busy", i);
+						POST(&psscan->smsg);
 					}
 				}
 			}
@@ -3919,28 +3901,34 @@ doPuts(CALLBACK *pCB)
 		epicsMutexUnlock(precPvt->numCallbacksSem);
 
 
-		/*
-		 * Fall through to TRIG_DETCTRS if we did no putCallbacks
-		 * (i.e., in onTheFly mode and flying, or no positioners to move,
-		 * or no putCallbacks succeeded)
-		 */
+		/* Fall through to TRIG_DETCTRS if we did no putCallbacks, or if no putCallbacks succeeded. */
 
 	case sscanFAZE_TRIG_DETCTRS:
 		if (sscanRecordDebug >= 5) {
 			printf("%s:doPuts:TRIG_DETCTRS - Point %ld\n", psscan->name, (long)psscan->cpt);
 		}
-		psscan->faze = precPvt->onTheFly ? sscanFAZE_CHECK_MOTORS : sscanFAZE_READ_DETCTRS;
-		POST(&psscan->faze);
+		psscan->faze = sscanFAZE_READ_DETCTRS; POST(&psscan->faze);
 
 		if (psscan->awct) {
 			psscan->wcnt = psscan->awct; POST(&psscan->wcnt);
 		}
 
+		/* On first point, launch fly-mode positioners, using Put instead of PutCallback. */
+		pPos = (posFields *) & psscan->p1pp;
+		pPvStat = &psscan->p1nv;
+		for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
+			if ((*pPvStat == PV_OK) && (pPos->p_sm == sscanP1SM_On_The_Fly) && (psscan->cpt == 0)) {
+				status = recDynLinkPut(&precPvt->caLinkStruct[i + P1_OUT], &(pPos->p_dv), 1);
+				if (sscanRecordDebug >= 5)
+					printf("%s:doPuts:start_fly to %f\n", psscan->name, pPos->p_dv);
+				precPvt->flying = 1;
+			}
+		}
+
 		if (precPvt->valTrigPvs == 0) {
 			/*
-			 * No valid trigger PV's.  Scan will hang unless we
-			 * cause the record to process.  (We get here if
-			 * there are no positioners.)
+			 * No valid trigger PV's, so we won't be getting any callbacks.  Scan will hang unless we
+			 * cause the record to process.  (We get here if there are no positioners.)
 			 */
 			precPvt->calledBy = DO_PUTS;
 			if (psscan->ddly == 0.) {
@@ -4782,7 +4770,7 @@ checkScanLimits(psscan)
 						0, 0, NULL);
 			}
 			POST(&pPos->p_pp);
-			if (sscanRecordDebug)
+			if (sscanRecordDebug>=2)
 				printf("%s:checkScanLimits: P%1ld pp=%f (status=%ld)\n",
 					psscan->name, j, pPos->p_pp, status);
 			if (status) {
