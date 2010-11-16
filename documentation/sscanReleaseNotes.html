@@ -10,6 +10,18 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
+<h2 align="center">Release 2-7 - November 16, 2010</h2>
+<ul>
+
+<li>Previously, on Linux, Solaris, and probably other non-real-time operating
+systems, saveData could write corrupted data files for 2D and higher scans,
+because monitored DATA fields from sscan records could be received out of order.
+
+<li>Previously, scans with any fly-mode positioners and no detector triggers
+failed to launch fly-mode positioners to the end point.
+
+</ul>
+
 <h2 align="center">Release 2-6-6 - March 30, 2010</h2>
 <ul>
 <li>Previously, a monitor on the file_subdir PV could leave savaData in the
