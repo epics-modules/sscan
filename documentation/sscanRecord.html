@@ -6,7 +6,7 @@
 </head>
 <body>
 <h1>
-The <b>sscan</b> record v5.5</h1>
+The <b>sscan</b> record for sscan module R2.7</h1>
 Author: Tim M. Mooney<br>
 Based on the scan record, written by Ned D. Arnold.<br>
 <p>&nbsp;Advanced Photon Source
@@ -2581,39 +2581,27 @@ detectors.</td></tr>
 <tr><td>7</td><td>WAIT:DETECTORS</td><td>We've triggered detectors.  Now we're
 waiting for their callbacks to come in.</td></tr>
 
-<tr><td>8</td><td>START_FLY</td><td>This is an on-the-fly scan</td></tr>
-
-<tr><td>9</td><td>RETRACE_MOVE</td><td>The next thing to do it send positioners
+<tr><td>8</td><td>RETRACE_MOVE</td><td>The next thing to do it send positioners
 to their post-scan positions.</td></tr>
 
-<tr><td>10</td><td>WAIT:RETRACE</td><td>We've told positioners to go to their
+<tr><td>9</td><td>WAIT:RETRACE</td><td>We've told positioners to go to their
 post-scan positions.  Now we're waiting for their callbacks to come
 in.</td></tr>
 
-<tr><td>11</td><td>DO:AFTER_SCAN</td><td>The next thing to do is trigger the
+<tr><td>10</td><td>DO:AFTER_SCAN</td><td>The next thing to do is trigger the
 after-scan link.</td></tr>
 
-<tr><td>12</td><td>WAIT:AFTER_SCAN</td><td>The after-scan link has been
+<tr><td>11</td><td>WAIT:AFTER_SCAN</td><td>The after-scan link has been
 triggered.  We're waiting for its callback to come in.</td></tr>
 
-<tr><td>13</td><td>SCAN_DONE</td><td>The scan is finished.</td></tr>
+<tr><td>12</td><td>SCAN_DONE</td><td>The scan is finished.</td></tr>
 
-<tr><td>14</td><td>WAIT:SAVE_DATA</td><td>The scan is waiting for
-<tt>AWAIT<tt>&nbsp;->&nbsp;<tt>0</tt> so it can switch data buffers.</td></tr>
-
-<tr><td>15</td><td>SCAN_PENDING</td><td>A scan has been commanded, but has not
+<tr><td>13</td><td>SCAN_PENDING</td><td>A scan has been commanded, but has not
 yet started</td></tr>
 
-<tr colspan=3><td colspan=3>The remaining menu choices can't be displayed as
-strings by CA clients, but should be displayed as numbers.</td></tr>
+<tr><td>14</td><td>PREVIEW</td><td>We're doing a preview of the scan.</td></tr>
 
-<tr><td>16</td><td>TRIG_ARRAY_READ</td><td>The scan is about to trigger array
-reads (A1PV)</td></tr>
-
-<tr><td>17</td><td>WAIT:ARRAY_READ</td><td>The scan is waiting for a callback
-from the array-read PV</td></tr>
-
-<tr><td>18</td><td>PREVIEW</td><td>We're doing a preview of the scan.</td></tr>
+<tr><td>15</td><td>RECORD SCALAR DATA</td><td>Record scalar data.</td></tr>
 
 </table>
 
@@ -2637,24 +2625,24 @@ would get last scan's data.</td></tr>
 the callback is still outstanding.   <br>If a client should read an array now,
 it would get last scan's data.</td></tr>
 
-<tr><td>2</td><td>ARRAY_GET_CALLBACK_WAIT</td><td>recDynLinkGetCallback() has been
+<tr><td>3</td><td>ARRAY_GET_CALLBACK_WAIT</td><td>recDynLinkGetCallback() has been
 issued for array-valued PVs, and one or more callbacks are still outstanding.
 </td></tr>
 
-<tr><td>3</td><td>RECORD_ARRAY_DATA</td><td>It's time to read array data.  If
+<tr><td>4</td><td>RECORD_ARRAY_DATA</td><td>It's time to read array data.  If
 any array-valued PVs exist, the data state will change to
 ARRAY_GET_CALLBACK_WAIT while waiting for the callbacks.</td></tr>
 
-<tr><td>3</td><td>SAVE_DATA_WAIT</td><td>Arrays are filled, but cannot be
+<tr><td>5</td><td>SAVE_DATA_WAIT</td><td>Arrays are filled, but cannot be
 posted yet because the data-storage client is not finished writing last scan's
 data.   <br>If a client should read an array now, it would get last scan's
 data.</td></tr>
 
-<tr><td>4</td><td>PACKED</td><td>Arrays are filled, and buffers have been
+<tr><td>6</td><td>PACKED</td><td>Arrays are filled, and buffers have been
 switched, but they haven't yet been posted.   <br>If a client should read an
 array now, it would get last scan's data.</td></tr>
 
-<tr><td>5</td><td>POSTED</td><td>Data arrays have been posted.  <br>Now the
+<tr><td>7</td><td>POSTED</td><td>Data arrays have been posted.  <br>Now the
 data-storage client can read this scan's array data.</td></tr>
 
 </table>
@@ -2754,7 +2742,7 @@ data-storage client can read this scan's array data.</td></tr>
 
 <tr>
 <td><tt>VERS</tt></td>
-<td>Code Version</td>
+<td>Code Version (This field has not been kept up to date.)</td>
 <td>FLOAT</td>
 <td>No</td>
 <td>1.0</td>
