@@ -21,7 +21,6 @@ Com_DIR          = $(EPICS_BASE_LIB)
 
 DBDINC += scanparmRecord
 DBDINC += sscanRecord
-#DBDINC += busyRecord
 
 # <name>.dbd will be created from <name>Include.dbd
 DBD += sscan.dbd
@@ -36,7 +35,6 @@ LIBRARY_IOC += sscan
 
 sscan_SRCS += sscanRecord.c
 sscan_SRCS += scanparmRecord.c
-#sscan_SRCS += busyRecord.c
 sscan_SRCS += recDynLink.c
 sscan_SRCS += req_file.c
 
