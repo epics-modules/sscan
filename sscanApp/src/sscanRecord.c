@@ -2833,7 +2833,7 @@ initScan(sscanRecord *psscan)
 		if (*pPvStat == PV_OK) precPvt->valPosPvs = i;
 	}
 	/* let pPvStat continue to increment into Readbacks */
-	for (i = 1; i <= NUM_POS; i++, pPvStat++) {
+	for (i = 1; i <= NUM_RDKS; i++, pPvStat++) {
 		if (*pPvStat == PV_OK) precPvt->valRdbkPvs = i;
 	}
 	/* let pPvStat continue to increment into Detectors */
@@ -2896,7 +2896,7 @@ initScan(sscanRecord *psscan)
 			if (pPos->p_dv == pPos->p_pp) pPos->p_dv *= (1 + DBL_EPSILON);
 
 			POST(&pPos->p_dv);
-			if (pPos->p_sm == sscanP1SM_On_The_Fly) {
+			if ((pPos->p_sm == sscanP1SM_On_The_Fly) || (psscan->acqt == sscanACQT_1D_ARRAY)) {
 				precPvt->haveFlyModePositioner |= 1;	/* at least one positioner is in fly mode */
 			}
 		}
@@ -2929,7 +2929,7 @@ contScan(sscanRecord *psscan)
 	unsigned short  i;
 	long			status;
 	size_t          nRequest = 1;
-	double			oldPos;
+	double			oldPos, endPos;
 
 	if (sscanRecordDebug>=2) printf("%s:contScan, faze='%s', data_state='%s'\n",
 		psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
@@ -2987,12 +2987,15 @@ contScan(sscanRecord *psscan)
 			pPos = (posFields *) & psscan->p1pp;
 			pPvStat = &psscan->p1nv;
 			for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
-				if ((*pPvStat == PV_OK) && (pPos->p_sm == sscanP1SM_On_The_Fly)) {
+				if ((*pPvStat == PV_OK) &&
+					((pPos->p_sm == sscanP1SM_On_The_Fly) || (psscan->acqt == sscanACQT_1D_ARRAY))
+					) {
 					oldPos = pPos->p_dv;
+					endPos = (pPos->p_sm == sscanP1SM_Table) ? pPos->p_pa[psscan->npts-1] : pPos->p_ep;
 					if (pPos->p_ar) {
-						pPos->p_dv = pPos->p_pp + pPos->p_ep;
+						pPos->p_dv = pPos->p_pp + endPos;
 					} else {
-						pPos->p_dv = pPos->p_ep;
+						pPos->p_dv = endPos;
 					}
 					if (pPos->p_dv == oldPos) pPos->p_dv *= (1 + DBL_EPSILON);
 				}
@@ -3000,7 +3003,7 @@ contScan(sscanRecord *psscan)
 		}
 
 		if (precPvt->valTrigPvs || (precPvt->haveFlyModePositioner && (psscan->cpt==0))) {
-			/* Do detector trigger fields.  If first point, launch fly-mode positioners. */
+			/* Do detector trigger fields.  If first point, this will launch fly-mode positioners. */
 			psscan->faze = sscanFAZE_TRIG_DETCTRS;
 			POST(&psscan->faze);
 			callbackRequest(&precPvt->doPutsCallback);
@@ -3100,12 +3103,19 @@ contScan(sscanRecord *psscan)
 			/* Is the positioner PV valid ? */
 			else if (*pPvStatPos == PV_OK) {
 				/* stuff array with desired value */
-				if ((pPos->p_sm != sscanP1SM_On_The_Fly) || !precPvt->flying) {
+				if (((pPos->p_sm != sscanP1SM_On_The_Fly) && (psscan->acqt != sscanACQT_1D_ARRAY))
+					|| !precPvt->flying) {
 					/* normal positioner */
 					pPos->r_cv = pPos->p_dv;
 				} else {
 					/* launched fly-mode positioner */
-					pPos->r_cv = precPvt->posBufPtr[i].pFill[psscan->cpt - 1] + pPos->p_si;
+					if (pPos->p_sm != sscanP1SM_Table) {
+						/* linear or fly (start point, end point, step increment) */
+						pPos->r_cv = precPvt->posBufPtr[i].pFill[psscan->cpt - 1] + pPos->p_si;
+					} else {
+						/* table */
+						pPos->r_cv = pPos->p_pa[psscan->cpt];
+					}
 				}
 			} else {
 				/* Neither PV is valid, store the current point number */
@@ -3170,7 +3180,8 @@ contScan(sscanRecord *psscan)
 
 			/* Figure out next position for non-fly-mode positioners. */
 			for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
-				if (*pPvStat == PV_OK && (pPos->p_sm != sscanP1SM_On_The_Fly)) {
+				if ((*pPvStat == PV_OK) && (pPos->p_sm != sscanP1SM_On_The_Fly) &&
+					(psscan->acqt != sscanACQT_1D_ARRAY)) {
 					oldPos = pPos->p_dv;
 					if (pPos->p_sm ==  sscanP1SM_Linear) {
 						pPos->p_dv = pPos->p_dv + pPos->p_si;
@@ -3184,7 +3195,7 @@ contScan(sscanRecord *psscan)
 
 			/* request callback to move motors to new positions */
 			psscan->faze = sscanFAZE_MOVE_MOTORS; POST(&psscan->faze);
-			/* For haveFlyModePositioner, doPuts will fall through to TRIG_DETCTRS after MOVE_MOTORS */
+			/* If haveFlyModePositioner, doPuts will fall through to TRIG_DETCTRS after MOVE_MOTORS */
 			callbackRequest(&precPvt->doPutsCallback);
 			return;
 		} else {
@@ -3871,7 +3882,8 @@ doPuts(CALLBACK *pCB)
 		 * positioner to the start point.  (We launch fly-mode positioners to the end point elsewhere.)
 		 */
 		for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
-			if ((*pPvStat == PV_OK) && ((pPos->p_sm != sscanP1SM_On_The_Fly) || (psscan->cpt == 0))) {
+			int notFlyMode = (pPos->p_sm != sscanP1SM_On_The_Fly) && (psscan->acqt != sscanACQT_1D_ARRAY);
+			if ((*pPvStat == PV_OK) && (notFlyMode || (psscan->cpt == 0))) {
 				epicsMutexLock(precPvt->numCallbacksSem);
 				precPvt->numPositionerCallbacks++;
 				epicsMutexUnlock(precPvt->numCallbacksSem);
@@ -3917,7 +3929,8 @@ doPuts(CALLBACK *pCB)
 		pPos = (posFields *) & psscan->p1pp;
 		pPvStat = &psscan->p1nv;
 		for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
-			if ((*pPvStat == PV_OK) && (pPos->p_sm == sscanP1SM_On_The_Fly) && (psscan->cpt == 0)) {
+			int flyMode = (pPos->p_sm == sscanP1SM_On_The_Fly) || (psscan->acqt == sscanACQT_1D_ARRAY);
+			if ((*pPvStat == PV_OK) && flyMode && (psscan->cpt == 0)) {
 				status = recDynLinkPut(&precPvt->caLinkStruct[i + P1_OUT], &(pPos->p_dv), 1);
 				if (sscanRecordDebug >= 5)
 					printf("%s:doPuts:start_fly to %f\n", psscan->name, pPos->p_dv);
