@@ -20,6 +20,21 @@ because monitored DATA fields from sscan records could be received out of order.
 <li>Previously, scans with any fly-mode positioners and no detector triggers
 failed to launch fly-mode positioners to the end point.
 
+<li>The detailed order of operations has changed slightly for one type of fly
+scan.  Previously, in soft fly scans (scans with ACQT="SCALAR", and one or more
+fly-mode positioners) detector triggers were executed and awaited after fly-mode
+positioners had arrived at the start point, and before they were launched toward
+the end point.  This error caused the first point in such a fly scan to be
+different from all other data points, in that it was a static measurement,
+rather than an average over position. Now, fly mode positioners are launched
+toward their endpoints before detector triggers are executed for the first
+time.  <i>Note that this change does not affect hardware-assisted fly scans
+(scans with ACQT="1D ARRAY"), which have always behaved in this way.</i>
+
+<li>Increased the maximum size of the PV-name prefix from 10 to 30
+(PVNAME_STRINGSZ/2).
+
+
 </ul>
 
 <h2 align="center">Release 2-6-6 - March 30, 2010</h2>
