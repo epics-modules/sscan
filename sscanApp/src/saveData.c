@@ -2598,7 +2598,9 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
 				} else {
 					status = ca_array_get(DBR_DOUBLE, pscan->bcpt, pscan->cpxra[i], pscan->pxra[i]);
 					if (status != ECA_NORMAL) {
-						printf("saveData:writeScanRecCompleted: ca_array_get_callback returned %d\n", status);
+						printf("saveData:writeScanRecCompleted: ca_array_get() (%ld pts) returned %d for scan %s, p%d\n",
+							pscan->bcpt, status, pscan->name, i);
+						printf("...%d means '%s'\n", status, ca_message(status));
 					}
 				}
 				if (pscan->bcpt < pscan->npts) { /* zero unacquired data points */
@@ -2635,7 +2637,11 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
 						printf("saveData:writeScanRecCompleted: Can't get %s detector array %d\n", pscan->name, i);
 					} else {
 						status = ca_array_get(DBR_FLOAT, pscan->bcpt, pscan->cdxda[i], pscan->dxda[i]);
-						if (status != ECA_NORMAL) printf("saveData:writeScanRecCompleted: ca_array_get returned error for det %d \n", i);
+						if (status != ECA_NORMAL) {
+							printf("saveData:writeScanRecCompleted: ca_array_get() (%ld pts) returned %d for scan %s, d%d\n",
+								pscan->bcpt, status, pscan->name, i);
+							printf("...%d means '%s'\n", status, ca_message(status));
+						}
 					}
 				}
 			}
