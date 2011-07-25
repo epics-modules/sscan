@@ -1096,22 +1096,22 @@ $(pv_value)</tooltip>
     </border_color>
     <y>30</y>
     <actions hook="false">
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlot.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N1)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot Array</description>
       </action>
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlotFromScalars.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N1)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot From Scalars</description>
       </action>
     </actions>
@@ -1151,22 +1151,22 @@ $(pv_value)</tooltip>
     </border_color>
     <y>50</y>
     <actions hook="false">
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlot.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N2)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot Array</description>
       </action>
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlotFromScalars.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N2)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot From Scalars</description>
       </action>
     </actions>
@@ -1206,22 +1206,22 @@ $(pv_value)</tooltip>
     </border_color>
     <y>90</y>
     <actions hook="false">
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlot.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N4)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot Array</description>
       </action>
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlotFromScalars.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N4)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot From Scalars</description>
       </action>
     </actions>
@@ -1261,22 +1261,22 @@ $(pv_value)</tooltip>
     </border_color>
     <y>70</y>
     <actions hook="false">
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlot.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N3)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot Array</description>
       </action>
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlotFromScalars.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N3)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot From Scalars</description>
       </action>
     </actions>
@@ -1316,22 +1316,22 @@ $(pv_value)</tooltip>
     </border_color>
     <y>110</y>
     <actions hook="false">
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlot.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N5)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot Array</description>
       </action>
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlotFromScalars.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N5)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot From Scalars</description>
       </action>
     </actions>
@@ -1371,22 +1371,22 @@ $(pv_value)</tooltip>
     </border_color>
     <y>130</y>
     <actions hook="false">
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlot.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N6)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot Array</description>
       </action>
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlotFromScalars.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N6)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot From Scalars</description>
       </action>
     </actions>
@@ -1426,22 +1426,22 @@ $(pv_value)</tooltip>
     </border_color>
     <y>150</y>
     <actions hook="false">
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlot.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N7)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot Array</description>
       </action>
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlotFromScalars.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N7)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot From Scalars</description>
       </action>
     </actions>
@@ -1481,22 +1481,22 @@ $(pv_value)</tooltip>
     </border_color>
     <y>170</y>
     <actions hook="false">
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlot.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N8)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot Array</description>
       </action>
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlotFromScalars.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N8)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot From Scalars</description>
       </action>
     </actions>
@@ -1536,22 +1536,22 @@ $(pv_value)</tooltip>
     </border_color>
     <y>190</y>
     <actions hook="false">
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlot.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N9)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot Array</description>
       </action>
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlotFromScalars.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N9)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot From Scalars</description>
       </action>
     </actions>
@@ -1591,22 +1591,22 @@ $(pv_value)</tooltip>
     </border_color>
     <y>210</y>
     <actions hook="false">
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlot.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N10)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot Array</description>
       </action>
-      <action type="OPEN_DISPLAY">
+      <action type="OPEN_OPI_IN_VIEW">
         <path>scanDetPlotFromScalars.opi</path>
         <macros>
           <include_parent_macros>true</include_parent_macros>
           <N>$(N10)</N>
         </macros>
-        <replace>false</replace>
+        <Position>1</Position>
         <description>Plot From Scalars</description>
       </action>
     </actions>
