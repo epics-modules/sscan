@@ -788,7 +788,7 @@ point; and <i>array-mode</i> fly scans, in which the scan record hands off the
 point-by-point direction to some other entity, such as a multichannel scaler. 
 These types are distinguished by the value of <tt>ACQT</tt> (ACQuisition Type).
 
-<p><a NAME="HEADING_1-5-3"></a>
+<p><a NAME="HEADING_1-5-1"></a>
 <h3> 1.5.1 Scalar-mode fly scans</h3>
 
 <P>If <tt>ACQT</tt>==<tt>SCALAR</tt> ("scalar mode", the default), the sscan
@@ -848,6 +848,7 @@ is the detector dwell time plus the sscan record's per-point overhead time,
 which varies because the IOC processor is doing other things in addition to
 scanning.
 
+<p><a NAME="HEADING_1-5-2"></a>
 <h3> 1.5.2 Array-mode fly scans</h3>
 
 <P>If <tt>ACQT</tt>==<tt>1D ARRAY</tt> ("array mode"), the sscan record will
@@ -2059,6 +2060,31 @@ scan. These arrays are used only in <tt>TABLE</tt> mode.
 </tr>
 </table>
 
+<P>To load an array of positions into <tt>P<i>n</i>PA</tt>, you can use any
+channel-access client that knows how to write to numeric arrays.  There are
+several versions of the command-line program caput that can do this.  For one
+version, you specify the switch <code>-m</code>, and write a comma-separated
+list of values:
+
+<pre>caput -m 2idb1:scan1.P1PA 0.,1.,2.</pre>
+
+works.  For another version, you specify the flag <code>-a</code>, specify the
+number of values to be written, and specify the values separated by spaces:
+
+<pre>caput -a 2idb1:scan1.P1PA 3 0. 1. 2.</pre>
+
+<P>You might also do this from Python, using <a href="http://cars9.uchicago.edu/software/python/pyepics3">pyepics</a>:
+
+<pre>
+wheaties% setenv LD_LIBRARY_PATH /home/oxygen/MOONEY/epics/base-3.14.12.1/lib/solaris-sparc
+wheaties% python
+>>> import epics
+>>> epics.caput("xxx:scan1.P1PA", [1,2,3,4,5,6,7])
+>>> epics.caget("xxx:scan1.P1PA")
+array([ 1.,  2.,  3.,  4.,  5.,  6.,  7.,  0.,  0.,  0.,  0.,  0.,  0.,
+...
+</pre>
+
 <!---------------------------------------------------------------------------->
 
 <p><a NAME="HEADING_2-2-3"></a>
@@ -2586,14 +2612,20 @@ data will contain every point at the completion of the scan.
 <P>A scan is started when a client writes <tt>1</tt> to the EXSC field.
 
 <P>Prior to beginning an actual scan, the record can be commanded to check the
-scan parameters to ensure that all positioner requests are within reasonable
-limits. This is done by writing <tt>1</tt> to the <tt>CMND</tt> field. The record will
-do a "dry run" by calculating every positioner value (or looking it up in the
-table) and comparing it with the high range and low range values
+scan parameters to ensure that all positioner requests are within positioner
+limits. This is done by writing <tt>1</tt> to the <tt>CMND</tt> field. The
+record will do a "dry run" by calculating every positioner value (or looking it
+up in the table) and comparing it with the high range and low range values
 (<tt>P1HR</tt>-<tt>P4HR</tt> and <tt><tt>P1LR</tt></tt>-<tt>P4LR</tt>)
 associated with that positioner's Process Variable. (Drive limits are an
 attribute of most process variables).  If any step would exceed the drive
-limits, the operator is notified via the <tt>SMSG</tt> field.
+limits, the operator is notified via the <tt>SMSG</tt> field.  (Note that the
+sscan record does not retrieve positioner limits whenever they are changed, but
+only when the sscan record connects (makes a link) to the positioner.  The sscan
+record disconnects and reconnects to positioners at the beginning of every
+scan for this reason, though it declines to do this if the most recent scan
+ended less than <code>sscanRecordLookupTime</code> seconds ago.  The default
+value of <code>sscanRecordLookupTime</code> is 1.)
 
 
 <table BORDER>
@@ -2646,11 +2678,12 @@ limits, the operator is notified via the <tt>SMSG</tt> field.
 
 <tr><td>0<td>Clear the State Message field (<tt>SMSG</tt>)</td></tr>
 
-<tr><td>1<td>Execute a "dry run", checking the desired position against the
-range limits for each positioner</td></tr>
+<tr><td>1<td>Execute a "dry run", checking positioners against their
+limits</td></tr>
 
-<tr><td>2<td>Check to see if limits would be violated if the currently
-programmed scan were actually performed</td></tr>
+<tr><td>2<td>Show a preview of the scan, using the positioner and detector
+arrays DnnCA and PnCA:  Write data-point numbers to DnnCA, and corresponding
+positioner values to PnCA.</td></tr>
 
 <tr><td>3<td>Clear all PVs, freeze flags, modes, switches, etc.</td></tr>
 
