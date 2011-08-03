@@ -10,7 +10,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
-<h2 align="center">Release 2-7 - November 16, 2010</h2>
+<h2 align="center">Release 2-7 - August ??, 2011</h2>
 <ul>
 
 <li>Previously, on Linux, Solaris, and probably other non-real-time operating
@@ -31,8 +31,37 @@ toward their endpoints before detector triggers are executed for the first
 time.  <i>Note that this change does not affect hardware-assisted fly scans
 (scans with ACQT="1D ARRAY"), which have always behaved in this way.</i>
 
-<li>Increased the maximum size of the PV-name prefix from 10 to 30
-(PVNAME_STRINGSZ/2).
+<li>Increased the maximum size of the PV-name prefix specified to
+saveData_Init() from 10 to 30 (PVNAME_STRINGSZ/2).
+
+<li>The sscan record's CMND field is now a DBF_MENU, instead of a DBF_ENUM.
+
+<li>Makefile was modified to build saveData on cygwin 1.7.x.
+
+<li>Added python programs for MDA files in sscanApp/op/python.
+
+<li>In the scan_more.adl and scan_triggers.adl display files, t*nv (the red
+numbers) were displaying error when assoc trigger link was not defined, instead
+of only when it was defined but not connected
+
+<li>fixes for 64-bit arch.
+
+<li>sscanRecord.html: better discussion of fly scans and examples of loading
+PnPA for table mode.
+
+<li>Modified RELEASE; deleted RELEASE.arch
+
+<li>Added .opi display files for CSS-BOY
+
+<li>standardScans.db: scanResumeSEQ was not defending against a change in the
+command value during the resume delay.  As a result, resuming and then pausing
+during the resume delay did not leave the scan paused.  
+
+<li>Previously, when an inner scan was paused while it was idle waiting for the
+next poke from the outer scan, the scan would not resume when the pause was
+rescinded.  This problem was caused by my change that treated an attempt to
+execute a paused scan as an error.  The sscan record no longer treats this as an
+error.
 
 
 </ul>
