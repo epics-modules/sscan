@@ -1290,11 +1290,15 @@ special(struct dbAddr *paddr, int after)
 		switch (fieldIndex) {
 		case sscanRecordEXSC:
 			if (psscan->exsc) {
+#if 0
 				if (psscan->paus) {
 					sprintf(psscan->smsg, "Scan is paused"); POST(&psscan->smsg);
 					if (!psscan->xsc) {psscan->exsc = 0; POST(&psscan->exsc);}
 					return(-1);
 				} else if (psscan->xsc) {
+#else
+				if (psscan->xsc) {
+#endif
 					/* redundant request to start scan */
 					sprintf(psscan->smsg, "Already scanning"); POST(&psscan->smsg);
 					return(-1);
