@@ -2234,9 +2234,17 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 		pPos->p_cv = -HUGE_VAL;
 		pPosOut_userPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i + NUM_PVS].puserPvt;
 		pPosOut_userPvt->connectInProgress = 1;
+		if (sscanRecordDebug >= 2) {
+			errlogPrintf("%s: calling recDynLinkAddOutput for caLinkStruck[%d] (%p, '%s')\n",
+				psscan->name, i + NUM_PVS, &precPvt->caLinkStruct[i + NUM_PVS], ppvn);
+		}
 		recDynLinkAddOutput(&precPvt->caLinkStruct[i + NUM_PVS], ppvn,
 			  DBR_DOUBLE, rdlSCALAR, pvSearchCallback);
 		puserPvt->connectInProgress = 1;
+		if (sscanRecordDebug >= 2) {
+			errlogPrintf("%s: calling recDynLinkAddInput for caLinkStruck[%d] (%p, '%s')\n",
+				psscan->name, i, &precPvt->caLinkStruct[i], ppvn);
+		}
 		recDynLinkAddInput(&precPvt->caLinkStruct[i], ppvn,
 			   DBR_DOUBLE, rdlSCALAR, pvSearchCallback, posMonCallback);
 		break;
@@ -2252,6 +2260,10 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 		}
 		if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
 			puserPvt->connectInProgress = 1;
+			if (sscanRecordDebug >= 2) {
+				errlogPrintf("%s: calling recDynLinkAddInput for caLinkStruck[%d] (%p, '%s')\n",
+					psscan->name, i, &precPvt->caLinkStruct[i], ppvn);
+			}
 			recDynLinkAddInput(&precPvt->caLinkStruct[i], ppvn,
 			     DBR_DOUBLE, rdlSCALAR, pvSearchCallback, NULL);
 		} else {
@@ -2263,6 +2275,10 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 		if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
 			/* might be array valued, so don't specify rdlSCALAR */
 			puserPvt->connectInProgress = 1;
+			if (sscanRecordDebug >= 2) {
+				errlogPrintf("%s: calling recDynLinkAddInput for caLinkStruck[%d] (%p, '%s')\n",
+					psscan->name, i, &precPvt->caLinkStruct[i], ppvn);
+			}
 			recDynLinkAddInput(&precPvt->caLinkStruct[i], ppvn,
 			      DBR_FLOAT, 0 /*rdlSCALAR*/, pvSearchCallback, NULL);
 		} else {
@@ -2274,6 +2290,10 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 	case READ_ARRAY_TRIG:
 	case BS_AS_LINK:
 		puserPvt->connectInProgress = 1;
+		if (sscanRecordDebug >= 2) {
+			errlogPrintf("%s: calling recDynLinkAddOutput for caLinkStruck[%d] (%p, '%s')\n",
+				psscan->name, i, &precPvt->caLinkStruct[i], ppvn);
+		}
 		recDynLinkAddOutput(&precPvt->caLinkStruct[i], ppvn,
 			      DBR_FLOAT, rdlSCALAR, pvSearchCallback);
 		break;
@@ -4662,7 +4682,7 @@ changedNpts(psscan)
 				(pParms->p_fc << 1) |
 				(pParms->p_fw);
 
-			if (sscanRecordDebug >= 2) {
+			if (sscanRecordDebug >= 5) {
 				errlogPrintf("%s:Freeze State of P%1d = 0x%hx \n", psscan->name, i, freezeState);
 			}
 			/* a table describing what happens is at the end of the file */
@@ -4979,7 +4999,7 @@ previewScan(psscan)
 				pDetBuf[j] = value;
 			}
 			/* now fill the rest of the array(s) with the last values */
-			for (j = j; j < psscan->mpts; j++) {
+			for ( ; j < psscan->mpts; j++) {
 				pPosBuf[j] = pPosBuf[j - 1];
 				pDetBuf[j] = pDetBuf[j - 1];
 			}
