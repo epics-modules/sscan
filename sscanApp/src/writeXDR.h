@@ -5,6 +5,7 @@
 
 typedef int (*xdrproc_t)();
 
+extern int write_XDR_Init();
 extern int writeXDR_char(FILE *fd, char *cp);
 extern int writeXDR_short(FILE *fd, short *sp);
 extern int writeXDR_int(FILE *fd, int *ip);
