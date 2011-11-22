@@ -1,8 +1,29 @@
 /* cygwin include for htonl, etc. */
-#include <asm/byteorder.h>
+/* #include <asm/byteorder.h> */
 
 #include <string.h>
 #include "writeXDR.h"
+
+#define UNKNOWN_E 0
+#define LITTLE_E 1
+#define BIG_E 2
+
+int endianUs = UNKNOWN_E;
+
+union {
+	int i;
+	char a[4];
+} endianTest;
+
+int write_XDR_Init() {
+	endianTest.i = 1;
+	if (endianTest.a[0] == 1)
+		endianUs = LITTLE_E;
+	else
+		endianUs = BIG_E;
+	/* printf("endianTest: We're %s endian\n", endianUs==LITTLE_E ? "little" : "big");*/
+	return(endianUs);
+}
 
 int writeXDR_char(FILE *fd, char *cp) {
 	int i = *cp;
@@ -24,8 +45,16 @@ int writeXDR_int(FILE *fd, int *ip) {
 }
 
 int writeXDR_long(FILE *fd, long *lp) {
-	long mycopy = htonl(*lp);
-	lp = &mycopy;
+	union {
+		unsigned long l;
+		unsigned char c[4];
+	} u;
+
+	if (endianUs == LITTLE_E) {
+		u.l = *lp;
+		u.l = ((u.c[0]<<8 | u.c[1])<<8 | u.c[2])<<8 | u.c[3];
+		lp = (long *)&u.l;
+	}
 	if (fwrite((caddr_t)lp, sizeof(long), 1, fd) != 1)
 		return (0);
 	return (1);
@@ -41,11 +70,11 @@ int writeXDR_double(FILE *fd, double *dp) {
 	long *lp;
 
 	lp = (long *)dp;
-#if defined(__CYGWIN32__) || defined(__MINGW32__)
-	return (writeXDR_long(fd, lp+1) && writeXDR_long(fd, lp));
-#else
-	return (writeXDR_long(fd, lp) && writeXDR_long(fd, lp+1));
-#endif
+	if (endianUs == LITTLE_E)
+		/* #if defined(__CYGWIN32__) || defined(__MINGW32__) */
+		return (writeXDR_long(fd, lp+1) && writeXDR_long(fd, lp));
+	else
+		return (writeXDR_long(fd, lp) && writeXDR_long(fd, lp+1));
 
 }
 
