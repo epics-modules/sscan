@@ -2334,6 +2334,7 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
 			if (pscan->savedSeekPos == EOF) {pscan->savedSeekPos = 0; fclose(fd); return(-1);}
 		}
 	}
+	write_XDR_Init();
 
 	if (pscan->first_scan) {
 		/*----------------------------------------------------------------*/
@@ -2571,6 +2572,8 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
 	    if (fd) fclose(fd);
 		return(-1);
 	}
+
+	write_XDR_Init();
 
 	/* The scan just finished. update buffers and save scan */
 	Debug2(3, "saveData:writeScanRecCompleted: writing %s to %s\n", pscan->name, pscan->fname);
@@ -3058,6 +3061,8 @@ LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
 			if (save_status_chid) ca_array_put(DBR_SHORT, 1, save_status_chid, &save_status);
 			return;
 	}
+
+	write_XDR_Init();
 
 	/* point number  */
 	writeFailed |= !writeXDR_setpos(fd, pscan->cpt_fpos);
