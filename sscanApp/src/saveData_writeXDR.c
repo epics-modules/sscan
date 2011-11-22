@@ -152,8 +152,8 @@
 
  */
 
-#define FILE_FORMAT_VERSION (float)1.3
-#define SAVE_DATA_VERSION   "1.32.0"
+#define FILE_FORMAT_VERSION (float)1.4
+#define SAVE_DATA_VERSION   "1.32.1"
 
 #include <stddef.h>
 #include <stdlib.h>
