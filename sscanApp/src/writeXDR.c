@@ -104,7 +104,7 @@ int writeXDR_string(FILE *fd, char **cpp, int maxsize) {
 
 static char zero[4] = { 0, 0, 0, 0 };
 
-int writeXDR_opaque(FILE *fd, caddr_t cp, int cnt) {
+int writeXDR_opaque(FILE *fd, char *cp, int cnt) {
 	int nPad;
 
 	if (cnt == 0)
@@ -121,7 +121,7 @@ int writeXDR_opaque(FILE *fd, caddr_t cp, int cnt) {
 	return (writeXDR_bytes(fd, zero, 4 - nPad));
 }
 
-int writeXDR_bytes(FILE *fd, caddr_t addr, u_int len) {
+int writeXDR_bytes(FILE *fd, char *addr, u_int len) {
 
 	if ((len != 0) && (fwrite(addr, (int)len, 1, fd) != 1))
 		return (0);
