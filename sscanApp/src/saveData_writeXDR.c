@@ -158,8 +158,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
+
+/* definition of u_int, etc. */
 /* #include <osiUnistd.h> 3.14.11 */
-#include <unistd.h>
+/* #include <unistd.h> */
+#include <sys/types.h>
 
 #ifdef vxWorks
 #include <usrLib.h>
