@@ -2,6 +2,7 @@
 /* #include <asm/byteorder.h> */
 
 #include <string.h>
+
 #include "writeXDR.h"
 
 #define UNKNOWN_E 0
@@ -35,41 +36,41 @@ int writeXDR_char(FILE *fd, char *cp) {
 }
 
 int writeXDR_short(FILE *fd, short *sp) {
-	long l = *sp;
+	epicsInt32 l = *sp;
 	return (writeXDR_long(fd, &l));
 }
 
 int writeXDR_int(FILE *fd, int *ip) {
-	long l = *ip;
+	epicsInt32 l = *ip;
 	return (writeXDR_long(fd, &l));
 }
 
-int writeXDR_long(FILE *fd, long *lp) {
+int writeXDR_long(FILE *fd, epicsInt32 *lp) {
 	union {
-		unsigned long l;
+		epicsUInt32 l;
 		unsigned char c[4];
 	} u;
 
 	if (endianUs == LITTLE_E) {
-		u.l = *lp;
+		u.l = (epicsUInt32) *lp;
 		u.l = ((u.c[0]<<8 | u.c[1])<<8 | u.c[2])<<8 | u.c[3];
-		lp = (long *)&u.l;
+		lp = (epicsInt32 *)&u.l;
 	}
-	if (fwrite((caddr_t)lp, sizeof(long), 1, fd) != 1)
+	if (fwrite((char *)lp, sizeof(epicsInt32), 1, fd) != 1)
 		return (0);
 	return (1);
 }
 
 
 int writeXDR_float(FILE *fd, float *fp) {
-	return (writeXDR_long(fd, (long *)fp));
+	return (writeXDR_long(fd, (epicsInt32 *)fp));
 }
 
 
 int writeXDR_double(FILE *fd, double *dp) {
-	long *lp;
+	epicsInt32 *lp;
 
-	lp = (long *)dp;
+	lp = (epicsInt32 *)dp;
 	if (endianUs == LITTLE_E)
 		/* #if defined(__CYGWIN32__) || defined(__MINGW32__) */
 		return (writeXDR_long(fd, lp+1) && writeXDR_long(fd, lp));
