@@ -37,15 +37,20 @@ int writeXDR_char(FILE *fd, char *cp) {
 
 int writeXDR_short(FILE *fd, short *sp) {
 	epicsInt32 l = *sp;
-	return (writeXDR_long(fd, &l));
+	return (writeXDR_epicsInt32(fd, &l));
 }
 
 int writeXDR_int(FILE *fd, int *ip) {
 	epicsInt32 l = *ip;
-	return (writeXDR_long(fd, &l));
+	return (writeXDR_epicsInt32(fd, &l));
 }
 
-int writeXDR_long(FILE *fd, epicsInt32 *lp) {
+int writeXDR_long(FILE *fd, long *longp) {
+	epicsInt32 l32 = (epicsInt32)*longp;
+	return (writeXDR_epicsInt32(fd, &l32));
+}
+
+int writeXDR_epicsInt32(FILE *fd, epicsInt32 *lp) {
 	union {
 		epicsUInt32 l;
 		unsigned char c[4];
@@ -61,9 +66,8 @@ int writeXDR_long(FILE *fd, epicsInt32 *lp) {
 	return (1);
 }
 
-
 int writeXDR_float(FILE *fd, float *fp) {
-	return (writeXDR_long(fd, (epicsInt32 *)fp));
+	return (writeXDR_epicsInt32(fd, (epicsInt32 *)fp));
 }
 
 
@@ -73,9 +77,9 @@ int writeXDR_double(FILE *fd, double *dp) {
 	lp = (epicsInt32 *)dp;
 	if (endianUs == LITTLE_E)
 		/* #if defined(__CYGWIN32__) || defined(__MINGW32__) */
-		return (writeXDR_long(fd, lp+1) && writeXDR_long(fd, lp));
+		return (writeXDR_epicsInt32(fd, lp+1) && writeXDR_epicsInt32(fd, lp));
 	else
-		return (writeXDR_long(fd, lp) && writeXDR_long(fd, lp+1));
+		return (writeXDR_epicsInt32(fd, lp) && writeXDR_epicsInt32(fd, lp+1));
 
 }
 
