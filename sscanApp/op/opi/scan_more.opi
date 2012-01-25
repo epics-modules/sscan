@@ -7,7 +7,7 @@
   <scripts />
   <show_ruler>true</show_ruler>
   <height>400</height>
-  <name>$(scan_more)</name>
+  <name>scan_more</name>
   <snap_to_geometry>false</snap_to_geometry>
   <show_grid>false</show_grid>
   <background_color>
