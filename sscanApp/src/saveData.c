@@ -2282,6 +2282,7 @@ LOCAL int saveExtraPV(XDR* pxdrs)
 			epicsMutexUnlock(pcur->lock);
 			pcur= pcur->nxt;
 		}
+		ca_flush_io();
 	}
 	return(writeFailed ? -1 : 0);
 }
