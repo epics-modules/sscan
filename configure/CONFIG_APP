@@ -17,8 +17,5 @@ ifdef T_A
 -include $(TOP)/configure/O.$(T_A)/CONFIG_APP_INCLUDE
 endif
 
-# Use sscan's own implementation of xdr (YES, NO)
-SSCAN_LOCAL_XDR = NO
-
 # dbst based database optimization (default: NO)
 DB_OPT = NO
