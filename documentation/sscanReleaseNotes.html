@@ -10,6 +10,28 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
+<h2 align="center">Release ?-? - ? ?, ?</h2>
+<ul>
+
+<li>Previously, saveData could not be buit on WIN32 because Windows has no XDR
+library.  The file saveData_writeXDR.c uses a local implementation (writeXDR) of
+XDR's file writing specification that doesn't require any help from the OS. 
+This support runs on any OS, but it's likely to be slower than system
+implementations, and so should be used only for WIN32.  Probably
+saveData_writeXDR.c will replace saveDataWin32.c in the next version.
+
+<li>Previously, aborting a sscan record that was already idle was treated as an
+error (special returned -1, which could be confusing to clients, and served no
+useful purpose).  Thanks to Sergey Stepanov for noticing this very long-standing
+problem.
+
+<li>Previously, saveData did not flush the channel access output buffer after
+doing cagets for extra PVs.  This resulted in some PVs having stale values in
+the data file - particularly PVs repeated by a PV gateway.  Thanks to Wang
+Xiaoqiang (PSI) for this fix.
+
+</ul>
+
 <h2 align="center">Release 2-7 - August 26, 2011</h2>
 <ul>
 
