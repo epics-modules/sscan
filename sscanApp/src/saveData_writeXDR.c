@@ -2405,7 +2405,7 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
 		pscan->nxt->offset = lval; /* tell inner scan where to write its offset */
 		Debug3(15, "saveData:writeScanRecInProgress(%s) telling %s to write its next offset at loc %ld\n",
 			pscan->name, pscan->nxt->name, lval);
-		writeFailed |= !writeXDR_setpos(fd, lval+pscan->npts*sizeof(long));
+		writeFailed |= !writeXDR_setpos(fd, lval+pscan->npts*sizeof(epicsInt32));
 	}
 	if (writeFailed) goto cleanup;
 
