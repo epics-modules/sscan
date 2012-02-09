@@ -1825,19 +1825,19 @@ LOCAL void extraValCallback(struct event_handler_args eha)
 		/* logMsg("extraValCallback: count=%d, strlen=%d\n", count, size); */
 		break;
 	case DBR_CTRL_CHAR:
-		size= dbr_size[DBR_CTRL_CHAR]+(count-1);
+		size= dbr_size_n(DBR_CTRL_CHAR, count);
 		break;
 	case DBR_CTRL_SHORT:
-		size= dbr_size[DBR_CTRL_SHORT]+(count-1)*sizeof(short);
+		size= dbr_size_n(DBR_CTRL_SHORT, count);
 		break;
 	case DBR_CTRL_LONG:
-		size= dbr_size[DBR_CTRL_LONG]+(count-1)*sizeof(long);
+		size= dbr_size_n(DBR_CTRL_LONG, count);
 		break;
 	case DBR_CTRL_FLOAT:
-		size= dbr_size[DBR_CTRL_FLOAT]+(count-1)*sizeof(float);
+		size= dbr_size_n(DBR_CTRL_FLOAT, count);
 		break;
 	case DBR_CTRL_DOUBLE:
-		size= dbr_size[DBR_CTRL_DOUBLE]+(count-1)*sizeof(double);
+		size= dbr_size_n(DBR_CTRL_DOUBLE, count);
 		break;
 	default:
 		printf("saveDta: unsupported dbr_type %d\n", (int)type);
@@ -1915,11 +1915,11 @@ LOCAL int connectPV(char* pv, char* desc)
 		break;
 	case DBR_CHAR:
 		pnode->dbr_type= DBR_CTRL_CHAR;
-		size= dbr_size[DBR_CTRL_CHAR]+ (count-1);
+		size= dbr_size_n(DBR_CTRL_CHAR, count);
 		break;
 	case DBR_SHORT:
 		pnode->dbr_type= DBR_CTRL_SHORT;
-		size= dbr_size[DBR_CTRL_SHORT]+ (count-1)*sizeof(short);
+		size= dbr_size_n(DBR_CTRL_SHORT, count);
 		break;
 	case DBR_ENUM:
 		pnode->dbr_type= DBR_STRING;
@@ -1928,15 +1928,15 @@ LOCAL int connectPV(char* pv, char* desc)
 		break;
 	case DBR_LONG:
 		pnode->dbr_type= DBR_CTRL_LONG;
-		size= dbr_size[DBR_CTRL_LONG]+ (count-1) * sizeof(long);
+		size= dbr_size_n(DBR_CTRL_LONG, count);
 		break;
 	case DBR_FLOAT:
 		pnode->dbr_type= DBR_CTRL_FLOAT;
-		size= dbr_size[DBR_CTRL_FLOAT]+ (count-1) * sizeof(float);
+		size= dbr_size_n(DBR_CTRL_FLOAT, count);
 		break;
 	case DBR_DOUBLE:
 		pnode->dbr_type= DBR_CTRL_DOUBLE;
-		size= dbr_size[DBR_CTRL_DOUBLE]+ (count-1) * sizeof(double);
+		size= dbr_size_n(DBR_CTRL_DOUBLE, count);
 		break;
 	default:
 		printf("saveData: %s has an unsupported type\n", pv);
@@ -2265,7 +2265,7 @@ LOCAL int saveExtraPV(XDR* pxdrs)
 			case DBR_CTRL_LONG:
 				cptr= pval->clngval.units;
 				writeFailed |= !xdr_counted_string(pxdrs, &cptr);
-				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->clngval.value,count, sizeof(long),(xdrproc_t)xdr_long);
+				writeFailed |= !xdr_vector(pxdrs,(char*)&pval->clngval.value,count, sizeof(epicsInt32),(xdrproc_t)xdr_int);
 				break;
 			case DBR_CTRL_FLOAT:
 				cptr= pval->cfltval.units;
