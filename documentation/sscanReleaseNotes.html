@@ -34,6 +34,10 @@ NPTS*4 extra bytes immediately preceding the name of outer-loop sscan-record
 names, because it calculated file offsets using sizeof(long) instead of
 sizeof(epicsInt32).  Thanks to Eric Berryman for reporting the problem.
 
+<li>Previously, writing an array of DBF_LONG or DBF_USHORT failed on 64-bit OS. 
+This happened when such an array was specified in the "extraPV" section of
+saveData.req
+
 </ul>
 
 <h2 align="center">Release 2-7 - August 26, 2011</h2>
