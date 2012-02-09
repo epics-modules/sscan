@@ -160,31 +160,34 @@
 #include <stdarg.h>
 
 #ifdef linux
-/* definition of close() */
-/* #include <osiUnistd.h> 3.14.11 */
-#include <unistd.h>
+	#include <unistd.h>
 #endif
 
 /* definition of u_int, etc. */
 #include <sys/types.h>
 
-#ifdef vxWorks
-#include <usrLib.h>
-#include <ioLib.h>
-
-/* nfsDrv.h was renamed nfsDriver.h in Tornado 2.2.2 */
-/* #include	<nfsDrv.h> */
-extern STATUS nfsMount(char *host, char *fileSystem, char *localName);
-extern STATUS nfsUnmount(char *localName);
-
-#else
-#include <sys/stat.h>
-#include <fcntl.h>
-#define OK 0
-#define ERROR -1
+#ifdef _WIN32
+	#include <direct.h>
+	#include <io.h>
+	typedef unsigned int    u_int;
 #endif
 
-#include <sys/types.h>
+#ifdef vxWorks
+	#include <usrLib.h>
+	#include <ioLib.h>
+
+	/* nfsDrv.h was renamed nfsDriver.h in Tornado 2.2.2 */
+	/* #include	<nfsDrv.h> */
+	extern STATUS nfsMount(char *host, char *fileSystem, char *localName);
+	extern STATUS nfsUnmount(char *localName);
+
+#else
+	#include <sys/stat.h>
+	#include <fcntl.h>
+	#define OK 0
+	#define ERROR -1
+#endif
+
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -1829,19 +1832,19 @@ LOCAL void extraValCallback(struct event_handler_args eha)
 		/* logMsg("extraValCallback: count=%d, strlen=%d\n", count, size); */
 		break;
 	case DBR_CTRL_CHAR:
-		size= dbr_size[DBR_CTRL_CHAR]+(count-1);
+		size = dbr_size_n(DBR_CTRL_CHAR, count);
 		break;
 	case DBR_CTRL_SHORT:
-		size= dbr_size[DBR_CTRL_SHORT]+(count-1)*sizeof(short);
+		size = dbr_size_n(DBR_CTRL_SHORT, count);
 		break;
 	case DBR_CTRL_LONG:
-		size= dbr_size[DBR_CTRL_LONG]+(count-1)*sizeof(long);
+		size = dbr_size_n(DBR_CTRL_LONG, count);
 		break;
 	case DBR_CTRL_FLOAT:
-		size= dbr_size[DBR_CTRL_FLOAT]+(count-1)*sizeof(float);
+		size = dbr_size_n(DBR_CTRL_FLOAT, count);
 		break;
 	case DBR_CTRL_DOUBLE:
-		size= dbr_size[DBR_CTRL_DOUBLE]+(count-1)*sizeof(double);
+		size = dbr_size_n(DBR_CTRL_DOUBLE, count);
 		break;
 	default:
 		printf("saveDta: unsupported dbr_type %d\n", (int)type);
@@ -1919,11 +1922,11 @@ LOCAL int connectPV(char* pv, char* desc)
 		break;
 	case DBR_CHAR:
 		pnode->dbr_type= DBR_CTRL_CHAR;
-		size= dbr_size[DBR_CTRL_CHAR]+ (count-1);
+		size = dbr_size_n(DBR_CTRL_CHAR, count);
 		break;
 	case DBR_SHORT:
 		pnode->dbr_type= DBR_CTRL_SHORT;
-		size= dbr_size[DBR_CTRL_SHORT]+ (count-1)*sizeof(short);
+		size = dbr_size_n(DBR_CTRL_SHORT, count);
 		break;
 	case DBR_ENUM:
 		pnode->dbr_type= DBR_STRING;
@@ -1932,15 +1935,15 @@ LOCAL int connectPV(char* pv, char* desc)
 		break;
 	case DBR_LONG:
 		pnode->dbr_type= DBR_CTRL_LONG;
-		size= dbr_size[DBR_CTRL_LONG]+ (count-1) * sizeof(long);
+		size = dbr_size_n(DBR_CTRL_LONG, count);
 		break;
 	case DBR_FLOAT:
 		pnode->dbr_type= DBR_CTRL_FLOAT;
-		size= dbr_size[DBR_CTRL_FLOAT]+ (count-1) * sizeof(float);
+		size = dbr_size_n(DBR_CTRL_FLOAT, count);
 		break;
 	case DBR_DOUBLE:
 		pnode->dbr_type= DBR_CTRL_DOUBLE;
-		size= dbr_size[DBR_CTRL_DOUBLE]+ (count-1) * sizeof(double);
+		size = dbr_size_n(DBR_CTRL_DOUBLE, count);
 		break;
 	default:
 		printf("saveData: %s has an unsupported type\n", pv);
@@ -2268,7 +2271,7 @@ LOCAL int saveExtraPV(FILE *fd)
 			case DBR_CTRL_LONG:
 				cptr= pval->clngval.units;
 				writeFailed |= !writeXDR_counted_string(fd, &cptr);
-				writeFailed |= !writeXDR_vector(fd,(char*)&pval->clngval.value,count, sizeof(long),(xdrproc_t)writeXDR_long);
+				writeFailed |= !writeXDR_vector(fd,(char*)&pval->clngval.value,count, sizeof(epicsInt32),(xdrproc_t)writeXDR_int);
 				break;
 			case DBR_CTRL_FLOAT:
 				cptr= pval->cfltval.units;
@@ -2285,6 +2288,7 @@ LOCAL int saveExtraPV(FILE *fd)
 			epicsMutexUnlock(pcur->lock);
 			pcur= pcur->nxt;
 		}
+		ca_flush_io();
 	}
 	return(writeFailed ? -1 : 0);
 }
