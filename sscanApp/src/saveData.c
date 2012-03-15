@@ -734,7 +734,11 @@ LOCAL int checkRWpermission(char* path) {
 		return ERROR;
 	}
 
+#ifdef vxWorks
+	file= creat(tmpfile, 0640);
+#else
 	file= creat(tmpfile, O_RDWR);
+#endif
 
 	if (fileStatus(tmpfile)!=OK) {
 		return ERROR;
