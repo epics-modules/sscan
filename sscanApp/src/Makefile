@@ -55,3 +55,6 @@ include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
 
+# Parallel build sometimes fails.
+# Make dependences on sscanRecord.h explicit.
+sscanRecord(OBJ):  $(COMMON_DIR)/sscanRecord.h
