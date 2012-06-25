@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <epicsTypes.h>
 
+#ifdef _WIN32
+    typedef unsigned int    u_int;
+    typedef char*    caddr_t;
+#endif
 typedef int (*xdrproc_t)();
 
 extern int write_XDR_Init();
@@ -18,4 +22,4 @@ extern int writeXDR_opaque(FILE *fd, caddr_t cp, int cnt);
 extern int writeXDR_bytes(FILE *fd, caddr_t addr, u_int len);
 extern int writeXDR_vector(FILE *fd, char *basep, int nelem, int elemsize, xdrproc_t xdr_elem);
 extern long writeXDR_getpos(FILE *fd);
-extern int writeXDR_setpos(FILE *fd, long pos); 
+extern int writeXDR_setpos(FILE *fd, long pos);
