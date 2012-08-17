@@ -329,6 +329,7 @@
 #include	"recDynLink.h"
 #include "epicsExport.h"
 
+#include "menuSscan.h"
 #define GEN_SIZE_OFFSET
 #include "sscanRecord.h"
 #undef  GEN_SIZE_OFFSET
