@@ -187,7 +187,7 @@ extern STATUS nfsUnmount(char *localName);
 #include <dbEvent.h>
 #include <special.h>
 #include <cadef.h>
-#include <tsDefs.h>
+/* not in 3.15.0.1 #include <tsDefs.h> */
 #include <epicsMutex.h>
 #include <epicsMessageQueue.h>
 #include <epicsThread.h>
