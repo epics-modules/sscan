@@ -27,18 +27,23 @@ DBDINC += menuSscan
 DBD += sscan.dbd
 DBD += sscanSupport.dbd
 DBD += menuSscan.dbd
-
+ifdef SNCSEQ
+	DBD += sscanProgressSupport.dbd
+endif
 INC += recDynLink.h
 
 #=============================
 
 LIBRARY_IOC += sscan
-
 sscan_SRCS += sscanRecord.c
 sscan_SRCS += scanparmRecord.c
 sscan_SRCS += recDynLink.c
 sscan_SRCS += req_file.c
-sscan_SRCS += scanProgress.st
+
+ifdef SNCSEQ
+	LIBRARY_IOC += scanProgress
+	scanProgress_SRCS += scanProg.st
+endif
 
 # save scan data stuff
 # XDR not available on WIN32
@@ -52,7 +57,10 @@ sscan_SYS_LIBS_cygwin32 += $(CYGWIN_RPC_LIB)
 endif
 
 # for scanProgress
-sscan_LIBS += seq pv
+ifdef SNCSEQ
+	scanProgress_LIBS += seq pv
+	scanProgress_LIBS += $(EPICS_BASE_IOC_LIBS)
+endif
 
 sscan_LIBS += $(EPICS_BASE_IOC_LIBS)
 
