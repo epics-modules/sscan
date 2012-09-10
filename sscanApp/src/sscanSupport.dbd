@@ -28,4 +28,6 @@ variable("sscanRecordViewPos", int)
 variable("sscanRecordDontCheckLimits", int)
 variable("sscanRecordLookupTime", int)
 variable("sscanRecordConnectWaitSeconds", int)
-registrar(scanProgressRegistrar)
+# Don't put this here, because it would require all users
+# of sscan to use the sequencer
+#registrar(scanProgressRegistrar)
