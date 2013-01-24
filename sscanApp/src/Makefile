@@ -29,6 +29,7 @@ DBD += sscanSupport.dbd
 DBD += menuSscan.dbd
 ifdef SNCSEQ
 	DBD += sscanProgressSupport.dbd
+	sscanSupport_DBD += sscanProgressSupport.dbd
 endif
 INC += recDynLink.h
 
