@@ -57,5 +57,5 @@ include $(TOP)/configure/RULES
 # Parallel build sometimes fails.
 # # Make dependences on mcaRecord.h explicit.
 sscanRecord$(OBJ): $(COMMON_DIR)/sscanRecord.h
-scanParamRecord$(OBJ): $(COMMON_DIR)/scanParamRecord.h
+scanparmRecord$(OBJ): $(COMMON_DIR)/scanparmRecord.h
 
