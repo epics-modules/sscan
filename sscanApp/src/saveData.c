@@ -735,7 +735,7 @@ LOCAL int checkRWpermission(char* path) {
 	}
 
 #ifdef vxWorks
-	file= creat(tmpfile, 0640);
+	file = open (tmpfile, O_CREAT | O_RDWR, 0666);
 #else
 	file= creat(tmpfile, O_RDWR);
 #endif
