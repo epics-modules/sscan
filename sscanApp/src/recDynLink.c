@@ -41,12 +41,9 @@ of this distribution.
 #include <taskwd.h>
 #include <dbDefs.h>
 
-/* what do I have to change for 3.15.0.1? */
-/* #include <dbAccessDefs.h> */
 #include <dbAddr.h>
-epicsShareFunc long dbNameToAddr(const char *pname,struct dbAddr *);
-
-/* end for 3.15.0.1 */
+/* #include <dbAccessDefs.h> */
+epicsShareFunc long epicsShareAPI dbNameToAddr(const char *pname,struct dbAddr *); 
 
 #include <epicsPrint.h>
 #include <db_access.h>
