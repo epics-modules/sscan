@@ -1,0 +1,1039 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>480</width>
+    <height>425</height>
+   </rect>
+  </property>
+  <property name="styleSheet">
+   <string>
+
+QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
+
+</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <widget class="caRelatedDisplay" name="caRelatedDisplay_119">
+    <property name="geometry">
+     <rect>
+      <x>410</x>
+      <y>400</y>
+      <width>70</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="label">
+     <string notr="true">Less</string>
+    </property>
+    <property name="foreground">
+     <color>
+      <red>255</red>
+      <green>255</green>
+      <blue>255</blue>
+     </color>
+    </property>
+    <property name="background">
+     <color>
+      <red>51</red>
+      <green>153</green>
+      <blue>0</blue>
+     </color>
+    </property>
+    <property name="labels">
+     <string notr="true">caScan2dMenu</string>
+    </property>
+    <property name="files">
+     <string notr="true">caScan2dMenu.ui</string>
+    </property>
+    <property name="args">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN)	</string>
+    </property>
+    <property name="stackingMode" stdset="0">
+     <enum>caRowColMenu::Menu</enum>
+    </property>
+    <property name="removeParent" stdset="0">
+     <string>true</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D01</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_2">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>20</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D02</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_3">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>40</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D03</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_4">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>60</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D04</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_5">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>80</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D05</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_6">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>100</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D06</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_7">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>120</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D07</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_8">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>140</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D08</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_9">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>160</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D09</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_10">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>180</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D10</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_11">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>200</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D11</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_12">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>220</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D12</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_13">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>240</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D13</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_14">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>260</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D14</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_15">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>280</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D15</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_16">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>300</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D16</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_17">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>320</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D17</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_18">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>340</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D18</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_19">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>360</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D19</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_20">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>380</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D20</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_21">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>160</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D29</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_22">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>140</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D28</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_23">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>340</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D38</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_24">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>380</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D40</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_25">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>80</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D25</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_26">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>280</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D35</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_27">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>20</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D22</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_28">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>360</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D39</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_29">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>220</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D32</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_30">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>0</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D21</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_31">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>240</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D33</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_32">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>180</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D30</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_33">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>120</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D27</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_34">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>40</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D23</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_35">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>200</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D31</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_36">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>300</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D36</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_37">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>60</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D24</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_38">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>260</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D34</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_39">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>100</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D26</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_40">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>320</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D37</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_41">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>0</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D41</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_42">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>360</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D59</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_43">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>340</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D58</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_44">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>100</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D46</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_45">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>300</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D56</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_46">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>380</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D60</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_47">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>140</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D48</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_48">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>40</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D43</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_49">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>80</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D45</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_50">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>220</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D52</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_51">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>280</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D55</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_52">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>180</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D50</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_53">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>200</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D51</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_54">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>240</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D53</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_55">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>160</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D49</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_56">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>60</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D44</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_57">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>320</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D57</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_58">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>120</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D47</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_59">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>20</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D42</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="cainclude_60">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>260</y>
+      <width>160</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D54</string>
+    </property>
+    <property name="filename" stdset="0">
+     <string notr="true">caScan2dMenuEntry_bare.ui</string>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>caRelatedDisplay</class>
+   <extends>QWidget</extends>
+   <header>caRelatedDisplay</header>
+  </customwidget>
+  <customwidget>
+   <class>caInclude</class>
+   <extends>QWidget</extends>
+   <header>caInclude</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
