@@ -51,7 +51,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      <string notr="true">caScan2dMenu.ui</string>
     </property>
     <property name="args">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN)	</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),SAVEDATAPATH=$(SAVEDATAPATH)	</string>
     </property>
     <property name="stackingMode" stdset="0">
      <enum>caRowColMenu::Menu</enum>
@@ -70,7 +70,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D01</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D01,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -86,7 +86,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D02</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D02,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -102,7 +102,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D03</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D03,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -118,7 +118,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D04</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D04,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -134,7 +134,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D05</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D05,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -150,7 +150,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D06</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D06,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -166,7 +166,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D07</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D07,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -182,7 +182,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D08</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D08,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -198,7 +198,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D09</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D09,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -214,7 +214,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D10</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D10,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -230,7 +230,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D11</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D11,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -246,7 +246,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D12</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D12,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -262,7 +262,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D13</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D13,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -278,7 +278,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D14</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D14,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -294,7 +294,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D15</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D15,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -310,7 +310,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D16</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D16,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -326,7 +326,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D17</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D17,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -342,7 +342,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D18</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D18,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -358,7 +358,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D19</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D19,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -374,7 +374,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D20</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D20,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -390,7 +390,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D29</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D29,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -406,7 +406,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D28</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D28,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -422,7 +422,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D38</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D38,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -438,7 +438,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D40</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D40,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -454,7 +454,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D25</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D25,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -470,7 +470,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D35</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D35,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -486,7 +486,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D22</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D22,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -502,7 +502,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D39</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D39,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -518,7 +518,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D32</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D32,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -534,7 +534,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D21</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D21,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -550,7 +550,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D33</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D33,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -566,7 +566,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D30</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D30,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -582,7 +582,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D27</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D27,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -598,7 +598,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D23</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D23,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -614,7 +614,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D31</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D31,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -630,7 +630,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D36</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D36,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -646,7 +646,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D24</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D24,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -662,7 +662,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D34</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D34,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -678,7 +678,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D26</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D26,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -694,7 +694,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D37</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D37,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -710,7 +710,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D41</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D41,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -726,7 +726,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D59</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D59,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -742,7 +742,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D58</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D58,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -758,7 +758,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D46</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D46,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -774,7 +774,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D56</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D56,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -790,7 +790,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D60</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D60,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -806,7 +806,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D48</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D48,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -822,7 +822,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D43</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D43,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -838,7 +838,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D45</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D45,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -854,7 +854,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D52</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D52,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -870,7 +870,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D55</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D55,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -886,7 +886,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D50</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D50,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -902,7 +902,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D51</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D51,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -918,7 +918,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D53</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D53,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -934,7 +934,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D49</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D49,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -950,7 +950,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D44</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D44,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -966,7 +966,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D57</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D57,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -982,7 +982,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D47</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D47,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -998,7 +998,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D42</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D42,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
@@ -1014,7 +1014,7 @@ QWidget#centralWidget {background: rgba(236, 236, 236, 255);}
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D54</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=D54,SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2dMenuEntry_bare.ui</string>
