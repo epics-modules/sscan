@@ -47,7 +47,7 @@
      <string notr="true">caScan2D.ui</string>
     </property>
     <property name="args">
-     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=$(DET)	</string>
+     <string notr="true">P=$(P),XSCAN=$(XSCAN),YSCAN=$(YSCAN),DET=$(DET),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="stackingMode" stdset="0">
      <enum>caRowColMenu::Menu</enum>
