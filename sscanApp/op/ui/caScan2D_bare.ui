@@ -70,7 +70,7 @@ caTable {
      <string notr="true">$(P)$(YSCAN).DATA{&quot;monitor&quot;:{&quot;maxdisplayrate&quot;:10}}</string>
     </property>
     <property name="channelSAVEDATA_PATH" stdset="0">
-     <string>$(P)saveData_fileSystem</string>
+     <string>$(SAVEDATAPATH)</string>
     </property>
     <property name="channelSAVEDATA_SUBDIR" stdset="0">
      <string>$(P)saveData_subDir</string>
