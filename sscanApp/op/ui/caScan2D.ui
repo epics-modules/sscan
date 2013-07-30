@@ -42,7 +42,7 @@ caTable {
      <bool>true</bool>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
