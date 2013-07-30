@@ -42,7 +42,7 @@ caTable {
      <bool>true</bool>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET1)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET1),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
@@ -58,7 +58,7 @@ caTable {
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET2)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET2),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
@@ -74,7 +74,7 @@ caTable {
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET3)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET3),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
@@ -90,7 +90,7 @@ caTable {
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET4)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET4),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
@@ -106,7 +106,7 @@ caTable {
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET5)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET5),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
@@ -122,7 +122,7 @@ caTable {
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET8)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET8),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
@@ -138,7 +138,7 @@ caTable {
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET9)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET9),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
@@ -154,7 +154,7 @@ caTable {
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET10)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET10),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
@@ -173,7 +173,7 @@ caTable {
      <bool>true</bool>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET6)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET6),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
@@ -189,7 +189,7 @@ caTable {
      </rect>
     </property>
     <property name="macro">
-     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET7)</string>
+     <string notr="true">P=$(P),XSCAN=scan1,YSCAN=scan2,DET=$(DET7),SAVEDATAPATH=$(SAVEDATAPATH)</string>
     </property>
     <property name="filename" stdset="0">
      <string notr="true">caScan2D_bare.ui</string>
