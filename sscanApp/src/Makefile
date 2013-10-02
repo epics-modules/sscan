@@ -25,8 +25,8 @@ DBDINC += menuSscan
 
 # <name>.dbd will be created from <name>Include.dbd
 DBD += sscan.dbd
-DBD_INSTALLS += sscanSupport.dbd
-DBD_INSTALLS += sscanProgressSupport.dbd
+DBD += sscanSupport.dbd
+DBD += sscanProgressSupport.dbd
 DBD += menuSscan.dbd
 INC += recDynLink.h
 
