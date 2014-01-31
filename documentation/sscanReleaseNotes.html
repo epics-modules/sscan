@@ -10,6 +10,23 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
+<h2 align="center">Release 2-10beta1 - Jan. 1, 2014</h2>
+<ul>
+
+<li>Changed DBD_INSTALLS to DBD for sscanSupport and sscanProgressSupport
+
+<li>scanparm record: Wait until sscan record's BUSY field is True before
+exiting, otherwise a second attempt to process the scanparm record will succeed
+and interfere with the still-unfinished first attempt.
+
+<li>sscanRecord: More thorough mutex lock around PV-status checks and updates. 
+Initialize p_pp when positioner PV changes, so we can detect a value that hasn't
+been updated from the new PV.  More thorough PV-status check in checkConnections
+(also check dbAddrNv or  recDynLinkConnectionStatus()).
+
+
+</ul>
+
 <h2 align="center">Release 2-9 - Apr. 17, 2013</h2>
 <ul>
 
