@@ -136,6 +136,7 @@ static long process(psr)
 scanparmRecord *psr;
 {
 	long status=0;
+	int i;
 
 	status = dbGetLink(&(psr->iact), DBR_SHORT, &(psr->act), NULL, NULL);
 	if (status) return(status);
@@ -209,7 +210,6 @@ scanparmRecord *psr;
 				if (scanparmRecordDebug) {
 					printf("scanparm(%s):process:starting scan\n", psr->name);
 				}
-
 				if (psr->oaqt.value.pv_link.pvname && 
 					psr->oaqt.value.pv_link.pvname[0])
 					status = dbPutLink(&(psr->oaqt), DBR_DOUBLE, &(psr->aqt), 1);
@@ -218,6 +218,14 @@ scanparmRecord *psr;
 					psr->osc.value.pv_link.pvname[0])
 					status = dbPutLink(&(psr->osc), DBR_SHORT, &(psr->sc), 1);
 				if (status) return(status);
+
+				/* wait until the scanRecord's BUSY field is True */
+				for (i=0; i<30; i++) {
+					status = dbGetLink(&(psr->iact), DBR_SHORT, &(psr->act), NULL, NULL);
+					if (status) return(status);
+					if (psr->act) break;
+					epicsThreadSleep(0.1);
+				}
 			}
 		}
 	}
