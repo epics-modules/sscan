@@ -1507,6 +1507,10 @@ if (pscan->nxt) {
 		if (sval == 1) {
 			/* hand shaking notify */
 			if (pscan->chandShake) {
+				/* We should not have to do this anymore, because connectScan() sets the sscan
+				 * record's .AAWAIT field, which causes the sscan record to set its own AWAIT
+				 * field immediately after it posts its .DATA field.
+				 */
 				newData = HANDSHAKE_BUSY;
 				/* printf("dataMonitor: putting %d to %s.AWAIT\n", newData, pscan->name); */
 				ca_array_put(DBR_SHORT, 1, pscan->chandShake, &newData);
