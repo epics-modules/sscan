@@ -65,6 +65,7 @@
 #include        <epicsExport.h>
 
 volatile int scanparmRecordDebug=0;
+epicsExportAddress(int, scanparmRecordDebug);
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -135,8 +136,9 @@ int pass;
 static long process(psr)
 scanparmRecord *psr;
 {
-	long status=0;
+	long status=0, isRemote=0;
 	int i;
+	struct dbAddr dbAddr;
 
 	status = dbGetLink(&(psr->iact), DBR_SHORT, &(psr->act), NULL, NULL);
 	if (status) return(status);
@@ -219,13 +221,27 @@ scanparmRecord *psr;
 					status = dbPutLink(&(psr->osc), DBR_SHORT, &(psr->sc), 1);
 				if (status) return(status);
 
-				/* wait until the scanRecord's BUSY field is True */
-				for (i=0; i<30; i++) {
-					status = dbGetLink(&(psr->iact), DBR_SHORT, &(psr->act), NULL, NULL);
-					if (status) return(status);
-					if (psr->act) break;
-					epicsThreadSleep(0.1);
+#if 1
+				/* if sscan record is in a different ioc, wait for its BUSY field to be
+				 * True before returning.  This defends against being run again while sscan
+				 * record is in the process of starting the scan.  Can't do this if we're
+				 * in the same ioc, because sscan record will run in our task, so we'd be
+				 * waiting for something that won't happen until after we exit.
+				 */
+				if (psr->osc.value.pv_link.pvname && 
+					psr->osc.value.pv_link.pvname[0]) {
+					isRemote = dbNameToAddr(psr->osc.value.pv_link.pvname, &dbAddr);
+					if (isRemote) {
+						/* wait until the scanRecord's BUSY field is True */
+						for (i=0; i<30; i++) {
+							status = dbGetLink(&(psr->iact), DBR_SHORT, &(psr->act), NULL, NULL);
+							if (status) return(status);
+							if (psr->act) break;
+							epicsThreadSleep(0.1);
+						}
+					}
 				}
+#endif
 			}
 		}
 	}
