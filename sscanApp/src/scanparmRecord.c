@@ -221,7 +221,7 @@ scanparmRecord *psr;
 					status = dbPutLink(&(psr->osc), DBR_SHORT, &(psr->sc), 1);
 				if (status) return(status);
 
-#if 1
+#if 0
 				/* if sscan record is in a different ioc, wait for its BUSY field to be
 				 * True before returning.  This defends against being run again while sscan
 				 * record is in the process of starting the scan.  Can't do this if we're
