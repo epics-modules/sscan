@@ -170,6 +170,11 @@
 extern STATUS nfsMount(char *host, char *fileSystem, char *localName);
 extern STATUS nfsUnmount(char *localName);
 
+#include <version.h>
+#define XX_VERSION_INT(A, B) (((A)<<8) | (B))
+#define VW_VERSION_INT XX_VERSION_INT(_WRS_VXWORKS_MAJOR, _WRS_VXWORKS_MINOR)
+#define LT_VW(MAJOR, MINOR) (VW_VERSION_INT < XX_VERSION_INT(MAJOR, MINOR))
+
 #else
 #include <sys/stat.h>
 #include <fcntl.h>
