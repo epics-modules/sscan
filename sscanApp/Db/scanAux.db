@@ -1,2 +1,3 @@
-grecord(sscan,"$(P)scanAux") {
+grecord(sscan,"$(P)$(S)") {
+  field(MPTS, "$(MAXPTS=100)")
 }
