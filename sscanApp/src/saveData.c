@@ -2103,8 +2103,10 @@ LOCAL int initSaveDataTask()
 		printf("saveData: counter pv name not defined\n");
 		return -1;
 	}
-	if (connectCounter(buff1)==-1) return -1;
-
+	if (connectCounter(buff1)==-1) {
+		printf("saveData: connectCounter(%s) failed \n", buff1);
+		return -1;
+	}
 
 	/* Connect to saveData_fileSystem                                     */
 	if (req_gotoSection(rf, "fileSystem")!=0) {
@@ -2115,8 +2117,10 @@ LOCAL int initSaveDataTask()
 		printf("saveData: fileSystem pv name not defined\n");
 		return -1;
 	}
-	if (connectFileSystem(buff1)==-1) return -1;
-
+	if (connectFileSystem(buff1)==-1) {
+		printf("saveData: connectFileSystem(%s) failed \n", buff1);
+		return -1;
+	}
 
 	/* Connect to saveData_subDir                                        */
 	if (req_gotoSection(rf, "subdir")!=0) {
@@ -2127,7 +2131,10 @@ LOCAL int initSaveDataTask()
 		printf("saveData: subDir pv name not defined\n");
 		return -1;
 	}
-	if (connectSubdir(buff1)==-1) return -1;
+	if (connectSubdir(buff1)==-1) {
+		printf("saveData: connectSubdir(%s) failed \n", buff1);
+		return -1;
+	}
 
 	/* Connect to saveData_baseName.  We can run without this PV.        */
 	if (req_gotoSection(rf, "basename")!=0) {
