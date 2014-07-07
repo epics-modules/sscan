@@ -55,4 +55,10 @@ long epicsShareAPI recDynLinkGetCallback(recDynLink *precDynLink, size_t *nReque
 epicsShareFunc long epicsShareAPI recDynLinkPut(recDynLink *precDynLink,void *pbuffer,size_t nRequest);
 epicsShareFunc long epicsShareAPI recDynLinkPutCallback(recDynLink *precDynLink,void *pbuffer,size_t nRequest, recDynCallback notifyCallback);
 
+/* bitmask */
+#define ACCESS_NONE 0
+#define ACCESS_READ 1
+#define ACCESS_WRITE 2
+int epicsShareAPI recDynLinkCheckReadWriteAccess(recDynLink *precDynLink);
+
 #endif /*INCrecDynLinkh*/
