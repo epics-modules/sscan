@@ -2890,7 +2890,6 @@ checkConnections(sscanRecord * psscan)
 	unsigned char   badOutputPv = 0;
 	unsigned char   badInputPv = 0;
 	unsigned short  i, j;
-
 	pPvStat = &psscan->p1nv;
 
 	epicsMutexLock(precPvt->pvStatSem);
@@ -2898,12 +2897,18 @@ checkConnections(sscanRecord * psscan)
 		/* positioners and positioner-output links */
 		if (*pPvStat & PV_NC) badInputPv = 1;
 		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) && (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) && recDynLinkConnectionStatus(&precPvt->caLinkStruct[j])) {
+		if ((*pPvStat != NO_PV) &&
+			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
+			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
+			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_READ)==0))) {
 			badOutputPv = 1;
 			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
 		}
 		/* Also check positioner-output links */
-		if ((*pPvStat != NO_PV) && (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) && recDynLinkConnectionStatus(&precPvt->caLinkStruct[j+NUM_PVS])) {
+		if ((*pPvStat != NO_PV) &&
+			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
+			recDynLinkConnectionStatus(&precPvt->caLinkStruct[j+NUM_PVS]) &&
+			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j+NUM_PVS])&ACCESS_WRITE)==0)) {
 			badOutputPv = 1;
 			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j+NUM_PVS]);
 		}
@@ -2912,8 +2917,11 @@ checkConnections(sscanRecord * psscan)
 	for (i = 1; i <= NUM_POS; i++, pPvStat++, j++) {
 		if (*pPvStat & PV_NC) badInputPv = 1;
 		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) && (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) && recDynLinkConnectionStatus(&precPvt->caLinkStruct[j])) {
-			badOutputPv = 1;
+		if ((*pPvStat != NO_PV) &&
+			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
+			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
+			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_READ)==0))) {
+			badInputPv = 1;
 			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
 		}
 	}
@@ -2921,7 +2929,10 @@ checkConnections(sscanRecord * psscan)
 	for (i = 1; i <= NUM_DET; i++, pPvStat++, j++) {
 		if (*pPvStat & PV_NC) badInputPv = 1;
 		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) && (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) && recDynLinkConnectionStatus(&precPvt->caLinkStruct[j])) {
+		if ((*pPvStat != NO_PV) &&
+			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
+			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
+			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_READ)==0))) {
 			badInputPv = 1;
 			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
 		}
@@ -2930,7 +2941,10 @@ checkConnections(sscanRecord * psscan)
 	for (i = 1; i <= NUM_TRGS; i++, pPvStat++, j++) {
 		if (*pPvStat & PV_NC) badOutputPv = 1;
 		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) && (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) && recDynLinkConnectionStatus(&precPvt->caLinkStruct[j])) {
+		if ((*pPvStat != NO_PV) &&
+			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
+			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
+			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_WRITE)==0))) {
 			badOutputPv = 1;
 			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
 		}
@@ -2939,7 +2953,10 @@ checkConnections(sscanRecord * psscan)
 	for (i = 1; i <= NUM_ATRGS; i++, pPvStat++, j++) {
 		if (*pPvStat & PV_NC) badOutputPv = 1;
 		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) && (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) && recDynLinkConnectionStatus(&precPvt->caLinkStruct[j])) {
+		if ((*pPvStat != NO_PV) &&
+			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
+			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
+			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_WRITE)==0))) {
 			badOutputPv = 1;
 			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
 		}
@@ -2948,7 +2965,10 @@ checkConnections(sscanRecord * psscan)
 	for (i = 1; i <= NUM_MISC; i++, pPvStat++, j++) {
 		if (*pPvStat & PV_NC) badOutputPv = 1;
 		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) && (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) && recDynLinkConnectionStatus(&precPvt->caLinkStruct[j])) {
+		if ((*pPvStat != NO_PV) &&
+			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
+			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
+			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_WRITE)==0))) {
 			badOutputPv = 1;
 			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
 		}
