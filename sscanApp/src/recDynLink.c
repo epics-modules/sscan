@@ -159,6 +159,21 @@ void exit_handler(void *arg) {
 	shutting_down = 1;
 }
 
+int epicsShareAPI recDynLinkCheckReadWriteAccess(recDynLink *precDynLink) {
+	int retval = ACCESS_NONE;
+	dynLinkPvt	*pdynLinkPvt;
+	chid chid;
+
+	if (precDynLink == NULL) return(retval);
+	pdynLinkPvt = precDynLink->pdynLinkPvt;
+	if (pdynLinkPvt == NULL) return(retval);
+	chid = pdynLinkPvt->chid;
+	if (chid == NULL) {printf("chid is NULL for '%s'\n", pdynLinkPvt->pvname); return(retval);}
+	if (ca_read_access(chid)) retval |= ACCESS_READ;
+	if (ca_write_access(chid)) retval |= ACCESS_WRITE;
+	return(retval);
+}
+
 long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	short dbrType,int options,
 	recDynCallback searchCallback,recDynCallback monitorCallback)
