@@ -10,7 +10,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
-<h2 align="center">Release 2-10beta2 - 3/252014</h2>
+<h2 align="center">Release 2-10 - Jul 7, 2014</h2>
 <ul>
 
 <li>Changed DBD_INSTALLS to DBD for sscanSupport and sscanProgressSupport
@@ -19,12 +19,7 @@ content="text/html; charset=iso-8859-1">
 occasionally failing to get the new positioner's current value before starting
 the scan.  
 
-<li>scanparm record: Wait until sscan record's BUSY field is True before
-exiting, if sscan record is in a different ioc that scanparm record.  Otherwise,
-a second attempt to process the scanparm record will succeed and interfere with
-the still-unfinished first attempt.
-
-<li>sscanRecord: More thorough mutex lock around PV-status checks and update,
+<li>sscanRecord: More thorough mutex lock around PV-status checks and updates,
 including essentially all of lookupPV() and the "psscan->faze ==
 sscanFAZE_SCAN_PENDING" sections of posMonCallback() and pvSearchCallback(). 
 Initialize p_pp when positioner PV changes, so we can detect a value that hasn't
@@ -32,6 +27,20 @@ been updated from the new PV.  More thorough PV-status check in checkConnections
 (also check dbAddrNv or recDynLinkConnectionStatus()).  checkConnections() was
 failing to check the recDynLinkConnectionStatus of the positioner-output link.
 
+<li>For positioner-input links, check waitingForPosMon along with connectInProgress.
+Wait until links disconnect before calling lookupPV.
+Previously, was setting badOutPutPv before changing positioner-input links, and badInputPv before changing positioner-output links.
+No longer init p_cv to -HUGE_VAL (replaced by waitingForPosMon)
+
+<li>scanAux.db: Make record name $(P)$(S), add macro for MPTS
+
+<li>sscanRecord.c: check access-security permissions for links<br>
+scan*.adl: show write links that are read-only because of access security
+
+<li>recDynLink.c: added recDynLinkCheckReadWriteAccess() to check
+access-security permissions.
+
+<li>scan_full.adl: TnNV were implemented wrong: showed red with no PV name.
 </ul>
 
 <h2 align="center">Release 2-9 - Apr. 17, 2013</h2>
