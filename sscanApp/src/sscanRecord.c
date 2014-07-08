@@ -2574,24 +2574,70 @@ pvSearchCallback(recDynLink * precDynLink)
 	PvStat = *pPvStat;	/* start with previous status value */
 	puserPvt->connectInProgress = 0;
 
-	if ((puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
-			recDynLinkConnectionStatus(precDynLink)) {
-		if (sscanRecordDebug >= 2) errlogPrintf("%s:pvSearchCallback: FAILURE: link '%s'.\n",
-				psscan->name, linkNames[puserPvt->linkIndex]);
-		switch (puserPvt->linkType) {
-		case POSITIONER:
-			/* set the bit that indicates the input link is bad */
-			PvStat |= PV_NoRead;
-			break;
-		case POSITIONER_OUT:
-			/* set the bit that indicates the output link is bad */
-			PvStat |= PV_NoWrite;
-			break;
-		default:
-			PvStat = PV_NC;
-			break;
+	if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+		/* it's a dynlink */
+		if (recDynLinkConnectionStatus(precDynLink)) {
+			/* bad link */
+			if (sscanRecordDebug >= 2) errlogPrintf("%s:pvSearchCallback: FAILURE: link '%s'.\n",
+					psscan->name, linkNames[puserPvt->linkIndex]);
+			switch (puserPvt->linkType) {
+			case POSITIONER: case READBACK: case DETECTOR:
+				/* set the bit that indicates the input link is bad */
+				PvStat |= PV_NoRead;
+				break;
+			case POSITIONER_OUT: case TRIGGER: case BS_AS_LINK: case READ_ARRAY_TRIG:
+				/* set the bit that indicates the output link is bad */
+				PvStat |= PV_NoWrite;
+				break;
+			default:
+				PvStat = PV_NC;
+				break;
+			}
+		} else {
+			/* good link.  check access security. */
+			if (sscanRecordDebug >= 2) errlogPrintf("%s:pvSearchCallback: Connected: link '%s'.\n",
+					psscan->name, linkNames[puserPvt->linkIndex]);
+			switch (puserPvt->linkType) {
+			case POSITIONER: case READBACK: case DETECTOR:
+				if (recDynLinkCheckReadWriteAccess(precDynLink)&ACCESS_READ) {
+					/* clear the bit that indicates the input link is bad */
+					PvStat &= ~PV_NoRead;
+				} else {
+					if (sscanRecordDebug >= 2) {
+						errlogPrintf("%s:pvSearchCallback: No read permission for link '%s'.\n",
+							psscan->name, linkNames[puserPvt->linkIndex]);
+					}
+				}
+				break;
+			case POSITIONER_OUT: case TRIGGER: case BS_AS_LINK: case READ_ARRAY_TRIG:
+				if (recDynLinkCheckReadWriteAccess(precDynLink)&ACCESS_READ) {
+					PvStat &= ~PV_NoRead;
+				}
+				if (recDynLinkCheckReadWriteAccess(precDynLink)&ACCESS_WRITE) {
+					/* clear the bit that indicates the output link is bad */
+					PvStat &= ~PV_NoWrite;
+				} else {
+					if (sscanRecordDebug >= 2) {
+						errlogPrintf("%s:pvSearchCallback: No write permission for link '%s'.\n",
+							psscan->name, linkNames[puserPvt->linkIndex]);
+					}
+				}
+				break;
+			default:
+				if (recDynLinkCheckReadWriteAccess(precDynLink)&ACCESS_READ) {
+					PvStat = PV_OK;
+				} else {
+					PvStat |= PV_NoRead;
+					if (sscanRecordDebug >= 2) {
+						errlogPrintf("%s:pvSearchCallback: No read permission for link '%s'.\n",
+							psscan->name, linkNames[puserPvt->linkIndex]);
+					}
+				}
+				break;
+			}
 		}
 	} else {
+		/* dblink */
 		if (sscanRecordDebug >= 2) errlogPrintf("%s:pvSearchCallback: Success: link '%s'.\n",
 				psscan->name, linkNames[puserPvt->linkIndex]);
 		switch (puserPvt->linkType) {
