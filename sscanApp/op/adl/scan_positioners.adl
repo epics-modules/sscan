@@ -1,7 +1,7 @@
 
 file {
-	name="C:\Program Files\EPICS WIN32 Extensions\synApps_5_1_adl\scan_positioners.adl"
-	version=020306
+	name="/home/oxygen/MOONEY/epics/synApps/support/sscan/sscanApp/op/adl/scan_positioners.adl"
+	version=030107
 }
 display {
 	object {
@@ -408,21 +408,6 @@ text {
 	limits {
 	}
 }
-"text update" {
-	object {
-		x=280
-		y=60
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).P1DV"
-		clr=53
-		bclr=3
-	}
-	limits {
-	}
-}
 menu {
 	object {
 		x=3
@@ -449,21 +434,6 @@ menu {
 		bclr=35
 	}
 	format="string"
-	limits {
-	}
-}
-"text update" {
-	object {
-		x=280
-		y=40
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).R1CV"
-		clr=53
-		bclr=3
-	}
 	limits {
 	}
 }
@@ -639,21 +609,6 @@ rectangle {
 	limits {
 	}
 }
-"text update" {
-	object {
-		x=280
-		y=246
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).P3DV"
-		clr=53
-		bclr=3
-	}
-	limits {
-	}
-}
 "text entry" {
 	object {
 		x=60
@@ -696,21 +651,6 @@ menu {
 		bclr=35
 	}
 	format="string"
-	limits {
-	}
-}
-"text update" {
-	object {
-		x=280
-		y=226
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).R3CV"
-		clr=53
-		bclr=3
-	}
 	limits {
 	}
 }
@@ -982,21 +922,6 @@ rectangle {
 	limits {
 	}
 }
-"text update" {
-	object {
-		x=280
-		y=339
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).P4DV"
-		clr=53
-		bclr=3
-	}
-	limits {
-	}
-}
 "text entry" {
 	object {
 		x=60
@@ -1010,21 +935,6 @@ rectangle {
 		bclr=35
 	}
 	format="string"
-	limits {
-	}
-}
-"text update" {
-	object {
-		x=280
-		y=319
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).R4CV"
-		clr=53
-		bclr=3
-	}
 	limits {
 	}
 }
@@ -1461,21 +1371,6 @@ composite {
 	limits {
 	}
 }
-"text update" {
-	object {
-		x=280
-		y=153
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).P2DV"
-		clr=53
-		bclr=3
-	}
-	limits {
-	}
-}
 menu {
 	object {
 		x=3
@@ -1502,21 +1397,6 @@ menu {
 		bclr=35
 	}
 	format="string"
-	limits {
-	}
-}
-"text update" {
-	object {
-		x=280
-		y=133
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).R2CV"
-		clr=53
-		bclr=3
-	}
 	limits {
 	}
 }
@@ -1829,4 +1709,203 @@ text {
 	}
 	limits {
 	}
+}
+composite {
+	object {
+		x=290
+		y=40
+		width=70
+		height=319
+	}
+	"composite name"=""
+	children {
+		"text update" {
+			object {
+				x=290
+				y=40
+				width=70
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).R1CV"
+				clr=53
+				bclr=3
+			}
+			limits {
+			}
+		}
+		"text update" {
+			object {
+				x=290
+				y=60
+				width=70
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).P1DV"
+				clr=53
+				bclr=3
+			}
+			limits {
+			}
+		}
+		"text update" {
+			object {
+				x=290
+				y=133
+				width=70
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).R2CV"
+				clr=53
+				bclr=3
+			}
+			limits {
+			}
+		}
+		"text update" {
+			object {
+				x=290
+				y=153
+				width=70
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).P2DV"
+				clr=53
+				bclr=3
+			}
+			limits {
+			}
+		}
+		"text update" {
+			object {
+				x=290
+				y=226
+				width=70
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).R3CV"
+				clr=53
+				bclr=3
+			}
+			limits {
+			}
+		}
+		"text update" {
+			object {
+				x=290
+				y=246
+				width=70
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).P3DV"
+				clr=53
+				bclr=3
+			}
+			limits {
+			}
+		}
+		"text update" {
+			object {
+				x=290
+				y=319
+				width=70
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).R4CV"
+				clr=53
+				bclr=3
+			}
+			limits {
+			}
+		}
+		"text update" {
+			object {
+				x=290
+				y=339
+				width=70
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).P4DV"
+				clr=53
+				bclr=3
+			}
+			limits {
+			}
+		}
+	}
+}
+text {
+	object {
+		x=280
+		y=60
+		width=10
+		height=14
+	}
+	"basic attribute" {
+		clr=21
+	}
+	"dynamic attribute" {
+		vis="calc"
+		calc="A==4"
+		chan="$(P)$(S).P1NV"
+	}
+	textix="R"
+}
+text {
+	object {
+		x=280
+		y=153
+		width=10
+		height=14
+	}
+	"basic attribute" {
+		clr=21
+	}
+	"dynamic attribute" {
+		vis="calc"
+		calc="A==4"
+		chan="$(P)$(S).P2NV"
+	}
+	textix="R"
+}
+text {
+	object {
+		x=280
+		y=246
+		width=10
+		height=14
+	}
+	"basic attribute" {
+		clr=21
+	}
+	"dynamic attribute" {
+		vis="calc"
+		calc="A==4"
+		chan="$(P)$(S).P3NV"
+	}
+	textix="R"
+}
+text {
+	object {
+		x=280
+		y=339
+		width=10
+		height=14
+	}
+	"basic attribute" {
+		clr=21
+	}
+	"dynamic attribute" {
+		vis="calc"
+		calc="A==4"
+		chan="$(P)$(S).P4NV"
+	}
+	textix="R"
 }

@@ -1,7 +1,7 @@
 
 file {
-	name="C:\cygwin\home\mooney\epics\synApps\support\all_adl\scan.adl"
-	version=030004
+	name="/home/oxygen/MOONEY/epics/synApps/support/sscan/sscanApp/op/adl/scan.adl"
+	version=030107
 }
 display {
 	object {
@@ -537,22 +537,6 @@ text {
 	}
 	textix="X"
 }
-"text update" {
-	object {
-		x=260
-		y=110
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).P1DV"
-		clr=53
-		bclr=3
-	}
-	format="compact"
-	limits {
-	}
-}
 "text entry" {
 	object {
 		x=40
@@ -582,22 +566,6 @@ text {
 		bclr=35
 	}
 	format="string"
-	limits {
-	}
-}
-"text update" {
-	object {
-		x=260
-		y=90
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).R1CV"
-		clr=53
-		bclr=3
-	}
-	format="compact"
 	limits {
 	}
 }
@@ -1279,4 +1247,64 @@ text {
 	}
 	limits {
 	}
+}
+composite {
+	object {
+		x=280
+		y=90
+		width=80
+		height=40
+	}
+	"composite name"=""
+	children {
+		"text update" {
+			object {
+				x=280
+				y=90
+				width=80
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).R1CV"
+				clr=53
+				bclr=3
+			}
+			format="compact"
+			limits {
+			}
+		}
+		"text update" {
+			object {
+				x=280
+				y=110
+				width=80
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).P1DV"
+				clr=53
+				bclr=3
+			}
+			format="compact"
+			limits {
+			}
+		}
+	}
+}
+text {
+	object {
+		x=260
+		y=110
+		width=10
+		height=20
+	}
+	"basic attribute" {
+		clr=21
+	}
+	"dynamic attribute" {
+		vis="calc"
+		calc="A==4"
+		chan="$(P)$(S).P1NV"
+	}
+	textix="R"
 }

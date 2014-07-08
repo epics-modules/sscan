@@ -1,12 +1,12 @@
 
 file {
-	name="/home/oxygen4/MOONEY/epics/synAppsSVN/support/sscan/sscanApp/op/adl/scan_more.adl"
-	version=030105
+	name="/home/oxygen/MOONEY/epics/synApps/support/sscan/sscanApp/op/adl/scan_more.adl"
+	version=030107
 }
 display {
 	object {
-		x=321
-		y=469
+		x=1106
+		y=815
 		width=380
 		height=400
 	}
@@ -623,22 +623,6 @@ text {
 	}
 	textix="X"
 }
-"text update" {
-	object {
-		x=270
-		y=120
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).P1DV"
-		clr=53
-		bclr=3
-	}
-	format="compact"
-	limits {
-	}
-}
 "text entry" {
 	object {
 		x=50
@@ -668,22 +652,6 @@ text {
 		bclr=35
 	}
 	format="string"
-	limits {
-	}
-}
-"text update" {
-	object {
-		x=270
-		y=100
-		width=80
-		height=20
-	}
-	monitor {
-		chan="$(P)$(S).R1CV"
-		clr=53
-		bclr=3
-	}
-	format="compact"
 	limits {
 	}
 }
@@ -1562,4 +1530,98 @@ composite {
 			}
 		}
 	}
+}
+composite {
+	object {
+		x=280
+		y=100
+		width=80
+		height=40
+	}
+	"composite name"=""
+	children {
+		"text update" {
+			object {
+				x=280
+				y=120
+				width=80
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).P1DV"
+				clr=53
+				bclr=3
+			}
+			format="compact"
+			limits {
+			}
+		}
+		"text update" {
+			object {
+				x=280
+				y=100
+				width=80
+				height=20
+			}
+			monitor {
+				chan="$(P)$(S).R1CV"
+				clr=53
+				bclr=3
+			}
+			format="compact"
+			limits {
+			}
+		}
+	}
+}
+text {
+	object {
+		x=270
+		y=120
+		width=10
+		height=20
+	}
+	"basic attribute" {
+		clr=21
+	}
+	"dynamic attribute" {
+		vis="calc"
+		calc="A==4"
+		chan="$(P)$(S).P1NV"
+	}
+	textix="R"
+}
+text {
+	object {
+		x=177
+		y=236
+		width=10
+		height=20
+	}
+	"basic attribute" {
+		clr=21
+	}
+	"dynamic attribute" {
+		vis="calc"
+		calc="A==4"
+		chan="$(P)$(S).T1NV"
+	}
+	textix="R"
+}
+text {
+	object {
+		x=367
+		y=236
+		width=10
+		height=20
+	}
+	"basic attribute" {
+		clr=21
+	}
+	"dynamic attribute" {
+		vis="calc"
+		calc="A==4"
+		chan="$(P)$(S).T2NV"
+	}
+	textix="R"
 }
