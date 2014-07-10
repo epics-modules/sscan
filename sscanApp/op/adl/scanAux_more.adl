@@ -1,7 +1,7 @@
 
 file {
-	name="C:\cygwin\home\mooney\epics\synApps\support\all_adl\scanAux_more.adl"
-	version=030004
+	name="/home/oxygen/MOONEY/epics/synApps/support/sscan/sscanApp/op/adl/scanAux_more.adl"
+	version=030107
 }
 display {
 	object {
@@ -312,20 +312,9 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
+		calc="a>1"
 		chan="$(P)$(S).T4NV"
-	}
-	textix="4"
-}
-text {
-	object {
-		x=195
-		y=248
-		width=10
-		height=20
-	}
-	"basic attribute" {
-		clr=14
 	}
 	textix="4"
 }
@@ -340,20 +329,9 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
+		calc="a>1"
 		chan="$(P)$(S).T3NV"
-	}
-	textix="3"
-}
-text {
-	object {
-		x=5
-		y=248
-		width=10
-		height=20
-	}
-	"basic attribute" {
-		clr=14
 	}
 	textix="3"
 }
@@ -1107,7 +1085,7 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
 		calc="a>1"
 		chan="$(P)$(S).BSNV"
 	}
@@ -1181,7 +1159,7 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
 		calc="a>1"
 		chan="$(P)$(S).ASNV"
 	}
@@ -1541,20 +1519,9 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
+		calc="a>1"
 		chan="$(P)$(S).T1NV"
-	}
-	textix="1"
-}
-text {
-	object {
-		x=5
-		y=228
-		width=10
-		height=20
-	}
-	"basic attribute" {
-		clr=14
 	}
 	textix="1"
 }
@@ -1600,7 +1567,8 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
+		calc="a>1"
 		chan="$(P)$(S).T2NV"
 	}
 	textix="2"
@@ -1635,18 +1603,6 @@ text {
 	format="string"
 	limits {
 	}
-}
-text {
-	object {
-		x=195
-		y=228
-		width=10
-		height=20
-	}
-	"basic attribute" {
-		clr=14
-	}
-	textix="2"
 }
 "text entry" {
 	object {
@@ -2107,4 +2063,52 @@ composite {
 	clr=0
 	bclr=17
 	label="-01"
+}
+text {
+	object {
+		x=5
+		y=228
+		width=10
+		height=20
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="1"
+}
+text {
+	object {
+		x=5
+		y=248
+		width=10
+		height=20
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="3"
+}
+text {
+	object {
+		x=195
+		y=228
+		width=10
+		height=20
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="2"
+}
+text {
+	object {
+		x=195
+		y=248
+		width=10
+		height=20
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="4"
 }

@@ -436,7 +436,7 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
 		calc="a>1"
 		chan="$(P)$(S).BSNV"
 	}
@@ -453,7 +453,7 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
 		calc="a>1"
 		chan="$(P)$(S).BSNV"
 	}
@@ -2176,7 +2176,7 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
 		calc="a>1"
 		chan="$(P)$(S).ASNV"
 	}
@@ -2193,7 +2193,7 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
 		calc="a>1"
 		chan="$(P)$(S).ASNV"
 	}
@@ -2270,7 +2270,7 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
 		calc="a>1"
 		chan="$(P)$(S).A1NV"
 	}
@@ -2287,7 +2287,7 @@ text {
 		clr=20
 	}
 	"dynamic attribute" {
-		vis="if not zero"
+		vis="calc"
 		calc="a>1"
 		chan="$(P)$(S).A1NV"
 	}
