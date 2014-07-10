@@ -193,7 +193,7 @@ text {
 }
 "message button" {
 	object {
-		x=227
+		x=232
 		y=16
 		width=20
 		height=18
@@ -257,7 +257,7 @@ composite {
 	object {
 		x=40
 		y=15
-		width=185
+		width=190
 		height=20
 	}
 	"composite name"=""
@@ -266,7 +266,7 @@ composite {
 			object {
 				x=40
 				y=15
-				width=185
+				width=190
 				height=20
 			}
 			"basic attribute" {
@@ -281,7 +281,7 @@ composite {
 			object {
 				x=42
 				y=18
-				width=180
+				width=185
 				height=14
 			}
 			monitor {

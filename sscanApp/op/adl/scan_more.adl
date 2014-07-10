@@ -211,7 +211,7 @@ composite {
 	object {
 		x=40
 		y=15
-		width=185
+		width=210
 		height=20
 	}
 	"composite name"=""
@@ -220,7 +220,7 @@ composite {
 			object {
 				x=40
 				y=15
-				width=185
+				width=210
 				height=20
 			}
 			"basic attribute" {
@@ -235,7 +235,7 @@ composite {
 			object {
 				x=42
 				y=18
-				width=180
+				width=204
 				height=14
 			}
 			monitor {
