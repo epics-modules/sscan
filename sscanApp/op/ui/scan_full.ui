@@ -1037,7 +1037,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </color>
             </property>
             <property name="visibility">
-                <enum>caLabel::IfNotZero</enum>
+                <enum>caLabel::Calc</enum>
             </property>
             <property name="visibilityCalc">
                 <string>a&gt;1</string>
@@ -1082,7 +1082,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </color>
             </property>
             <property name="visibility">
-                <enum>caLabel::IfNotZero</enum>
+                <enum>caLabel::Calc</enum>
             </property>
             <property name="visibilityCalc">
                 <string>a&gt;1</string>
@@ -5713,7 +5713,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </color>
             </property>
             <property name="visibility">
-                <enum>caLabel::IfNotZero</enum>
+                <enum>caLabel::Calc</enum>
             </property>
             <property name="visibilityCalc">
                 <string>a&gt;1</string>
@@ -5758,7 +5758,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </color>
             </property>
             <property name="visibility">
-                <enum>caLabel::IfNotZero</enum>
+                <enum>caLabel::Calc</enum>
             </property>
             <property name="visibilityCalc">
                 <string>a&gt;1</string>
@@ -5981,7 +5981,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </color>
             </property>
             <property name="visibility">
-                <enum>caLabel::IfNotZero</enum>
+                <enum>caLabel::Calc</enum>
             </property>
             <property name="visibilityCalc">
                 <string>a&gt;1</string>
@@ -6026,7 +6026,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </color>
             </property>
             <property name="visibility">
-                <enum>caLabel::IfNotZero</enum>
+                <enum>caLabel::Calc</enum>
             </property>
             <property name="visibilityCalc">
                 <string>a&gt;1</string>
