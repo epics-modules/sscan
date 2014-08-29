@@ -1102,7 +1102,7 @@ process(sscanRecord *psscan)
 		}
 		db_post_events(psscan, &psscan->data, DBE_VAL_LOG);
 		if (sscanRecordDebug > 1) {
-			printf("%s(%s): posting data==0\n", psscan->name,  epicsThreadGetNameSelf());
+			errlogPrintf("%s(%s): posting data==0\n", psscan->name,  epicsThreadGetNameSelf());
 		}
 		if (sscanRecordDebug >= 5) errlogPrintf("%s:process: new sscan\n", psscan->name);
 		if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
@@ -1140,8 +1140,10 @@ process(sscanRecord *psscan)
 			/*precPvt->calledBy = UNKNOWN;*/
 			return(status);
 		} else {
-			sprintf(psscan->smsg, "Scan aborted by operator");
-			POST(&psscan->smsg);
+			if (strlen(psscan->smsg) == 0) {
+				sprintf(psscan->smsg, "Scan aborted by operator");
+				POST(&psscan->smsg);
+			}
 			if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
 			if (psscan->wcnt) {psscan->wcnt = 0; POST(&psscan->wcnt);}
 			if (psscan->wtng) {psscan->wtng = 0; POST(&psscan->wtng);}
@@ -1383,7 +1385,7 @@ special(struct dbAddr *paddr, int after)
 									while ((recDynLinkConnectionStatus(&precPvt->caLinkStruct[i])==0) ||
 										   (recDynLinkConnectionStatus(&precPvt->caLinkStruct[i + NUM_PVS])==0)) {
 										epicsThreadSleep(0.1);
-										if (sscanRecordDebug) printf("special: waiting for pos links to clear\n");
+										if (sscanRecordDebug) errlogPrintf("special: waiting for pos links to clear\n");
 									}
 
 									/* remember when we did this lookup */
@@ -2214,7 +2216,7 @@ checkMonitors(sscanRecord *psscan)
 		psscan->data = 1;
 		db_post_events(psscan, &psscan->data, DBE_VAL_LOG);
 		if (sscanRecordDebug >= 1) {
-			printf("%s(%s): posting data==1\n", psscan->name,  epicsThreadGetNameSelf());
+			errlogPrintf("%s(%s): posting data==1\n", psscan->name,  epicsThreadGetNameSelf());
 		}
 		if (psscan->aawait == sscanNOYES_YES) {
 			psscan->await = 1;
@@ -2412,6 +2414,19 @@ notifyCallback(recDynLink * precDynLink)
 	if (precDynLink->status) errlogPrintf("%s: notifyCallback: error %d\n", psscan->name, 
 		precDynLink->status);
 
+	if (precDynLink->status == FATAL_ERROR) {
+		/* abort scan */
+		psscan->xsc = 0; POST(&psscan->xsc);
+		psscan->exsc = 0; POST(&psscan->exsc);
+		sprintf(psscan->smsg, "Scan aborted by notifyCallback"); POST(&psscan->smsg);
+		psscan->alrt = 1; POST(&psscan->alrt);
+		/* Probably shouldn't say the scan is done when limit trouble is
+		 * encountered, because multidimensional scan could appear to be acquiring
+		 * data that it's not, in fact, even attempting to acquire.  Better to
+		 * hang, so user will notice the problem.
+		 */ 
+		/* psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze); */
+	}
 
 	if (puserPvt->linkType == TRIGGER) {
 		if (numTrigCb) {
@@ -2600,8 +2615,12 @@ pvSearchCallback(recDynLink * precDynLink)
 			switch (puserPvt->linkType) {
 			case POSITIONER: case READBACK: case DETECTOR:
 				if (recDynLinkCheckReadWriteAccess(precDynLink)&ACCESS_READ) {
-					/* clear the bit that indicates the input link is bad */
-					PvStat &= ~PV_NoRead;
+					/* clear the bits that indicate the input link is bad */
+					if (puserPvt->linkType == POSITIONER) {
+						PvStat &= ~PV_NoRead;
+					} else {
+						PvStat &= ~PV_NC;
+					}
 				} else {
 					if (sscanRecordDebug >= 2) {
 						errlogPrintf("%s:pvSearchCallback: No read permission for link '%s'.\n",
@@ -2778,7 +2797,7 @@ pvSearchCallback(recDynLink * precDynLink)
 	if (*pPvStat != PvStat) {
 		*pPvStat = PvStat;
 		if (sscanRecordDebug > 1) {
-			printf("%s(%s): posting pxnv=%d\n", psscan->name,  epicsThreadGetNameSelf(), *pPvStat);
+			errlogPrintf("%s(%s): posting pxnv=%d\n", psscan->name,  epicsThreadGetNameSelf(), *pPvStat);
 		}
 		POST(pPvStat);
 	}
@@ -2802,6 +2821,7 @@ pvSearchCallback(recDynLink * precDynLink)
 			if (sscanRecordDebug >= 2) errlogPrintf("%s:pvSearchCallback: pending scan was aborted\n",
 					psscan->name);
 			psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
+			sprintf(psscan->smsg, "Scan aborted"); POST(&psscan->smsg);
 		} else {
 
 			/* Have any of the positioners involved in the scan still not called back with a value? */
@@ -2822,7 +2842,7 @@ pvSearchCallback(recDynLink * precDynLink)
 
 			if (sscanRecordDebug) {
 				pPos = (posFields *) &psscan->p1pp;
-				printf("%s:pvSearchCallback: scan pending - call scanOnce() p1cv=%f\n",	psscan->name, pPos->p_cv);
+				errlogPrintf("%s:pvSearchCallback: scan pending - call scanOnce() p1cv=%f\n",	psscan->name, pPos->p_cv);
 			}
 			scanOnce((struct dbCommon *)psscan);
 		}
@@ -2894,6 +2914,7 @@ posMonCallback(recDynLink * precDynLink)
 			if (sscanRecordDebug >= 2) errlogPrintf("%s:posMonCallback: pending scan was aborted\n",
 					psscan->name);
 			psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
+			sprintf(psscan->smsg, "Scan aborted"); POST(&psscan->smsg);
 			epicsMutexUnlock(precPvt->pvStatSem);
 			return;
 		}
@@ -2919,7 +2940,7 @@ posMonCallback(recDynLink * precDynLink)
 
 		if (sscanRecordDebug) {
 			pPos = (posFields *) &psscan->p1pp;
-			printf("%s:posMonCallback: scan pending - call scanOnce() p1cv=%f\n",	psscan->name, pPos->p_cv);
+			errlogPrintf("%s:posMonCallback: scan pending - call scanOnce() p1cv=%f\n",	psscan->name, pPos->p_cv);
 		}
 		scanOnce((struct dbCommon *)psscan);
 		epicsMutexUnlock(precPvt->pvStatSem);
@@ -2927,11 +2948,47 @@ posMonCallback(recDynLink * precDynLink)
 }
 
 
-static void 
-checkConnections(sscanRecord * psscan)
-{
+int checkLink(sscanRecord *psscan, int linkNum, int accessNeeded, unsigned short *pPvStat) {
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	recDynLinkPvt  *puserPvt;
+	int access, retval = 0;
+	unsigned short PvStat = *pPvStat; /* save so we can see if it should be posted */
+
+	if (sscanRecordDebug > 1) errlogPrintf("checkLink: entry for link %s, PvStat=%d\n", linkNames[linkNum], PvStat);
+
+	puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[linkNum].puserPvt;
+	if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+		if (recDynLinkConnectionStatus(&precPvt->caLinkStruct[linkNum]) == 0) {
+			if (sscanRecordDebug > 1) errlogPrintf("checkLink: good link to %s\n", linkNames[linkNum]);
+			access = recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[linkNum]);
+			if ((access & accessNeeded) == 0) {
+				*pPvStat |= (accessNeeded==ACCESS_READ) ? PV_NoRead : PV_NoWrite;
+				retval = 1;
+				if (sscanRecordDebug > 1) {
+					errlogPrintf("checkLink: no %s access to %s\n", (accessNeeded==ACCESS_READ)?"read":"write", linkNames[linkNum]);
+				}
+			} else {
+				*pPvStat &= (accessNeeded==ACCESS_READ) ? ~PV_NoRead : ~PV_NC; /* write implies read */
+			}
+		} else {
+			*pPvStat = PV_NC;
+			retval = 1;
+			if (sscanRecordDebug > 1) errlogPrintf("checkLink: no connection to %s\n", linkNames[linkNum]);
+		}
+	}
+
+	if (*pPvStat != PvStat) {
+		POST(pPvStat);
+		if (sscanRecordDebug > 1) errlogPrintf("checkLink: posting PvStat=%d\n", *pPvStat);
+	}
+	return(retval);
+}
+
+
+static void 
+checkConnections(sscanRecord *psscan)
+{
+	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	unsigned short *pPvStat;
 	unsigned char   badOutputPv = 0;
 	unsigned char   badInputPv = 0;
@@ -2941,83 +2998,47 @@ checkConnections(sscanRecord * psscan)
 	epicsMutexLock(precPvt->pvStatSem);
 	for (i=1, j=0; i <= NUM_POS; i++, pPvStat++, j++) {
 		/* positioners and positioner-output links */
-		if (*pPvStat & PV_NC) badInputPv = 1;
-		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) &&
-			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
-			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
-			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_READ)==0))) {
-			badOutputPv = 1;
-			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
-		}
-		/* Also check positioner-output links */
-		if ((*pPvStat != NO_PV) &&
-			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
-			recDynLinkConnectionStatus(&precPvt->caLinkStruct[j+NUM_PVS]) &&
-			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j+NUM_PVS])&ACCESS_WRITE)==0)) {
-			badOutputPv = 1;
-			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j+NUM_PVS]);
-		}
+		if (*pPvStat == NO_PV) continue;
+		/* if (*pPvStat & PV_NC) {badOuputPv = 1; continue;} */
+		/* check positioner-monitor link */
+		badOutputPv |= checkLink(psscan, j, ACCESS_READ, pPvStat);
+		/* Also check positioner-output link */
+		badOutputPv |= checkLink(psscan, j+NUM_PVS, ACCESS_WRITE, pPvStat);
 	}
+
 	/* let pPvStat, j continue to increment into Readbacks */
 	for (i = 1; i <= NUM_POS; i++, pPvStat++, j++) {
-		if (*pPvStat & PV_NC) badInputPv = 1;
-		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) &&
-			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
-			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
-			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_READ)==0))) {
-			badInputPv = 1;
-			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
-		}
+		if (*pPvStat == NO_PV) continue;
+		/* if (*pPvStat & PV_NC) {badInputPv = 1; continue;} */
+		badInputPv |= checkLink(psscan, j, ACCESS_READ, pPvStat);
 	}
+
 	/* let pPvStat, j continue to increment into Detectors */
 	for (i = 1; i <= NUM_DET; i++, pPvStat++, j++) {
-		if (*pPvStat & PV_NC) badInputPv = 1;
-		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) &&
-			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
-			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
-			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_READ)==0))) {
-			badInputPv = 1;
-			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
-		}
+		if (*pPvStat == NO_PV) continue;
+		/* if (*pPvStat & PV_NC) {badInputPv = 1; continue;} */
+		badInputPv |= checkLink(psscan, j, ACCESS_READ, pPvStat);
 	}
+
 	/* let pPvStat, j continue to increment into Triggers */
 	for (i = 1; i <= NUM_TRGS; i++, pPvStat++, j++) {
-		if (*pPvStat & PV_NC) badOutputPv = 1;
-		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) &&
-			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
-			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
-			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_WRITE)==0))) {
-			badOutputPv = 1;
-			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
-		}
+		if (*pPvStat == NO_PV) continue;
+		/* if (*pPvStat & PV_NC) {badInputPv = 1; continue;} */
+		badOutputPv |= checkLink(psscan, j, ACCESS_WRITE, pPvStat);
 	}
+
 	/* let pPvStat, j continue to increment into Array-read triggers */
 	for (i = 1; i <= NUM_ATRGS; i++, pPvStat++, j++) {
-		if (*pPvStat & PV_NC) badOutputPv = 1;
-		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) &&
-			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
-			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
-			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_WRITE)==0))) {
-			badOutputPv = 1;
-			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
-		}
+		if (*pPvStat == NO_PV) continue;
+		/* if (*pPvStat & PV_NC) {badInputPv = 1; continue;} */
+		badOutputPv |= checkLink(psscan, j, ACCESS_WRITE, pPvStat);
 	}
+
 	/* let pPvStat, j continue to increment into before/after-scan links */
 	for (i = 1; i <= NUM_MISC; i++, pPvStat++, j++) {
-		if (*pPvStat & PV_NC) badOutputPv = 1;
-		puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[j].puserPvt;
-		if ((*pPvStat != NO_PV) &&
-			(puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) &&
-			(recDynLinkConnectionStatus(&precPvt->caLinkStruct[j]) ||
-			((recDynLinkCheckReadWriteAccess(&precPvt->caLinkStruct[j])&ACCESS_WRITE)==0))) {
-			badOutputPv = 1;
-			if (sscanRecordDebug > 1) printf("checkConnections: badPv j=%d (%s)\n", j, linkNames[j]);
-		}
+		if (*pPvStat == NO_PV) continue;
+		/* if (*pPvStat & PV_NC) {badInputPv = 1; continue;} */
+		badOutputPv |= checkLink(psscan, j, ACCESS_WRITE, pPvStat);
 	}
 	precPvt->badOutputPv = badOutputPv;
 	precPvt->badInputPv = badInputPv;
