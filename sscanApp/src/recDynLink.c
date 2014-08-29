@@ -168,7 +168,7 @@ int epicsShareAPI recDynLinkCheckReadWriteAccess(recDynLink *precDynLink) {
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
 	if (pdynLinkPvt == NULL) return(retval);
 	chid = pdynLinkPvt->chid;
-	if (chid == NULL) {printf("chid is NULL for '%s'\n", pdynLinkPvt->pvname); return(retval);}
+	if (chid == NULL) {printf("recDynLinkCheckReadWriteAccess: chid is NULL for '%s'\n", pdynLinkPvt->pvname); return(retval);}
 	if (ca_read_access(chid)) retval |= ACCESS_READ;
 	if (ca_write_access(chid)) retval |= ACCESS_WRITE;
 	return(retval);
