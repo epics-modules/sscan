@@ -13,7 +13,7 @@
 </head>
 <body>
 <h1>
-The sscan record for sscan module R2.9</h1>
+The sscan record for sscan module R2.10</h1>
 Author: Tim M. Mooney<br>
 Based on the scan record, written by Ned D. Arnold.<br>
 <p>&nbsp;Advanced Photon Source
@@ -143,6 +143,12 @@ This allows a scan to be configured at run time, immediately before it is
 executed.  Currently, these links are implemented with the recDynLink library,
 which is distributed along with the <b>sscan</b> module.
 
+<P>Before a scan can start, all of the links that aren't blank must connect with
+the named PVs.  Links that will write must, in addition, have write permission
+granted by EPICS' access security.  The sscan record doesn't check continuously
+for link connection and write permission; it checks when a link is defined, and
+at the beginning of every scan.
+
 <!---------------------------------------------------------------------------->
 
 <p><a NAME="HEADING_1-1"></a>
@@ -219,12 +225,13 @@ detector-signal PVs.  (If no detector triggers, then no detector settling time.)
 <DT>Detector signals
 
 <DD>Typically, detector signals are scalar PVs, but they can be array-valued
-PVs.  If so, the sscan record will read them at the end of the scan.  If
-array-valued PVs require processing to acquire their values, the sscan record
-can write to a special array trigger (<tt>A1PV</tt> <tt>A1CD</tt>, exactly
-analogous to detector triggers), and wait for any ensuing processing to finish
-before reading the arrays.  If all detector signals are array valued, it's
-probably better to use the array acquisition type. (See <tt>ACQT</tt>.)
+PVs.  If so, the sscan record will read <tt>NPTS</tt> values from them at the
+end of the scan.  If array-valued PVs require processing to acquire their
+values, the sscan record can write to a special array trigger (<tt>A1PV</tt>
+<tt>A1CD</tt>, exactly analogous to detector triggers), and wait for any ensuing
+processing to finish before reading the arrays.  If all detector signals are
+array valued, it's probably better to use the array acquisition type. (See
+<tt>ACQT</tt>.)
 
 <P>Detector-signal values can be accumulated from scan to scan, so you can sweep
 over a set of positions, building up statistical precision and averaging over
@@ -310,7 +317,15 @@ an error indication, and the command may be ignored.  The sscan record
 will set its <tt>SMSG</tt> field to a string describing the reason why it cannot
 start a new scan.  Possible reasons include the following:
 
-<dl> <dt>"Scan is paused ..."<dd>The sscan-record field <tt>PAUS</tt> has a
+<dl> 
+
+<dt>"Waiting for PV's to connect"<dd>One or more of the PVs specified as
+positioners, triggers, readbacks, etc. has not yet connected.  If the offending
+PV must be written to, it's possible that the PV has connected but the ioc
+doesn't have permission to write to it, because of an EPICS access-security
+setting or condition.
+
+<dt>"Scan is paused ..."<dd>The sscan-record field <tt>PAUS</tt> has a
 nonzero value, indicating that some client has told the sscan record to stand by
 until <tt>PAUS</tt> is set back to <tt>0</tt>.  In this case, the sscan record
 will set <tt>FAZE</tt> to "SCAN_PENDING", and wait until <tt>PAUS</tt> is
@@ -335,13 +350,14 @@ starting the scan.
 
 <dt>"Waiting for callback"<dd>The previous scan is essentially complete, but one
 of the commands the sscan record issued has not yet completed.    In this case,
-the command will be ignored.
+the command to start a new scan will be ignored.
 
 </dl>
 
-<P>In all but the "Scan is paused" case, the start command will be ignored, and the
-scan will not automatically start when the condition that prevented it from starting
-is removed.  A new start command must be issued.
+<P>In all but the "Waiting for PV's to connect" and "Scan is paused" cases, the
+start command will be ignored, and the scan will not automatically start when
+the condition that prevented it from starting is removed.  A new start command
+must be issued.
 
 <p><a NAME="HEADING_1-3-2"></a>
 <h3>1.3.2 Stopping a scan</h3>
@@ -864,7 +880,7 @@ scanning.
 
 <P>If <tt>ACQT</tt>==<tt>1D ARRAY</tt> ("array mode"), the sscan record will
 direct the acquisition of only a single "data point", and that data point will
-be a set of one-dimensional arrays of length <t>NPTS</tt>.  In an array-mode
+be a set of one-dimensional arrays of length <tt>NPTS</tt>.  In an array-mode
 scan, all positioners are treated as being in fly mode, whatever the values of
 their step-mode PVs, because the sscan record writes to them only twice.  After
 moving positioners to their start positions, the sscan record will execute only
@@ -1138,7 +1154,11 @@ underway.)</dd>
 <tr>
 <td><tt>BSNV</tt></td>
 <td>BSPV Name Valid</td>
-<td>LONG</td>
+
+<td>MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV
+illegal2", "PV BAD")<br>"PV OK" and "No PV" are good states; all others will
+prevent a scan from starting</td>
+
 <td>No</td>
 <td>0</td>
 <td>Yes</td>
@@ -1233,7 +1253,10 @@ underway.)</dd>
 <tr>
 <td><tt>ASNV</tt></td>
 <td>ASPV Name Valid</td>
-<td>LONG</td>
+<td>MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV
+illegal2", "PV BAD")<br>"PV OK" and "No PV" are good states; all others will
+prevent a scan from starting</td>
+
 <td>No</td>
 <td>0</td>
 <td>Yes</td>
@@ -1327,7 +1350,9 @@ underway.)</dd>
 <tr>
 <td><tt>A1NV</tt></td>
 <td>A1PV Name Valid</td>
-<td>LONG</td>
+<td>MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV
+illegal2", "PV BAD")<br>"PV OK" and "No PV" are good states; all others will
+prevent a scan from starting</td>
 <td>No</td>
 <td>0</td>
 <td>Yes</td>
@@ -1519,7 +1544,9 @@ fills the readback array <tt>P<i>n</i>RA</tt> with those values.
 <tr>
 <td><tt>P<i>n</i>NV</tt></td>
 <td>P<i>n</i>PV Name Valid</td>
-<td>LONG</td>
+<td>MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV
+illegal2", "PV BAD")<br>"PV OK" and "No PV" are good states; all others will
+prevent a scan from starting</td>
 <td>No</td>
 <td>0</td>
 <td>Yes</td>
@@ -1697,7 +1724,13 @@ fills the readback array <tt>P<i>n</i>RA</tt> with those values.
 <tr>
 <td><tt>R<i>n</i>NV</tt></td>
 <td>Readback <i>/n</i> Name Valid</td>
-<td>LONG</td>
+
+<td>MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV
+illegal2", "PV BAD")<br>"PV OK" and "No PV" are good states; all others will
+prevent a scan from starting, though "PV NoWrite" is impossible for this
+readback PV
+
+</td>
 <td>No</td>
 <td>0</td>
 <td>Yes</td>
@@ -2187,7 +2220,9 @@ For <i>n</i> in [1..4]:<br>
 <tr>
 <td><tt>T<i>n</i>NV</tt></td>
 <td>Trigger <i>n</i> Name Valid</td>
-<td>LONG</td>
+<td>MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV
+illegal2", "PV BAD")<br>"PV OK" and "No PV" are good states; all others will
+prevent a scan from starting
 <td>No</td>
 <td>0</td>
 <td>Yes</td>
@@ -2497,7 +2532,10 @@ data will contain every point at the completion of the scan.
 <tr>
 <td><tt>D<i>nn</i>NV</tt></td>
 <td>data <i>nn</i> Name Valid</td>
-<td>LONG</td>
+<td>MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV
+illegal2", "PV BAD")<br>"PV OK" and "No PV" are good states; all others will
+prevent a scan from starting, though "PV NoWrite" is impossible for these
+readback PVs
 <td>No</td>
 <td>0</td>
 <td>Yes</td>
