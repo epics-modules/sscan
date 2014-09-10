@@ -10,7 +10,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
-<h2 align="center">Release 2-10 - Jul 7, 2014</h2>
+<h2 align="center">Release 2-10 - Sep 10, 2014</h2>
 <ul>
 
 <li>Changed DBD_INSTALLS to DBD for sscanSupport and sscanProgressSupport
@@ -32,6 +32,11 @@ Wait until links disconnect before calling lookupPV.
 Previously, was setting badOutPutPv before changing positioner-input links, and badInputPv before changing positioner-output links.
 No longer init p_cv to -HUGE_VAL (replaced by waitingForPosMon)
 
+<li>When changing positioner links, and waiting for the first monitor callback
+after the change (to get current position for, e.g., relative scan about that
+position), do a recDynLinkGetCallback from posMonCallback() to defend against
+old monitors from the previous positioner PV.
+
 <li>scanAux.db: Make record name $(P)$(S), add macro for MPTS
 
 <li>sscanRecord.c: check access-security permissions for links<br>
@@ -41,6 +46,10 @@ scan*.adl: show write links that are read-only because of access security
 access-security permissions.
 
 <li>scan_full.adl: TnNV were implemented wrong: showed red with no PV name.
+
+<li>sscanRecord.c had "#include epicsExport.h" in the wrong place, and this
+broke cygwin builds.
+
 </ul>
 
 <h2 align="center">Release 2-9 - Apr. 17, 2013</h2>
