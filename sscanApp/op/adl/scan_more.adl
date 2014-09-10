@@ -1,6 +1,6 @@
 
 file {
-	name="/home/oxygen/MOONEY/epics/synApps/support/sscan/sscanApp/op/adl/scan_more.adl"
+	name="/home/oxygen4/MOONEY/epics/synAppsSVN/support/sscan/sscanApp/op/adl/scan_more.adl"
 	version=030107
 }
 display {
@@ -417,9 +417,9 @@ menu {
 }
 "text entry" {
 	object {
-		x=232
+		x=230
 		y=149
-		width=71
+		width=70
 		height=20
 	}
 	control {
