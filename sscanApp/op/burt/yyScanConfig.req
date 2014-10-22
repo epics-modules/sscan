@@ -24,3 +24,4 @@ PREFIX:saveData_fileSystem
 PREFIX:saveData_subDir
 PREFIX:saveData_scanNumber
 PREFIX:saveData_realTime1D
+PREFIX:saveData_baseName

@@ -1,4 +1,4 @@
-grecord(scanparm,"$(P)$(Q):scanParms") {
+grecord(scanparm,"$(P)$(M):scanParms") {
 	field(PREC,"6")
 	field(PRE,"4")
 	field(OPRE,"$(SCANREC).CMND  CA NMS")
