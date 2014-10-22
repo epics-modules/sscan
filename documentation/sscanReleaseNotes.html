@@ -10,7 +10,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">sscan Release Notes</h1>
 
-<h2 align="center">Release 2-10 - Sep 12, 2014</h2>
+<h2 align="center">Release 2-10 - Oct 22, 2014</h2>
 <ul>
 
 <li>Changed DBD_INSTALLS to DBD for sscanSupport and sscanProgressSupport
@@ -49,6 +49,10 @@ access-security permissions.
 
 <li>sscanRecord.c had "#include epicsExport.h" in the wrong place, and this
 broke cygwin builds.
+
+<li>Modified scanParms_settings.req so it uses the same macro as scanParms.db (M
+instead of Q). Added scanAux_settings.req, alignParms_settings.req,
+scanParms2D_settings.req, scanParmsRemote_settings.re.
 
 </ul>
 
