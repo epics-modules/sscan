@@ -54,6 +54,10 @@ broke cygwin builds.
 instead of Q). Added scanAux_settings.req, alignParms_settings.req,
 scanParms2D_settings.req, scanParmsRemote_settings.re.
 
+<li>saveData was failing to read its .req file correctly in some cases on
+Windows. Fixed by opening the file with fopen(file, "rb"), instead of as
+fopen(file, "r").
+
 </ul>
 
 <h2 align="center">Release 2-9 - Apr. 17, 2013</h2>
