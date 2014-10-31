@@ -123,7 +123,15 @@ REQ_FILE* req_open_file(char* name, char* macro)
   FILE*     fd;
   REQ_FILE* rf;
 
-  fd= fopen(name, "r");
+  /* On Windows, text-translation mode can result in ftell() giving
+   * a different position than would be expected from the character
+   * count.  Opening as binary disables the translation.
+   */
+#ifdef _WIN32
+  fd= fopen(name, "rb");
+#else
+  fd= fopen(name, "rb");
+#endif
   if(!fd) return NULL;
 
   rf= (REQ_FILE*) malloc(sizeof(REQ_FILE));
