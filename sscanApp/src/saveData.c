@@ -1153,7 +1153,7 @@ LOCAL int disconnectScan(SCAN* pscan)
 		if (pscan->cpxeu[i]) ca_clear_channel(pscan->cpxeu[i]);
 		if (pscan->cpxsm[i]) ca_clear_channel(pscan->cpxsm[i]);
 
-		if (pscan->crxnv) ca_clear_channel(pscan->crxnv[i]);
+		if (pscan->crxnv[i]) ca_clear_channel(pscan->crxnv[i]);
 		if (pscan->crxpv[i]) ca_clear_channel(pscan->crxpv[i]);
 		if (pscan->crxds[i]) ca_clear_channel(pscan->crxds[i]);
 		if (pscan->crxeu[i]) ca_clear_channel(pscan->crxeu[i]);
