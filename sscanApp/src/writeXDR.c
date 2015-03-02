@@ -126,7 +126,7 @@ int writeXDR_opaque(FILE *fd, char *cp, int cnt) {
 	return (writeXDR_bytes(fd, zero, 4 - nPad));
 }
 
-int writeXDR_bytes(FILE *fd, char *addr, size_t len) {
+int writeXDR_bytes(FILE *fd, void *addr, size_t len) {
 
 	if ((len != 0) && (fwrite(addr, len, 1, fd) != 1))
 		return (0);
