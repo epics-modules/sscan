@@ -149,7 +149,7 @@
  *     06-04-09  dmk  Moved the strncpy() calls in saveData_Init() to inside the
  *                    brackets as to not overwrite the existing values if the
  *                    method is called multiple times.
-
+ *     03-02-15  kcl  mkdir under minGW has a different type signature than WIN32.
  */
 
 #define FILE_FORMAT_VERSION (float)1.4
@@ -172,6 +172,10 @@
 	typedef unsigned int    u_int;
 #endif
 
+#if defined(__MINGW32__) || defined(__MINGW64__)
+	#define mkdir(PATH, PERMIS) (mkdir(PATH))
+#endif
+    
 #ifdef vxWorks
 	#include <usrLib.h>
 	#include <ioLib.h>
