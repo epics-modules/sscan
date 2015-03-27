@@ -1178,6 +1178,7 @@ process(sscanRecord *psscan)
 		}
 	} else if (psscan->busy) {
 		/* Scan is essentially finished (since xsc==0), but may still have some after-scan business */
+		if (sscanRecordDebug >= 5) errlogPrintf("%s:process: xsc=0, but still busy\n", psscan->name);
 		if (psscan->dstate < sscanDSTATE_PACKED) {
 			packData(psscan, 2);
 			if (psscan->dstate < sscanDSTATE_PACKED) {
@@ -1186,7 +1187,13 @@ process(sscanRecord *psscan)
 				return(status);
 			}
 		}
+		if (sscanRecordDebug >= 5) errlogPrintf("%s:process: faze='%s', dstate='%s', calledBy = %s\n",
+			psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate],
+			calledByNames[precPvt->calledBy]);
 		if (psscan->faze == sscanFAZE_RETRACE_WAIT) {
+			/* wait for notifyCallback */
+			return(status);
+		} else if (psscan->faze == sscanFAZE_AFTER_SCAN_DO) {
 			afterScan(psscan);
 		} else if ((psscan->faze == sscanFAZE_AFTER_SCAN_WAIT) ||
 			   (psscan->faze == sscanFAZE_SCAN_DONE)) {
@@ -1203,6 +1210,7 @@ process(sscanRecord *psscan)
 	if (psscan->busy && (psscan->faze == sscanFAZE_SCAN_DONE) && (psscan->dstate == sscanDSTATE_POSTED)) {
 		psscan->busy = 0; POST(&psscan->busy);
 		psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
+		sprintf(psscan->smsg, "SCAN Complete"); POST(&psscan->smsg);
 		recGblFwdLink(psscan);
 		if (sscanRecordDebug>=2) {
 			epicsTimeGetCurrent(&timeCurrent);
@@ -2426,6 +2434,7 @@ notifyCallback(recDynLink * precDynLink)
 
 	if (precDynLink->status == FATAL_ERROR) {
 		/* abort scan */
+		if (sscanRecordDebug >= 5) errlogPrintf("%s:notifyCallback: FATAL_ERROR, ending scan\n", psscan->name);
 		psscan->xsc = 0; POST(&psscan->xsc);
 		psscan->exsc = 0; POST(&psscan->exsc);
 		sprintf(psscan->smsg, "Scan aborted by notifyCallback"); POST(&psscan->smsg);
@@ -2490,7 +2499,20 @@ notifyCallback(recDynLink * precDynLink)
 					POST(&psscan->smsg);
 					return;
 				}
+				if (sscanRecordDebug >= 5) errlogPrintf("%s:notifyCallback: faze='%s', dstate='%s', calledBy = %s\n",
+					psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate],
+					calledByNames[precPvt->calledBy]);
 				precPvt->calledBy = NOTIFY;
+				if (psscan->faze == sscanFAZE_RETRACE_WAIT) {
+					psscan->faze = sscanFAZE_AFTER_SCAN_DO; POST(&psscan->faze);
+					scanOnce((struct dbCommon *)psscan);
+					return;
+				}
+				if (psscan->faze == sscanFAZE_AFTER_SCAN_WAIT) {
+					psscan->faze = sscanFAZE_SCAN_DONE;
+					scanOnce((struct dbCommon *)psscan);
+					return;
+				}
 				if ((psscan->faze != sscanFAZE_CHECK_MOTORS) || (psscan->pdly == 0.)) {
 					scanOnce((struct dbCommon *)psscan);
 				} else {
@@ -3169,6 +3191,7 @@ initScan(sscanRecord *psscan)
 
 	if ((status = checkScanLimits(psscan))) {
 		/* limits didn't pass, or couldn't get current positioner value.  abort scan */
+		if (sscanRecordDebug >= 5) errlogPrintf("%s:initScan: limit error, ending scan\n", psscan->name);
 		psscan->xsc = 0; POST(&psscan->xsc);
 		psscan->exsc = 0; POST(&psscan->exsc);
 		POST(&psscan->smsg);
@@ -3500,8 +3523,6 @@ contScan(sscanRecord *psscan)
 			return;
 		} else {
 			endScan(psscan);	/* scan is successfully complete */
-			sprintf(psscan->smsg, "SCAN Complete");
-			POST(&psscan->smsg);
 			precPvt->scanErr = 0;
 			return;
 		}
@@ -3524,6 +3545,7 @@ endScan(sscanRecord *psscan)
 		return;
 	}
 
+	if (sscanRecordDebug >= 5) errlogPrintf("%s:endScan: scan is done.  Retrace?\n", psscan->name);
 	psscan->xsc = 0;	/* done with scan */
 	epicsTimeGetCurrent(&precPvt->lastScanEndTime);
 
@@ -4417,7 +4439,7 @@ doPuts(CALLBACK *pCB)
 		}
 		if (numPutCallbacks == 0) {
 			/* Don't have to wait for after-scan link callback */
-			psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze);
+			psscan->faze = sscanFAZE_SCAN_DONE;
 			/* Scan must end in the process() routine. */
 			precPvt->calledBy = DO_PUTS;
 			scanOnce((struct dbCommon *)psscan);
