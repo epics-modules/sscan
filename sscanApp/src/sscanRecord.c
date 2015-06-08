@@ -2199,7 +2199,7 @@ checkMonitors(sscanRecord *psscan)
 		/* Must post events on both pointers, since toggle.  Note that this is
 		 * merely the notification step of the posting, since these PV's are
 		 * arrays.  The actual accociation between PV and data will
-		 * occur in and get_array_info().
+		 * occur in get_array_info().
 		 */
 		for (i = 0; i < NUM_POS; i++) {
 			db_post_events(psscan, precPvt->posBufPtr[i].pBufA, DBE_VAL_LOG);
@@ -3609,9 +3609,11 @@ readArrays(sscanRecord *psscan)
 					if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
 						status = recDynLinkGetCallback(&precPvt->caLinkStruct[i + NUM_POS],
 								       &nRequest, userGetCallback);
-						epicsMutexLock(precPvt->numCallbacksSem);
-						precPvt->numGetCallbacks++;
-						epicsMutexUnlock(precPvt->numCallbacksSem);
+						if (status) {
+							epicsMutexLock(precPvt->numCallbacksSem);
+							precPvt->numGetCallbacks++;
+							epicsMutexUnlock(precPvt->numCallbacksSem);
+						}
 					}
 				}
 			}
@@ -3635,9 +3637,11 @@ readArrays(sscanRecord *psscan)
 						if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
 							status |= recDynLinkGetCallback(&precPvt->caLinkStruct[i + D1_IN],
 										&nRequest, userGetCallback);
-							epicsMutexLock(precPvt->numCallbacksSem);
-							precPvt->numGetCallbacks++;
-							epicsMutexUnlock(precPvt->numCallbacksSem);
+							if (status) {
+								epicsMutexLock(precPvt->numCallbacksSem);
+								precPvt->numGetCallbacks++;
+								epicsMutexUnlock(precPvt->numCallbacksSem);
+							}
 						} 
 					}
 				}
@@ -4410,6 +4414,8 @@ doPuts(CALLBACK *pCB)
 		}
 
 	case sscanFAZE_AFTER_SCAN_DO:
+		if (psscan->dstate == sscanDSTATE_ARRAY_READ_WAIT)
+			return;
 		/* If an After Scan Link PV is valid, execute it */
 		numPutCallbacks = 0;
 		if (psscan->asnv == PV_OK) {
