@@ -923,7 +923,7 @@ process(sscanRecord *psscan)
 	epicsMutexUnlock(precPvt->numCallbacksSem);
 
 	if (sscanRecordDebug) {
-		errlogPrintf("%s:process:entry:faze='%s', nPTRG_CBs=%1d_%1d_%1d_%2d, xsc=%d, pxsc=%d, calledBy %s\n",
+		errlogPrintf("\n%s:process:entry:faze='%s', nPTRG_CBs=%1d_%1d_%1d_%2d, xsc=%d, pxsc=%d, calledBy %s\n",
 			psscan->name, sscanFAZE_strings[psscan->faze], numPosCb, numTrigCb, numAReadCb, numGetCb,
 			psscan->xsc, psscan->pxsc, calledByNames[precPvt->calledBy]);
 
@@ -1170,7 +1170,8 @@ process(sscanRecord *psscan)
 			errlogPrintf("%s:process: Lost connection to Control PV\n", psscan->name);
 			endScan(psscan);
 		} else if ((psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) ||
-				(psscan->dstate == sscanDSTATE_ARRAY_READ_WAIT)) {
+				(psscan->dstate == sscanDSTATE_ARRAY_READ_WAIT) ||
+				(psscan->dstate == sscanDSTATE_RECORD_ARRAY_DATA)) {
 				/* endScan is waiting for something to complete */
 			endScan(psscan);
 		} else {
@@ -2343,7 +2344,7 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 					psscan->name, i, &precPvt->caLinkStruct[i], ppvn);
 			}
 			recDynLinkAddInput(&precPvt->caLinkStruct[i], ppvn,
-			     DBR_DOUBLE, rdlSCALAR, pvSearchCallback, NULL);
+			     DBR_DOUBLE, 0 /*rdlSCALAR*/, pvSearchCallback, NULL);
 		} else {
 			pvSearchCallback(&precPvt->caLinkStruct[i]);
 		}
@@ -2599,7 +2600,7 @@ pvSearchCallback(recDynLink * precDynLink)
 	detFields      *pDet = (detFields *) & psscan->d01hr;
 	unsigned short  linkIndex = puserPvt->linkIndex;
 	unsigned short  pvIndex = linkIndex % NUM_PVS;
-	unsigned short  detIndex;
+	unsigned short  detIndex, rdbkIndex;
 	unsigned short *pPvStat, PvStat;
 	size_t          nelem;
 	long            status;
@@ -2739,6 +2740,35 @@ pvSearchCallback(recDynLink * precDynLink)
 		POST(&pPos->p_lr);
 
 		break;
+
+	case READBACK:
+		if (PvStat & PV_NoRead) break;
+		
+		rdbkIndex = pvIndex - R1_IN;
+		/* get # of elements*/
+		if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
+			status = recDynLinkGetNelem(precDynLink, &nelem);
+		} else {
+			nelem = puserPvt->pAddr->no_elements;
+		}
+		if (nelem > 1) {
+			sprintf(psscan->smsg, "Array-valued positioner read-back");
+			POST(&psscan->smsg);
+		}
+
+		puserPvt->nelem = nelem;
+		if (precPvt->validBuf == B_BUFFER) {
+			precPvt->posBufPtr[rdbkIndex].pFill =
+				precPvt->posBufPtr[rdbkIndex].pBufA;
+		} else {
+			precPvt->posBufPtr[rdbkIndex].pFill =
+				precPvt->posBufPtr[rdbkIndex].pBufB;
+		}
+ 
+		if (sscanRecordDebug >= 5) errlogPrintf("%s:pvSearchCallback: link '%s', setting nelem to %ld.\n",
+			psscan->name, linkNames[puserPvt->linkIndex], puserPvt->nelem);
+	
+ 		break;
 
 	case DETECTOR:
 		if (PvStat != PV_OK) break;
@@ -3537,15 +3567,15 @@ endScan(sscanRecord *psscan)
 	if (sscanRecordDebug>=2) errlogPrintf("%s:endScan, faze='%s', data_state='%s'\n",
 		psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate]);
 
-	if (psscan->dstate == sscanDSTATE_UNPACKED) packData(psscan, 3);
-	if (psscan->dstate == sscanDSTATE_UNPACKED) {
+	if (psscan->dstate < sscanDSTATE_PACKED) packData(psscan, 3);
+	if (psscan->dstate < sscanDSTATE_PACKED) {
 		/* packData didn't finish; probably waiting for previous scan's data to be written.
 		 * For now, don't try to do after-scan stuff until packData finishes
 		 */
 		return;
 	}
 
-	if (sscanRecordDebug >= 5) errlogPrintf("%s:endScan: scan is done.  Retrace?\n", psscan->name);
+	if (sscanRecordDebug >= 2) errlogPrintf("%s:endScan: scan is done.  Retrace?\n", psscan->name);
 	psscan->xsc = 0;	/* done with scan */
 	epicsTimeGetCurrent(&precPvt->lastScanEndTime);
 
@@ -3591,7 +3621,6 @@ readArrays(sscanRecord *psscan)
 	if (psscan->dstate == sscanDSTATE_ARRAY_READ_WAIT) {
 		/* Queue any remote reads */
 
-#if 0
 		/*
 		 * array-valued positioners, which we told recDynLink we don't have.  (We told
 		 * recDynLink these were scalars, so it didn't allocate the memory buffer that
@@ -3603,6 +3632,10 @@ readArrays(sscanRecord *psscan)
 		for (i = 0; i < NUM_POS; i++, pPos++, pPvStatPos++, pPvStat++) {
 			/* if positioner-readback PV is OK, use it */
 			puserPvt = precPvt->caLinkStruct[i + NUM_POS].puserPvt;
+			if (sscanRecordDebug >= 5) {
+				errlogPrintf("%s:readArrays: link=%s, nelem=%ld\n", psscan->name,
+					linkNames[puserPvt->linkIndex], puserPvt->nelem);
+			}
 			if (puserPvt->nelem > 1) {
 				nRequest = psscan->npts;
 				if (*pPvStat == PV_OK) {
@@ -3618,7 +3651,6 @@ readArrays(sscanRecord *psscan)
 				}
 			}
 		}
-#endif
 
 		/* Queue reads for array-valued detectors, if any. */
 		status = 0;
@@ -3677,6 +3709,10 @@ readArrays(sscanRecord *psscan)
 				if (puserPvt->dbAddrNv || puserPvt->useDynLinkAlways) {
 					status = recDynLinkGet(&precPvt->caLinkStruct[i + NUM_POS],
 							       pDbuff, &nRequest, 0, 0, 0);
+					if (sscanRecordDebug >= 5) {
+							errlogPrintf("%s:recDynLinkGet returned %ld, nRequest=%d\n",
+								psscan->name, status, (int)nRequest);
+					}
 					if (nRequest < psscan->npts)
 						for (j = nRequest; j < psscan->npts; j++) pDbuff[j] = 0;
 				} else {
@@ -4414,8 +4450,7 @@ doPuts(CALLBACK *pCB)
 		}
 
 	case sscanFAZE_AFTER_SCAN_DO:
-		if (psscan->dstate == sscanDSTATE_ARRAY_READ_WAIT)
-			return;
+		if (psscan->dstate < sscanDSTATE_SAVE_DATA_WAIT) return;
 		/* If an After Scan Link PV is valid, execute it */
 		numPutCallbacks = 0;
 		if (psscan->asnv == PV_OK) {
