@@ -1199,6 +1199,12 @@ process(sscanRecord *psscan)
 		} else if ((psscan->faze == sscanFAZE_AFTER_SCAN_WAIT) ||
 			   (psscan->faze == sscanFAZE_SCAN_DONE)) {
 			psscan->faze = sscanFAZE_SCAN_DONE; POST(&psscan->faze);
+		} else if ((psscan->faze == sscanFAZE_READ_DETCTRS || psscan->faze == sscanFAZE_CHECK_MOTORS) &&
+				(psscan->dstate == sscanDSTATE_PACKED)) {
+			/* Alex Soderqvist's fix for hung scan with this symptom:
+			 * "How did I get here? (faze='WAIT:DETCTRS', dstate='PACKED', calledBy = NOTIFY_READ_ARRAY_TRIG)
+			 */
+			endScan(psscan);
 		} else {
 			errlogPrintf("%s:process: How did I get here? (faze='%s', dstate='%s', calledBy = %s)\n",
 				psscan->name, sscanFAZE_strings[psscan->faze], sscanDSTATE_strings[psscan->dstate],
