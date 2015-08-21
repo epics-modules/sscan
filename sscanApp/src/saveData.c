@@ -1991,7 +1991,7 @@ LOCAL int connectPV(char* pv, char* desc)
 		len= strcspn(pv, ".");
 		strncpy(buff, pv, len);
 		buff[len]='\0';
-		strcat(buff, ".DESC");
+		strncat(buff, ".DESC", PVNAME_STRINGSZ-len);
 		ca_search(buff, &pnode->desc_chid);
 		pnode->desc[0]='\0';
 		if (ca_pend_io(10)!=ECA_NORMAL) {
@@ -3390,7 +3390,7 @@ LOCAL void proc_scan_dxnv(SCAN_INDEX_MSG* pmsg)
 			len= strcspn(pscan->dxpv[i], ".");
 			strncpy(buff, pscan->dxpv[i], len);
 			buff[len]='\0';
-			strcat(buff, ".DESC");
+			strncat(buff, ".DESC", PVNAME_STRINGSZ-len);
 			ca_search(buff, &pscan->cdxds[i]);
 			if (ca_pend_io(2.0)!=ECA_NORMAL) {
 				Debug1(2, "Unable to connect %s\n", buff);
