@@ -734,7 +734,11 @@ LOCAL int checkRWpermission(char* path) {
 	char tmpfile[100];
 
 	strncpy(tmpfile, path, 100);
-	strncat(tmpfile, "/rix_", 100-strlen(tmpfile));
+	if (tmpfile[strlen(tmpfile)-1] == '/') {
+		strncat(tmpfile, "rix_", 100-strlen(tmpfile));
+	} else {
+		strncat(tmpfile, "/rix_", 100-strlen(tmpfile));
+	}
 
 	while (fileStatus(tmpfile)==OK && strlen(tmpfile)<100) {
 		strncat(tmpfile, "_", 100-strlen(tmpfile));
@@ -744,13 +748,10 @@ LOCAL int checkRWpermission(char* path) {
 		return ERROR;
 	}
 
-#ifdef vxWorks
 	file = open (tmpfile, O_CREAT | O_RDWR, 0666);
-#else
-	file= creat(tmpfile, O_RDWR);
-#endif
 
 	if (fileStatus(tmpfile)!=OK) {
+		if (debug_saveData) printf("saveData:checkRWpermission: can't create test file '%s'\n", tmpfile);
 		return ERROR;
 	}
 
