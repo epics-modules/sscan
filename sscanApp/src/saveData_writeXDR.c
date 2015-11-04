@@ -750,7 +750,8 @@ LOCAL int checkRWpermission(char* path) {
 		return ERROR;
 	}
 
-	file= creat(tmpfile, O_RDWR);
+	/* crashes on Windows: file= creat(tmpfile, O_RDWR); */
+	file = open (tmpfile, O_CREAT | O_RDWR, 0666);
 
 	if (fileStatus(tmpfile)!=OK) {
 		return ERROR;
