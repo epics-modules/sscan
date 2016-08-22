@@ -849,7 +849,7 @@ void saveData_Info() {
 		printf("  links:");
 		cur= scan;
 		while (cur) {
-			printf(cur->name);
+			printf("%s", cur->name);
 			cur= cur->nxt;
 			if (cur) printf("->");
 		}
