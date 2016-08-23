@@ -33,6 +33,7 @@ of this distribution.
 #include <epicsMutex.h>
 #include <epicsThread.h>
 #include <epicsEvent.h>
+#include <epicsVersion.h>       /* for LT_EPICSBASE macro */
 
 #include <stdio.h>
 #include <string.h>
@@ -42,8 +43,8 @@ of this distribution.
 #include <dbDefs.h>
 
 #include <dbAddr.h>
-/* #include <dbAccessDefs.h> */
-epicsShareFunc long epicsShareAPI dbNameToAddr(const char *pname,struct dbAddr *); 
+/* #include <dbAccessDefs.h> Can't include this.  See by-hand definition of
+dbNameToAddr below. */
 
 #include <epicsPrint.h>
 #include <db_access.h>
@@ -65,6 +66,19 @@ volatile int recDynOUTCallFlush = 1;
 
 volatile int recDynLinkDebug = 0;
 epicsExportAddress(int, recDynLinkDebug);
+
+/* Less than EPICS base version test.*/
+#ifndef EPICS_VERSION_INT
+#define VERSION_INT(V,R,M,P) ( ((V)<<24) | ((R)<<16) | ((M)<<8) | (P))
+#define EPICS_VERSION_INT VERSION_INT(EPICS_VERSION, EPICS_REVISION, EPICS_MODIFICATION, EPICS_PATCH_LEVEL)
+#endif
+#define LT_EPICSBASE(V,R,M,P) (EPICS_VERSION_INT < VERSION_INT((V),(R),(M),(P)))
+
+#if LT_EPICSBASE(3,15,0,0)
+	epicsShareFunc long epicsShareAPI dbNameToAddr(const char *pname,struct dbAddr *); 
+#else
+	epicsShareFunc long dbNameToAddr(const char *pname,struct dbAddr *); 
+#endif
 
 /*Definitions to map between old and new database access*/
 /*because we are using CA must include db_access.h*/
@@ -576,7 +590,7 @@ LOCAL void getCallback(struct event_handler_args eha)
 	size_t					nRequest;
    
     if (eha.status != ECA_NORMAL) {
-		printf("recDynLink:getCallback: CA returns eha.status=%d\n", eha.status);
+		printf("recDynLink:getCallback: CA returns eha.status=%d (%s)\n", eha.status, ca_message(eha.status));
 		return;
 	}
 	precDynLink = (recDynLink *)ca_puser(eha.chid);
@@ -626,7 +640,7 @@ LOCAL void monitorCallback(struct event_handler_args eha)
 	double		*pdouble;
    
     if (eha.status != ECA_NORMAL) {
-		printf("recDynLink:monitorCallback: CA returns eha.status=%d\n", eha.status);
+		printf("recDynLink:monitorCallback: CA returns eha.status=%d (%s)\n", eha.status, ca_message(eha.status));
 		return;
 	}
 	precDynLink = (recDynLink *)ca_puser(eha.chid);
@@ -636,8 +650,8 @@ LOCAL void monitorCallback(struct event_handler_args eha)
 		printf("recDynLink:monitorCallback:  PV=%s, nRequest=%ld, status=%d\n",
 			pdynLinkPvt->pvname, (long)pdynLinkPvt->nRequest, eha.status);
 		if (recDynLinkDebug >= 15) {
-			printf("recDynLink:monitorCallback:  eha.usr=%p, .chid=%p, .type=%ld, .count=%ld, .dbr=%p, .status=%d\n",
-				(void *)eha.usr, (void *)eha.chid, eha.type, eha.count, (void *)eha.dbr, eha.status);
+			printf("recDynLink:monitorCallback:  eha.usr=%p, .chid=%p, .type=%ld, .count=%ld, .dbr=%p, .status=%d (%s)\n",
+				(void *)eha.usr, (void *)eha.chid, eha.type, eha.count, (void *)eha.dbr, eha.status, ca_message(eha.status));
 		}
 	}
 	if (pdynLinkPvt->pbuffer) {
@@ -706,7 +720,7 @@ LOCAL void userGetCallback(struct event_handler_args eha)
 	short		timeType;
 
     if (eha.status != ECA_NORMAL) {
-		printf("recDynLink:userGetCallback: CA returns eha.status=%d\n", eha.status);
+		printf("recDynLink:userGetCallback: CA returns eha.status=%d (%s)\n", eha.status, ca_message(eha.status));
 		return;
 	}
 	precDynLink = (recDynLink *)ca_puser(eha.chid);
