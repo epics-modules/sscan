@@ -104,7 +104,7 @@ int		aPause;
 int		scanDim;		/* dimension of scan, {1,2,3,4} */
 
 %% static void clocks2str(long isec, char *str);
-%% static void formatTimeStr(char *tStr, int tStrLen, long final, int full);
+%% static void formatTimeStr(char *tStr, int tStrLen, time_t final, int full);
 %% static long calc_cpt(void);
 %% static int allStopped(void);
 
