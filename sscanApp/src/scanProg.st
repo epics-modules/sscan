@@ -44,10 +44,10 @@ program scanProgress ("S=34ide:, P=34ide:scanProgress:")
 #define NULL 0L
 #endif
 
-#define TodayFMT "%T Today (%A)"				/* for today use:		"22:23:44 Today (Wednesday)" */
-#define TomorrowFMT "%T Tomorrow (%A)"			/* for tomorrow use:	"22:23:44 Tomorrow (Thursday)" */
-#define YesterdayFMT "%T Yesterday (%A)"		/* for yesterday use:	"22:23:44 Yesterday (Tuesday)" */
-#define GeneralDateFMT "%T  (%a) %b %e, %Y"		/* for all others use:	"22:23:44  (Thu) Nov  8, 2011" */
+#define TodayFMT "%H:%M:%S Today (%A)"				/* for today use:		"22:23:44 Today (Wednesday)" */
+#define TomorrowFMT "%H:%M:%S Tomorrow (%A)"			/* for tomorrow use:	"22:23:44 Tomorrow (Thursday)" */
+#define YesterdayFMT "%H:%M:%S Yesterday (%A)"		/* for yesterday use:	"22:23:44 Yesterday (Tuesday)" */
+#define GeneralDateFMT "%H:%M:%S  (%a) %b %d, %Y"		/* for all others use:	"22:23:44  (Thu) Nov  8, 2011" */
 
 /*   ------------------------   assignments   ------------------------ */
 
@@ -104,7 +104,7 @@ int		aPause;
 int		scanDim;		/* dimension of scan, {1,2,3,4} */
 
 %% static void clocks2str(long isec, char *str);
-%% static void formatTimeStr(char *tStr, int tStrLen, long final, int full);
+%% static void formatTimeStr(char *tStr, int tStrLen, time_t final, int full);
 %% static long calc_cpt(void);
 %% static int allStopped(void);
 
@@ -450,10 +450,10 @@ static void clocks2str(long isec, char *str)
 static void formatTimeStr(
 char *tStr,			/* string to recieve the result */
 int tStrLen,		/* maximum length of tStr */
-long final,			/* final time as a time_t, this is what's given */
+time_t final,			/* final time as a time_t, this is what's given */
 int full)			/* when true, always use GeneralDateFMT */
 {
-	long	now;
+	time_t	now;
 	struct tm *tm1;
 	int	isToday=0;
 	int	isTomorrow=0;
