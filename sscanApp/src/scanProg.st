@@ -44,10 +44,10 @@ program scanProgress ("S=34ide:, P=34ide:scanProgress:")
 #define NULL 0L
 #endif
 
-#define TodayFMT "%T Today (%A)"				/* for today use:		"22:23:44 Today (Wednesday)" */
-#define TomorrowFMT "%T Tomorrow (%A)"			/* for tomorrow use:	"22:23:44 Tomorrow (Thursday)" */
-#define YesterdayFMT "%T Yesterday (%A)"		/* for yesterday use:	"22:23:44 Yesterday (Tuesday)" */
-#define GeneralDateFMT "%T  (%a) %b %e, %Y"		/* for all others use:	"22:23:44  (Thu) Nov  8, 2011" */
+#define TodayFMT "%H:%M:%S Today (%A)"				/* for today use:		"22:23:44 Today (Wednesday)" */
+#define TomorrowFMT "%H:%M:%S Tomorrow (%A)"			/* for tomorrow use:	"22:23:44 Tomorrow (Thursday)" */
+#define YesterdayFMT "%H:%M:%S Yesterday (%A)"		/* for yesterday use:	"22:23:44 Yesterday (Tuesday)" */
+#define GeneralDateFMT "%H:%M:%S  (%a) %b %e, %Y"		/* for all others use:	"22:23:44  (Thu) Nov  8, 2011" */
 
 /*   ------------------------   assignments   ------------------------ */
 
