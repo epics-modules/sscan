@@ -450,10 +450,10 @@ static void clocks2str(long isec, char *str)
 static void formatTimeStr(
 char *tStr,			/* string to recieve the result */
 int tStrLen,		/* maximum length of tStr */
-long final,			/* final time as a time_t, this is what's given */
+time_t final,			/* final time as a time_t, this is what's given */
 int full)			/* when true, always use GeneralDateFMT */
 {
-	long	now;
+	time_t	now;
 	struct tm *tm1;
 	int	isToday=0;
 	int	isTomorrow=0;
