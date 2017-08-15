@@ -44,15 +44,14 @@ ifdef SNCSEQ
 endif
 
 # save scan data stuff
-# XDR not available on WIN32
-ifeq ($(OS_CLASS), WIN32)
 sscan_SRCS += saveData_writeXDR.c, writeXDR.c
-else
-sscan_SRCS += xdr_lib.c
-sscan_SRCS += saveData.c
-sscan_SRCS_vxWorks += xdr_stdio.c
-sscan_SYS_LIBS_cygwin32 += $(CYGWIN_RPC_LIB)
-endif
+
+# The old saveData code, in case it's still needed on some platform
+#sscan_SRCS += xdr_lib.c
+#sscan_SRCS += saveData.c
+#sscan_SRCS_vxWorks += xdr_stdio.c
+#sscan_SYS_LIBS_cygwin32 += $(CYGWIN_RPC_LIB)
+
 
 # for scanProgress
 ifdef SNCSEQ
