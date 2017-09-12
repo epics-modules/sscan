@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/keenanlang/sscan.svg?branch=master)](https://travis-ci.org/keenanlang/sscan)
+
 # sscan
 APS BCDA synApps module: sscan
 
