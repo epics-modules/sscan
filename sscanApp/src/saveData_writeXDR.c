@@ -2587,7 +2587,18 @@ LOCAL int writeScanRecInProgress(SCAN *pscan, epicsTimeStamp stamp, int isRetry)
 	}
 
 cleanup:
-	fclose(fd);
+	i = fclose(fd);
+	if (i) {
+		printf("saveData:writeScanRecInProgress: fclose(%s) returned %d, errno = %d ('%s')\n", 
+				pscan->ffname, i, errno, strerror(errno));
+		epicsThreadSleep(0.1);
+		i = fclose(fd);
+		if (i) {
+			printf("saveData:writeScanRecInProgress: retry fclose(%s) returned %d, errno = %d ('%s')\n", 
+					pscan->ffname, i, errno, strerror(errno));
+			writeFailed = 1;
+		}
+	}
 	return(writeFailed ? -1 : 0);
 }
 
@@ -2765,8 +2776,19 @@ LOCAL int writeScanRecCompleted(SCAN *pscan, int isRetry)
 	}
 
 cleanup:
-	fclose(fd);
-	return(writeFailed?1:0);
+	i = fclose(fd);
+	if (i) {
+		printf("saveData:writeScanRecCompleted: fclose(%s) returned %d, errno = %d ('%s')\n", 
+				pscan->ffname, i, errno, strerror(errno));
+		epicsThreadSleep(0.1);
+		i = fclose(fd);
+		if (i) {
+			printf("saveData:writeScanRecCompleted: retry fclose(%s) returned %d, errno = %d ('%s')\n", 
+					pscan->ffname, i, errno, strerror(errno));
+			writeFailed = 1;
+		}
+	}
+	return(writeFailed ? -1 : 0);
 }
 
 
@@ -3139,7 +3161,18 @@ LOCAL void proc_scan_cpt(SCAN_LONG_MSG* pmsg)
 	}
 
 cleanup:
-	fclose(fd);
+	i = fclose(fd);
+	if (i) {
+		printf("saveData:proc_scan_cpt: fclose(%s) returned %d, errno = %d ('%s')\n", 
+				pscan->ffname, i, errno, strerror(errno));
+		epicsThreadSleep(0.1);
+		i = fclose(fd);
+		if (i) {
+			printf("saveData:proc_scan_cpt: retry fclose(%s) returned %d, errno = %d ('%s')\n", 
+					pscan->ffname, i, errno, strerror(errno));
+			writeFailed = 1;
+		}
+	}
 	epicsTimeGetCurrent(&now);
 	Debug2(1, "saveData:proc_scan_cpt:%s data point written (%.3fs)\n", pscan->name,
 		(float)epicsTimeDiffInSeconds(&now, &openTime));
