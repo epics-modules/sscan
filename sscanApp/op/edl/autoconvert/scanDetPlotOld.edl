@@ -1,0 +1,77 @@
+4 0 0
+beginScreenProperties
+major 4
+minor 0
+release 0
+x 10
+y 20
+w 400
+h 200
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-8.0"
+btnFont "helvetica-medium-r-18.0"
+fgColor index 14
+bgColor index 4
+textColor index 14
+ctlFgColor1 index 30
+ctlFgColor2 index 32
+ctlBgColor1 index 34
+ctlBgColor2 index 35
+topShadowColor index 37
+botShadowColor index 44
+snapToGrid
+gridSize 5
+endScreenProperties
+
+
+# (X-Y Graph)
+object xyGraphClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 0
+w 400
+h 200
+# Appearance
+border
+graphTitle "$(S) DETECTOR $(D)"
+xLabel "POSITIONER 1"
+yLabel "D$(D)"
+fgColor index 14
+bgColor index 0
+gridColor index 14
+font "helvetica-medium-r-10.0"
+# Operating Modes
+plotMode "plotLastNPts"
+nPts 2000
+#  X axis properties
+showXAxis
+xAxisSrc "AutoScale"
+xLablePrecision 1
+#  Y axis properties
+showYAxis
+yAxisSrc "AutoScale"
+#  Trace Properties
+numTraces 1
+xPv {
+  0 "$(P)$(S).P1RA"
+}
+yPv {
+  0 "$(P)$(S).D$(D)DA"
+}
+plotStyle {
+  0 "line"
+}
+plotUpdateMode {
+  0 "x"
+}
+plotSymbolType {
+  0 "circle"
+}
+plotColor {
+  0 index 20
+}
+endObjectProperties
+

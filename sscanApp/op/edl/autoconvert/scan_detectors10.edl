@@ -1,0 +1,1163 @@
+4 0 0
+beginScreenProperties
+major 4
+minor 0
+release 0
+x 21
+y 135
+w 290
+h 235
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-8.0"
+btnFont "helvetica-medium-r-18.0"
+fgColor index 14
+bgColor index 3
+textColor index 14
+ctlFgColor1 index 30
+ctlFgColor2 index 32
+ctlBgColor1 index 34
+ctlBgColor2 index 35
+topShadowColor index 37
+botShadowColor index 44
+snapToGrid
+gridSize 5
+endScreenProperties
+
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 0
+w 290
+h 15
+controlPv "$(P)$(S).NAME"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 0
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Lines)
+object activeLineClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 15
+w 295
+h 3
+lineColor index 53
+fillColor index 53
+lineWidth 3
+numPoints 2 {
+xPoints  {
+0 1
+1 293
+}
+yPoints  {
+0 16
+1 16
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 25
+y 17
+w 185
+h 14
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+fgColor index 14
+useDisplayBg
+value {
+ "Detector Names"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 19
+w 25
+h 10
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+fgColor index 14
+useDisplayBg
+value {
+ "PLOT"
+}
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 225
+y 30
+w 60
+h 20
+controlPv "$(P)$(S).D$(N1)CV"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 215
+y 33
+w 10
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 21
+useDisplayBg
+value {
+ "X"
+}
+visPv "CALC\\\{(A>1)\}($(P)$(S).D$(N1)NV)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 225
+y 50
+w 60
+h 20
+controlPv "$(P)$(S).D$(N2)CV"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 215
+y 53
+w 10
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 21
+useDisplayBg
+value {
+ "X"
+}
+visPv "CALC\\\{(A>1)\}($(P)$(S).D$(N2)NV)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 225
+y 90
+w 60
+h 20
+controlPv "$(P)$(S).D$(N4)CV"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 215
+y 93
+w 10
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 21
+useDisplayBg
+value {
+ "X"
+}
+visPv "CALC\\\{(A>1)\}($(P)$(S).D$(N4)NV)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 225
+y 70
+w 60
+h 20
+controlPv "$(P)$(S).D$(N3)CV"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 215
+y 73
+w 10
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 21
+useDisplayBg
+value {
+ "X"
+}
+visPv "CALC\\\{(A>1)\}($(P)$(S).D$(N3)NV)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 225
+y 110
+w 60
+h 20
+controlPv "$(P)$(S).D$(N5)CV"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 215
+y 113
+w 10
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 21
+useDisplayBg
+value {
+ "X"
+}
+visPv "CALC\\\{(A>1)\}($(P)$(S).D$(N5)NV)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 225
+y 130
+w 60
+h 20
+controlPv "$(P)$(S).D$(N6)CV"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 215
+y 133
+w 10
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 21
+useDisplayBg
+value {
+ "X"
+}
+visPv "CALC\\\{(A>1)\}($(P)$(S).D$(N6)NV)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 225
+y 150
+w 60
+h 20
+controlPv "$(P)$(S).D$(N7)CV"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 215
+y 153
+w 10
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 21
+useDisplayBg
+value {
+ "X"
+}
+visPv "CALC\\\{(A>1)\}($(P)$(S).D$(N7)NV)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 225
+y 170
+w 60
+h 20
+controlPv "$(P)$(S).D$(N8)CV"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 215
+y 173
+w 10
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 21
+useDisplayBg
+value {
+ "X"
+}
+visPv "CALC\\\{(A>1)\}($(P)$(S).D$(N8)NV)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 225
+y 190
+w 60
+h 20
+controlPv "$(P)$(S).D$(N9)CV"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 215
+y 193
+w 10
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 21
+useDisplayBg
+value {
+ "X"
+}
+visPv "CALC\\\{(A>1)\}($(P)$(S).D$(N9)NV)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 225
+y 210
+w 60
+h 20
+controlPv "$(P)$(S).D$(N10)CV"
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+smartRefresh
+fastUpdate
+fgColor index 53
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 215
+y 213
+w 10
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 21
+useDisplayBg
+value {
+ "X"
+}
+visPv "CALC\\\{(A>1)\}($(P)$(S).D$(N10)NV)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 30
+y 30
+w 185
+h 20
+controlPv "$(P)$(S).D$(N1)PV"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 35
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 30
+y 50
+w 185
+h 20
+controlPv "$(P)$(S).D$(N2)PV"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 35
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 30
+y 90
+w 185
+h 20
+controlPv "$(P)$(S).D$(N4)PV"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 35
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 30
+y 70
+w 185
+h 20
+controlPv "$(P)$(S).D$(N3)PV"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 35
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 30
+y 110
+w 185
+h 20
+controlPv "$(P)$(S).D$(N5)PV"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 35
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 30
+y 130
+w 185
+h 20
+controlPv "$(P)$(S).D$(N6)PV"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 35
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 30
+y 150
+w 185
+h 20
+controlPv "$(P)$(S).D$(N7)PV"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 35
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 30
+y 170
+w 185
+h 20
+controlPv "$(P)$(S).D$(N8)PV"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 35
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 30
+y 190
+w 185
+h 20
+controlPv "$(P)$(S).D$(N9)PV"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 35
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 30
+y 210
+w 185
+h 20
+controlPv "$(P)$(S).D$(N10)PV"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 35
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 30
+w 25
+h 20
+fgColor index 0
+bgColor index 17
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "$(N1)"
+numPvs 4
+numDsps 2
+displayFileName {
+  0 scanDetPlot.edl
+  1 scanDetPlotFromScalars.edl
+}
+menuLabel {
+  0 Plot Array
+  1 Plot From Scalars
+}
+symbols {
+  0 "P=$(P),S=$(S),N=$(N1)"
+  1 "P=$(P),S=$(S),N=$(N1)"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 50
+w 25
+h 20
+fgColor index 0
+bgColor index 17
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "$(N2)"
+numPvs 4
+numDsps 2
+displayFileName {
+  0 scanDetPlot.edl
+  1 scanDetPlotFromScalars.edl
+}
+menuLabel {
+  0 Plot Array
+  1 Plot From Scalars
+}
+symbols {
+  0 "P=$(P),S=$(S),N=$(N2)"
+  1 "P=$(P),S=$(S),N=$(N2)"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 90
+w 25
+h 20
+fgColor index 0
+bgColor index 17
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "$(N4)"
+numPvs 4
+numDsps 2
+displayFileName {
+  0 scanDetPlot.edl
+  1 scanDetPlotFromScalars.edl
+}
+menuLabel {
+  0 Plot Array
+  1 Plot From Scalars
+}
+symbols {
+  0 "P=$(P),S=$(S),N=$(N4)"
+  1 "P=$(P),S=$(S),N=$(N4)"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 70
+w 25
+h 20
+fgColor index 0
+bgColor index 17
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "$(N3)"
+numPvs 4
+numDsps 2
+displayFileName {
+  0 scanDetPlot.edl
+  1 scanDetPlotFromScalars.edl
+}
+menuLabel {
+  0 Plot Array
+  1 Plot From Scalars
+}
+symbols {
+  0 "P=$(P),S=$(S),N=$(N3)"
+  1 "P=$(P),S=$(S),N=$(N3)"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 110
+w 25
+h 20
+fgColor index 0
+bgColor index 17
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "$(N5)"
+numPvs 4
+numDsps 2
+displayFileName {
+  0 scanDetPlot.edl
+  1 scanDetPlotFromScalars.edl
+}
+menuLabel {
+  0 Plot Array
+  1 Plot From Scalars
+}
+symbols {
+  0 "P=$(P),S=$(S),N=$(N5)"
+  1 "P=$(P),S=$(S),N=$(N5)"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 130
+w 25
+h 20
+fgColor index 0
+bgColor index 17
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "$(N6)"
+numPvs 4
+numDsps 2
+displayFileName {
+  0 scanDetPlot.edl
+  1 scanDetPlotFromScalars.edl
+}
+menuLabel {
+  0 Plot Array
+  1 Plot From Scalars
+}
+symbols {
+  0 "P=$(P),S=$(S),N=$(N6)"
+  1 "P=$(P),S=$(S),N=$(N6)"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 150
+w 25
+h 20
+fgColor index 0
+bgColor index 17
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "$(N7)"
+numPvs 4
+numDsps 2
+displayFileName {
+  0 scanDetPlot.edl
+  1 scanDetPlotFromScalars.edl
+}
+menuLabel {
+  0 Plot Array
+  1 Plot From Scalars
+}
+symbols {
+  0 "P=$(P),S=$(S),N=$(N7)"
+  1 "P=$(P),S=$(S),N=$(N7)"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 170
+w 25
+h 20
+fgColor index 0
+bgColor index 17
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "$(N8)"
+numPvs 4
+numDsps 2
+displayFileName {
+  0 scanDetPlot.edl
+  1 scanDetPlotFromScalars.edl
+}
+menuLabel {
+  0 Plot Array
+  1 Plot From Scalars
+}
+symbols {
+  0 "P=$(P),S=$(S),N=$(N8)"
+  1 "P=$(P),S=$(S),N=$(N8)"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 190
+w 25
+h 20
+fgColor index 0
+bgColor index 17
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "$(N9)"
+numPvs 4
+numDsps 2
+displayFileName {
+  0 scanDetPlot.edl
+  1 scanDetPlotFromScalars.edl
+}
+menuLabel {
+  0 Plot Array
+  1 Plot From Scalars
+}
+symbols {
+  0 "P=$(P),S=$(S),N=$(N9)"
+  1 "P=$(P),S=$(S),N=$(N9)"
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 210
+w 25
+h 20
+fgColor index 0
+bgColor index 17
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "$(N10)"
+numPvs 4
+numDsps 2
+displayFileName {
+  0 scanDetPlot.edl
+  1 scanDetPlotFromScalars.edl
+}
+menuLabel {
+  0 Plot Array
+  1 Plot From Scalars
+}
+symbols {
+  0 "P=$(P),S=$(S),N=$(N10)"
+  1 "P=$(P),S=$(S),N=$(N10)"
+}
+endObjectProperties
+

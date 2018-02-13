@@ -1,0 +1,666 @@
+4 0 0
+beginScreenProperties
+major 4
+minor 0
+release 0
+x 597
+y 248
+w 360
+h 90
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-8.0"
+btnFont "helvetica-medium-r-18.0"
+fgColor index 14
+bgColor index 2
+textColor index 14
+ctlFgColor1 index 30
+ctlFgColor2 index 32
+ctlBgColor1 index 34
+ctlBgColor2 index 35
+topShadowColor index 37
+botShadowColor index 44
+snapToGrid
+gridSize 5
+endScreenProperties
+
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 69
+w 352
+h 18
+
+beginGroup
+
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 69
+w 50
+h 18
+font "helvetica-medium-r-8.0"
+fgColor index 17
+useDisplayBg
+value {
+ "end"
+}
+visPv "CALC\\\{(A)\}($(B)running)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 69
+w 50
+h 18
+font "helvetica-medium-r-8.0"
+fgColor index 14
+useDisplayBg
+value {
+ "end"
+}
+visPv "CALC\\\{(!A)\}($(B)running)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 50
+y 69
+w 305
+h 18
+controlPv "$(B)endingTimeStr"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 2
+autoHeight
+format "string"
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+endGroup
+
+endObjectProperties
+
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 7
+y 3
+w 304
+h 13
+lineColor index 1
+fill
+fillColor index 1
+lineWidth 0
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 7
+y 3
+w 305
+h 14
+font "helvetica-medium-r-8.0"
+fontAlign "center"
+fgColor index 54
+useDisplayBg
+value {
+ "$(P)"
+}
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 285
+y 49
+w 50
+h 18
+controlPv "$(B)percentDone"
+font "helvetica-medium-r-8.0"
+fontAlign "right"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 2
+autoHeight
+format "string"
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 337
+y 49
+w 20
+h 18
+font "helvetica-medium-r-8.0"
+fgColor index 14
+useDisplayBg
+value {
+ "%"
+}
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 49
+w 257
+h 18
+
+beginGroup
+
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 49
+w 120
+h 18
+font "helvetica-medium-r-8.0"
+fgColor index 14
+useDisplayBg
+value {
+ "total time"
+}
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 130
+y 49
+w 130
+h 18
+controlPv "$(B)totalElapsedTimeStr"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 2
+autoHeight
+format "string"
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+endGroup
+
+visPv "CALC\\\{(A)\}($(B)running)"
+visMin 0
+visMax 1
+endObjectProperties
+
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 1
+y 20
+w 358
+h 28
+
+beginGroup
+
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 2
+y 21
+w 356
+h 26
+lineColor index 14
+fillColor index 14
+lineWidth 2
+endObjectProperties
+# (Bar)
+object activeBarClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 22
+w 354
+h 24
+indicatorColor index 41
+fgColor index 14
+bgColor index 3
+indicatorPv "$(B)percentDone"
+font "helvetica-medium-r-8.0"
+labelTicks 1
+majorTicks 10
+minorTicks 0
+border
+scaleFormat "FFloat"
+orientation "horizontal"
+endObjectProperties
+
+endGroup
+
+visPv "CALC\\\{(!A && !B)\}($(B)paused, $(B)running)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 20
+w 358
+h 28
+
+beginGroup
+
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 1
+y 21
+w 356
+h 26
+lineColor index 14
+fillColor index 14
+lineWidth 2
+endObjectProperties
+# (Bar)
+object activeBarClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 22
+w 354
+h 24
+indicatorColor index 32
+fgColor index 14
+bgColor index 3
+indicatorPv "$(B)percentDone"
+font "helvetica-medium-r-8.0"
+labelTicks 1
+majorTicks 10
+minorTicks 0
+border
+scaleFormat "FFloat"
+orientation "horizontal"
+endObjectProperties
+
+endGroup
+
+visPv "CALC\\\{(A)\}($(B)paused)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 20
+w 358
+h 28
+
+beginGroup
+
+# (Bar)
+object activeBarClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 22
+w 354
+h 24
+indicatorColor index 16
+fgColor index 14
+bgColor index 3
+indicatorPv "$(B)percentDone"
+font "helvetica-medium-r-8.0"
+labelTicks 1
+majorTicks 10
+minorTicks 0
+border
+scaleFormat "FFloat"
+orientation "horizontal"
+endObjectProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 1
+y 21
+w 356
+h 26
+lineColor index 14
+fillColor index 14
+lineWidth 2
+endObjectProperties
+
+endGroup
+
+visPv "CALC\\\{(A && !B)\}($(B)running, $(B)paused)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 49
+w 255
+h 18
+
+beginGroup
+
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 128
+y 49
+w 130
+h 18
+controlPv "$(B)remainingTimeStr"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 2
+autoHeight
+format "string"
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 49
+w 120
+h 18
+font "helvetica-medium-r-8.0"
+fgColor index 17
+useDisplayBg
+value {
+ "remaining time"
+}
+visPv "CALC\\\{(A)\}($(B)running)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+endGroup
+
+visPv "CALC\\\{(A)\}($(B)running)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 69
+w 352
+h 18
+
+beginGroup
+
+
+endGroup
+
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 49
+w 257
+h 18
+
+beginGroup
+
+
+endGroup
+
+visPv "CALC\\\{(A)\}($(B)running)"
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 1
+y 20
+w 358
+h 28
+
+beginGroup
+
+
+endGroup
+
+visPv "CALC\\\{(!A && !B)\}($(B)paused, $(B)running)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 20
+w 358
+h 28
+
+beginGroup
+
+
+endGroup
+
+visPv "CALC\\\{(A)\}($(B)paused)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 20
+w 358
+h 28
+
+beginGroup
+
+
+endGroup
+
+visPv "CALC\\\{(A && !B)\}($(B)running, $(B)paused)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 3
+y 49
+w 255
+h 18
+
+beginGroup
+
+
+endGroup
+
+visPv "CALC\\\{(A)\}($(B)running)"
+visInvert
+visMin 0
+visMax 1
+endObjectProperties
+
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 315
+y 1
+w 45
+h 18
+fgColor index 14
+bgColor index 4
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+buttonLabel "More"
+numPvs 2
+numDsps 1
+displayFileName {
+  0 ProgressBarMore.edl
+}
+menuLabel {
+  0 More
+}
+symbols {
+  0 "B=$(B),P=$(P)"
+}
+closeAction {
+  0 1
+}
+closeDisplay {
+  0 1
+}
+endObjectProperties
+

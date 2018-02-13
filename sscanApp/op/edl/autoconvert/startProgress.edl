@@ -1,0 +1,56 @@
+4 0 0
+beginScreenProperties
+major 4
+minor 0
+release 0
+x 509
+y 44
+w 180
+h 60
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-8.0"
+btnFont "helvetica-medium-r-18.0"
+fgColor index 14
+bgColor index 4
+textColor index 14
+ctlFgColor1 index 30
+ctlFgColor2 index 32
+ctlBgColor1 index 34
+ctlBgColor2 index 35
+topShadowColor index 37
+botShadowColor index 44
+snapToGrid
+gridSize 5
+endScreenProperties
+
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 20
+y 20
+w 130
+h 22
+fgColor index 14
+bgColor index 4
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-medium-r-10.0"
+icon
+buttonLabel "Progress Bar"
+numPvs 2
+numDsps 1
+displayFileName {
+  0 ProgressBar.edl
+}
+menuLabel {
+  0 progress
+}
+symbols {
+  0 "B=ornlefrc:scanProgress:,P=scanRecordName"
+}
+endObjectProperties
+
