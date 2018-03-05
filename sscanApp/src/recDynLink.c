@@ -872,6 +872,7 @@ LOCAL void recDynLinkInp(void)
 			SEVCHK(status,"ca_pend_event");
 		}
 	}
+	taskwdRemove(0);
 }
 
 /*
@@ -1006,4 +1007,5 @@ LOCAL void recDynLinkOut(void)
 			SEVCHK(status,"ca_pend_event");
 		}
 	}
+	taskwdRemove(0);
 }
