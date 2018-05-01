@@ -33,7 +33,7 @@ of this distribution.
 #include <epicsMutex.h>
 #include <epicsThread.h>
 #include <epicsEvent.h>
-#include <epicsVersion.h>       /* for LT_EPICSBASE macro */
+#include <epicsVersion.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -72,9 +72,8 @@ epicsExportAddress(int, recDynLinkDebug);
 #define VERSION_INT(V,R,M,P) ( ((V)<<24) | ((R)<<16) | ((M)<<8) | (P))
 #define EPICS_VERSION_INT VERSION_INT(EPICS_VERSION, EPICS_REVISION, EPICS_MODIFICATION, EPICS_PATCH_LEVEL)
 #endif
-#define LT_EPICSBASE(V,R,M,P) (EPICS_VERSION_INT < VERSION_INT((V),(R),(M),(P)))
 
-#if LT_EPICSBASE(3,15,0,0)
+#if EPICS_VERSION_INT < VERSION_INT(3,15,0,0)
 	epicsShareFunc long epicsShareAPI dbNameToAddr(const char *pname,struct dbAddr *); 
 #else
 	epicsShareFunc long dbNameToAddr(const char *pname,struct dbAddr *); 
@@ -90,9 +89,17 @@ epicsExportAddress(int, recDynLinkDebug);
 #define	newDBF_USHORT	4
 #define	newDBF_LONG	5
 #define	newDBF_ULONG	6
-#define	newDBF_FLOAT	7
-#define	newDBF_DOUBLE	8
-#define	newDBF_ENUM	9
+#if (EPICS_VERSION_INT < VERSION_INT(3,16,1,0))
+    #define newDBF_FLOAT    7
+    #define newDBF_DOUBLE   8
+    #define newDBF_ENUM     9
+#else
+    #define newDBF_INT64    7
+    #define newDBF_UINT64   8
+    #define newDBF_FLOAT    9
+    #define newDBF_DOUBLE  10
+    #define newDBF_ENUM    11
+#endif
 
 /* new data request buffer types */
 #define newDBR_STRING      newDBF_STRING
@@ -104,13 +111,19 @@ epicsExportAddress(int, recDynLinkDebug);
 #define newDBR_ULONG       newDBF_ULONG
 #define newDBR_FLOAT       newDBF_FLOAT
 #define newDBR_DOUBLE      newDBF_DOUBLE
-#ifndef newDBR_ENUM
 #define newDBR_ENUM        newDBF_ENUM
-#endif
 #define VALID_newDB_REQ(x) ((x >= 0) && (x <= newDBR_ENUM))
 static short mapNewToOld[newDBR_ENUM+1] = {
-	DBF_STRING,DBF_CHAR,DBF_CHAR,DBF_SHORT,DBF_SHORT,
-	DBF_LONG,DBF_LONG,DBF_FLOAT,DBF_DOUBLE,DBF_ENUM};
+    DBF_STRING,
+    DBF_CHAR,DBF_CHAR,
+    DBF_SHORT,DBF_SHORT,
+    DBF_LONG,DBF_LONG,
+#if (EPICS_VERSION_INT >= VERSION_INT(3,16,1,0))
+    DBF_DOUBLE,DBF_DOUBLE,  /* Mapping for INT64 types */
+#endif
+    DBF_FLOAT,DBF_DOUBLE,
+    DBF_ENUM
+};
 
 int   recDynLinkQsize = 256;
 epicsExportAddress(int, recDynLinkQsize);
