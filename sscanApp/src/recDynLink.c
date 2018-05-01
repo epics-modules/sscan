@@ -154,7 +154,7 @@ typedef struct dynLinkPvt{
     short		severity;
     void		*pbuffer;
     size_t		nRequest;
-    short		dbrType;
+    short		caType;
     double		graphicLow,graphHigh;
     double		controlLow,controlHigh;
     char		units[MAX_UNITS_SIZE];
@@ -224,6 +224,10 @@ long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 		printf("recDynLinkAddInput: pvname is blank\n");
 		return(-1);
 	}
+	if (!VALID_newDB_REQ(dbrType)) {
+		printf("recDynLinkAddInput: invalid dbrType %d\n", dbrType);
+		return(-1);
+	}
 	if (options&rdlDBONLY  && dbNameToAddr(pvname,&dbaddr)) return(-1);
 	if (!inpTaskId) recDynLinkStartTasks();
 	if (precDynLink->pdynLinkPvt) {
@@ -239,7 +243,7 @@ long epicsShareAPI recDynLinkAddInput(recDynLink *precDynLink,char *pvname,
 	pdynLinkPvt->lock = epicsMutexMustCreate();
 	precDynLink->pdynLinkPvt = pdynLinkPvt;
 	pdynLinkPvt->pvname = pvname;
-	pdynLinkPvt->dbrType = dbrType;
+	pdynLinkPvt->caType = mapNewToOld[dbrType];
 	pdynLinkPvt->searchCallback = searchCallback;
 	pdynLinkPvt->monitorCallback = monitorCallback;
 	pdynLinkPvt->io = ioInput;
@@ -277,6 +281,10 @@ long epicsShareAPI recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 		printf("recDynLinkAddOutput: pvname is empty\n");
 		return(-1);
 	}
+	if (!VALID_newDB_REQ(dbrType)) {
+		printf("recDynLinkAddInput: invalid dbrType %d\n", dbrType);
+		return(-1);
+	}
 	if (options&rdlDBONLY  && dbNameToAddr(pvname,&dbaddr)) return(-1);
 	if (!outTaskId) recDynLinkStartTasks();
 	if (precDynLink->pdynLinkPvt) {
@@ -292,7 +300,7 @@ long epicsShareAPI recDynLinkAddOutput(recDynLink *precDynLink,char *pvname,
 	pdynLinkPvt->lock = epicsMutexMustCreate();
 	precDynLink->pdynLinkPvt = pdynLinkPvt;
 	pdynLinkPvt->pvname = pvname;
-	pdynLinkPvt->dbrType = dbrType;
+	pdynLinkPvt->caType = mapNewToOld[dbrType];
 	pdynLinkPvt->searchCallback = searchCallback;
 	pdynLinkPvt->io = ioOutput;
 	pdynLinkPvt->scalar = (options&rdlSCALAR) ? TRUE : FALSE;
@@ -444,7 +452,7 @@ long epicsShareAPI recDynLinkGet(recDynLink *precDynLink,void *pbuffer,size_t *n
 	}
 	epicsMutexMustLock(pdynLinkPvt->lock);
 	memcpy(pbuffer,pdynLinkPvt->pbuffer,
-		(*nRequest * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
+		(*nRequest * dbr_size[pdynLinkPvt->caType]));
 	if (recDynLinkDebug > 5) 
             printf("recDynLinkGet: PV=%s, user asked for=%ld, got %ld\n", pdynLinkPvt->pvname,
 		save_nRequest, (long)*nRequest);
@@ -533,7 +541,7 @@ long epicsShareAPI recDynLinkPutCallback(recDynLink *precDynLink,void *pbuffer,s
 	nRequest = ca_element_count(pdynLinkPvt->chid);
 	pdynLinkPvt->nRequest = nRequest;
 	memcpy(pdynLinkPvt->pbuffer,pbuffer,
-		(nRequest * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
+		(nRequest * dbr_size[pdynLinkPvt->caType]));
 	cmd.data.precDynLink = precDynLink;
 	cmd.cmd = notifyCallback ? cmdPutCallback : cmdPut;
 	precDynLink->onQueue++;
@@ -624,12 +632,12 @@ LOCAL void getCallback(struct event_handler_args eha)
 	}
 	nRequest = pdynLinkPvt->nRequest;
 	pdynLinkPvt->pbuffer = calloc(nRequest,
-		dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]);
+		dbr_size[pdynLinkPvt->caType]);
 	pdynLinkPvt->state = stateConnected;
 	if (pdynLinkPvt->searchCallback) (pdynLinkPvt->searchCallback)(precDynLink);
 	if (pdynLinkPvt->io==ioInput) {
 		SEVCHK(ca_add_array_event(
-			dbf_type_to_DBR_TIME(mapNewToOld[pdynLinkPvt->dbrType]),
+			dbf_type_to_DBR_TIME(pdynLinkPvt->caType),
 			pdynLinkPvt->nRequest,
 			pdynLinkPvt->chid,monitorCallback,precDynLink,
 			0.0,0.0,0.0,
@@ -672,7 +680,7 @@ LOCAL void monitorCallback(struct event_handler_args eha)
 		if (count>=pdynLinkPvt->nRequest) count = pdynLinkPvt->nRequest;
 		pdbr_time_string = (struct dbr_time_string *)pbuffer;
 		if (recDynLinkDebug >= 15) {printf("recDynLink:monitorCallback: pdbr_time_string=%p\n", (void *)pdbr_time_string); epicsThreadSleep(.1);}
-		timeType = dbf_type_to_DBR_TIME(mapNewToOld[pdynLinkPvt->dbrType]);
+		timeType = dbf_type_to_DBR_TIME(pdynLinkPvt->caType);
 		pdata = (void *)((char *)pbuffer + dbr_value_offset[timeType]);
 		if (recDynLinkDebug >= 15) {printf("recDynLink:monitorCallback: copying time stamp\n"); epicsThreadSleep(.1);}
 		pdynLinkPvt->timestamp = pdbr_time_string->stamp; /*array copy*/
@@ -681,11 +689,11 @@ LOCAL void monitorCallback(struct event_handler_args eha)
 		pdynLinkPvt->severity = pdbr_time_string->severity;
 		if (recDynLinkDebug >= 15) printf("recDynLink:monitorCallback: calling memcpy\n");
 		memcpy(pdynLinkPvt->pbuffer,pdata,
-			(count * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
+			(count * dbr_size[pdynLinkPvt->caType]));
 		epicsMutexUnlock(pdynLinkPvt->lock);
 		if ((count > 1) && (recDynLinkDebug >= 5)) {
 			printf("recDynLink:monitorCallback: array of %ld elements\n", (long)pdynLinkPvt->nRequest);
-			switch (mapNewToOld[pdynLinkPvt->dbrType]) {
+			switch (pdynLinkPvt->caType) {
 			case DBF_STRING: case DBF_CHAR:
 				if (recDynLinkDebug >= 15) printf("recDynLink:monitorCallback: case DBF_STRING\n");
 				pchar = (char *)pdata;
@@ -747,13 +755,13 @@ LOCAL void userGetCallback(struct event_handler_args eha)
 		epicsMutexMustLock(pdynLinkPvt->lock);
 		if (count>=pdynLinkPvt->nRequest) count = pdynLinkPvt->nRequest;
 		pdbr_time_string = (struct dbr_time_string *)pbuffer;
-		timeType = dbf_type_to_DBR_TIME(mapNewToOld[pdynLinkPvt->dbrType]);
+		timeType = dbf_type_to_DBR_TIME(pdynLinkPvt->caType);
 		pdata = (void *)((char *)pbuffer + dbr_value_offset[timeType]);
 		pdynLinkPvt->timestamp = pdbr_time_string->stamp; /*array copy*/
 		pdynLinkPvt->status = pdbr_time_string->status;
 		pdynLinkPvt->severity = pdbr_time_string->severity;
 		memcpy(pdynLinkPvt->pbuffer,pdata,
-			(count * dbr_size[mapNewToOld[pdynLinkPvt->dbrType]]));
+			(count * dbr_size[pdynLinkPvt->caType]));
 		epicsMutexUnlock(pdynLinkPvt->lock);
 	}
 	if (pdynLinkPvt->userGetCallback)
@@ -859,7 +867,7 @@ LOCAL void recDynLinkInp(void)
 			case (cmdGetCallback):
 				didGetCallback = 1;
 				status = ca_array_get_callback(
-					dbf_type_to_DBR_TIME(mapNewToOld[pdynLinkPvt->dbrType]),
+					dbf_type_to_DBR_TIME(pdynLinkPvt->caType),
 					pdynLinkPvt->nRequest,pdynLinkPvt->chid, userGetCallback, precDynLink);
 				if (status!=ECA_NORMAL) {
 					epicsPrintf("recDynLinkTask pv=%s CA Error %s\n",
@@ -965,8 +973,7 @@ LOCAL void recDynLinkOut(void)
 				precDynLink->onQueue--;
 				break;
 			case (cmdPut):
-				caStatus = ca_array_put(
-					mapNewToOld[pdynLinkPvt->dbrType],
+				caStatus = ca_array_put(pdynLinkPvt->caType,
 					pdynLinkPvt->nRequest,pdynLinkPvt->chid,
 					pdynLinkPvt->pbuffer);
 				if (caStatus!=ECA_NORMAL) {
@@ -977,8 +984,7 @@ LOCAL void recDynLinkOut(void)
 				break;
 			case (cmdPutCallback):
 				pdynLinkPvt->notifyInProgress = 1;
-				caStatus = ca_array_put_callback(
-					mapNewToOld[pdynLinkPvt->dbrType],
+				caStatus = ca_array_put_callback(pdynLinkPvt->caType,
 					pdynLinkPvt->nRequest,pdynLinkPvt->chid,
 					pdynLinkPvt->pbuffer, notifyCallback, precDynLink);
 				if (caStatus!=ECA_NORMAL) {
@@ -997,7 +1003,7 @@ LOCAL void recDynLinkOut(void)
 					pdynLinkPvt->pvname, (long)pdynLinkPvt->nRequest); 
 
 				status = ca_array_get_callback(
-					dbf_type_to_DBR_TIME(mapNewToOld[pdynLinkPvt->dbrType]),
+					dbf_type_to_DBR_TIME(pdynLinkPvt->caType),
 					pdynLinkPvt->nRequest,pdynLinkPvt->chid, userGetCallback, precDynLink);
 				if (status!=ECA_NORMAL) {
 					epicsPrintf("recDynLinkTask pv=%s CA Error %s\n",
