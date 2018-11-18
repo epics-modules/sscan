@@ -439,23 +439,23 @@ static char linkNames[NUM_LINKS][6] =
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long     init_record();
-static long     process();
-static long     special();
+static long init_record(struct dbCommon *precord, int pass);
+static long process(dbCommon *precord);
+static long special(dbAddr *paddr, int after);
 #define get_value NULL
-static long     cvt_dbaddr();
-static long     get_array_info();
-static long     put_array_info();
-static long     get_units();
-static long     get_precision();
+static long cvt_dbaddr(dbAddr *paddr);
+static long get_array_info(dbAddr *paddr, long *no_elements, long *offset);
+static long put_array_info(dbAddr *paddr, long nNew);
+static long get_units(dbAddr *paddr, char *units);
+static long get_precision(const dbAddr *paddr, long *precision);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long     get_graphic_double();
-static long     get_control_double();
-static long     get_alarm_double();
+static long get_graphic_double(dbAddr *paddr, struct dbr_grDouble *p);
+static long get_control_double(dbAddr *paddr, struct dbr_ctrlDouble *p);
+static long get_alarm_double(dbAddr *paddr, struct dbr_alDouble *p);
 
-rset     sscanRSET = {
+rset sscanRSET = {
 	RSETNUMBER,
 	report,
 	initialize,
@@ -706,8 +706,9 @@ static int isBlank(char *name)
 }
 
 static long 
-init_record(sscanRecord *psscan, int pass)
+init_record(dbCommon *pcommon, int pass)
 {
+	sscanRecord    *psscan = (sscanRecord *) pcommon;
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	posFields      *pPos;
 	detFields      *pDet;
@@ -908,8 +909,9 @@ init_record(sscanRecord *psscan, int pass)
 }
 
 static long 
-process(sscanRecord *psscan)
+process(dbCommon *pcommon)
 {
+	sscanRecord    *psscan = (sscanRecord *) pcommon;
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	long            status = 0;
 	epicsTimeStamp	timeCurrent;
@@ -2050,7 +2052,7 @@ get_units(struct dbAddr *paddr, char *units)
 }
 
 static long 
-get_precision(struct dbAddr *paddr, long *precision)
+get_precision(const struct dbAddr *paddr, long *precision)
 {
 	sscanRecord *psscan = (sscanRecord *) paddr->precord;
 	posFields   *pPos = (posFields *) & psscan->p1pp;
@@ -5268,7 +5270,7 @@ previewScan(psscan)
 	float          *pDetBuf;
 	float           value;
 	long            i, j;
-	long            status;
+	long            status = 0;
 	size_t          nRequest = 1;
 
 	/* Update "previous position" of positioners to use in relative mode */
