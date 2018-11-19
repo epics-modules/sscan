@@ -159,9 +159,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#ifdef linux
-	#include <unistd.h>
-#endif
 
 /* definition of u_int, etc. */
 #include <sys/types.h>
@@ -197,6 +194,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <osiUnistd.h>
 
 #include <dbEvent.h>
 #include <special.h>
@@ -851,7 +849,7 @@ void saveData_Info() {
 		printf("  links:");
 		cur= scan;
 		while (cur) {
-			printf(cur->name);
+			printf("%s", cur->name);
 			cur= cur->nxt;
 			if (cur) printf("->");
 		}
@@ -3533,7 +3531,6 @@ LOCAL void remount_file_system(char* filesystem)
 {
 	char  msg[MAX_STRING_SIZE];
 	char *path = local_pathname;
-	int i;
 #ifdef vxWorks
 	char  hostname[40];
 	char *cout;
