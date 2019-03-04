@@ -176,7 +176,7 @@
 #ifdef vxWorks
 	#include <usrLib.h>
 	#include <ioLib.h>
-	#include "nfs/nfsCommon.h"
+	/*#include "nfs/nfsCommon.h"*/
 	
 	/* nfsDrv.h was renamed nfsDriver.h in Tornado 2.2.2 */
 	/* #include	<nfsDrv.h> */
@@ -3571,7 +3571,8 @@ LOCAL void remount_file_system(char* filesystem)
 		
 		/* Enable write-through cache */
 		savedCacheOptions = nfs3CacheOptions;
-		nfs3CacheOptions = NFS_CACHE_WRITE_THROUGH;
+		/*nfs3CacheOptions = NFS_CACHE_WRITE_THROUGH;*/
+		nfs3CacheOptions = 1;
 		
 		/* Mount the new file system */
 		if (nfsMount(hostname, filesystem, "/data")==ERROR) {
