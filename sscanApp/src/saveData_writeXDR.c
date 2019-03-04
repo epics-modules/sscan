@@ -181,6 +181,7 @@
 	/* #include	<nfsDrv.h> */
 	extern STATUS nfsMount(char *host, char *fileSystem, char *localName);
 	extern STATUS nfsUnmount(char *localName);
+	extern UINT32 nfs3CacheOptions;
 
 #else
 	#include <sys/stat.h>
@@ -3565,6 +3566,9 @@ LOCAL void remount_file_system(char* filesystem)
 		}
 		*cout='\0';
 		
+		/* Enable write-through cache */
+		nfs3CacheOptions = 1;
+		
 		/* Mount the new file system */
 		if (nfsMount(hostname, filesystem, "/data")==ERROR) {
 			strncpy(msg, "Unable to mount file system !!!!", MAX_STRING_SIZE);
@@ -3572,6 +3576,9 @@ LOCAL void remount_file_system(char* filesystem)
 			file_system_state= FS_MOUNTED;
 			path = local_pathname;
 		}
+		
+		/* Disable write-through cache */
+		nfs3CacheOptions = 0;
 	}
 
 #else
