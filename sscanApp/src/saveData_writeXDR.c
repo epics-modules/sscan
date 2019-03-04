@@ -3535,6 +3535,7 @@ LOCAL void remount_file_system(char* filesystem)
 #ifdef vxWorks
 	char  hostname[40];
 	char *cout;
+	int  i;
 #endif
 
 #ifdef vxWorks
