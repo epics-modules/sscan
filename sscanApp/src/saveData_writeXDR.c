@@ -3558,7 +3558,7 @@ LOCAL void remount_file_system(char* filesystem)
 	} else {
 		/* extract the host name */
 		cout= hostname;
-		i = 0;
+		int i = 0;
 		while ((*filesystem!='\0') && (*filesystem!='/') && i<40) {
 			*(cout++)= *(filesystem++);
 			i++;
