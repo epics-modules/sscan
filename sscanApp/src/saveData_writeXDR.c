@@ -2247,7 +2247,6 @@ LOCAL void getExtraPV()
 LOCAL int saveExtraPV(FILE *fd)
 {
 	PV_NODE* pcur;
-	chid     channel;
 	int      type;
 	DBR_VAL* pval;
 	long     count;
@@ -2263,7 +2262,6 @@ LOCAL int saveExtraPV(FILE *fd)
 		while (pcur) {
 			epicsMutexLock(pcur->lock);
 
-			channel= pcur->channel;
 			pval= pcur->pval;
 			
 			cptr= pcur->name;
