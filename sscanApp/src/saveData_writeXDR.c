@@ -3557,8 +3557,8 @@ LOCAL void remount_file_system(char* filesystem)
 		strncpy(msg, "Invalid file system !!!", MAX_STRING_SIZE);
 	} else {
 		/* extract the host name */
-		cout= hostname;
 		int i = 0;
+		cout= hostname;
 		while ((*filesystem!='\0') && (*filesystem!='/') && i<40) {
 			*(cout++)= *(filesystem++);
 			i++;
