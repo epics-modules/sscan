@@ -7,11 +7,11 @@
   </auto_scale_widgets>
   <auto_zoom_to_fit_all>false</auto_zoom_to_fit_all>
   <background_color>
-    <color name="Gray_14" red="0" green="0" blue="0" />
+    <color red="0" green="0" blue="0" />
   </background_color>
-  <boy_version>5.1.0.201802081749</boy_version>
+  <boy_version>5.1.0</boy_version>
   <foreground_color>
-    <color name="Gray_0" red="255" green="255" blue="255" />
+    <color red="255" green="255" blue="255" />
   </foreground_color>
   <grid_space>5</grid_space>
   <height>235</height>
@@ -36,7 +36,7 @@
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Gray_14" red="0" green="0" blue="0" />
+      <color red="0" green="0" blue="0" />
     </background_color>
     <border_alarm_sensitive>true</border_alarm_sensitive>
     <border_color>
@@ -46,11 +46,11 @@
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color name="alarm" red="253" green="0" blue="0" />
+      <color red="253" green="0" blue="0" />
     </foreground_color>
     <format_type>1</format_type>
     <height>13</height>
@@ -98,13 +98,13 @@ $(pv_value)</tooltip>
     <axis_0_maximum>100.0</axis_0_maximum>
     <axis_0_minimum>0.0</axis_0_minimum>
     <axis_0_scale_font>
-      <opifont.name fontName="Cantarell" height="11" style="0" pixels="false">Default</opifont.name>
+      <opifont.name fontName="Sans" height="10" style="0" pixels="false">Default</opifont.name>
     </axis_0_scale_font>
     <axis_0_scale_format></axis_0_scale_format>
     <axis_0_show_grid>true</axis_0_show_grid>
     <axis_0_time_format>0</axis_0_time_format>
     <axis_0_title_font>
-      <opifont.name fontName="Cantarell" height="11" style="1" pixels="false">Default Bold</opifont.name>
+      <opifont.name fontName="Sans" height="10" style="1" pixels="false">Default Bold</opifont.name>
     </axis_0_title_font>
     <axis_0_visible>true</axis_0_visible>
     <axis_1_auto_scale>true</axis_1_auto_scale>
@@ -121,13 +121,13 @@ $(pv_value)</tooltip>
     <axis_1_maximum>100.0</axis_1_maximum>
     <axis_1_minimum>0.0</axis_1_minimum>
     <axis_1_scale_font>
-      <opifont.name fontName="Cantarell" height="11" style="0" pixels="false">Default</opifont.name>
+      <opifont.name fontName="Sans" height="10" style="0" pixels="false">Default</opifont.name>
     </axis_1_scale_font>
     <axis_1_scale_format></axis_1_scale_format>
     <axis_1_show_grid>true</axis_1_show_grid>
     <axis_1_time_format>0</axis_1_time_format>
     <axis_1_title_font>
-      <opifont.name fontName="Cantarell" height="11" style="1" pixels="false">Default Bold</opifont.name>
+      <opifont.name fontName="Sans" height="10" style="1" pixels="false">Default Bold</opifont.name>
     </axis_1_title_font>
     <axis_1_visible>true</axis_1_visible>
     <axis_2_auto_scale>true</axis_2_auto_scale>
@@ -145,13 +145,13 @@ $(pv_value)</tooltip>
     <axis_2_maximum>100.0</axis_2_maximum>
     <axis_2_minimum>0.0</axis_2_minimum>
     <axis_2_scale_font>
-      <opifont.name fontName="Cantarell" height="11" style="0" pixels="false">Default</opifont.name>
+      <opifont.name fontName="Sans" height="10" style="0" pixels="false">Default</opifont.name>
     </axis_2_scale_font>
     <axis_2_scale_format></axis_2_scale_format>
     <axis_2_show_grid>true</axis_2_show_grid>
     <axis_2_time_format>0</axis_2_time_format>
     <axis_2_title_font>
-      <opifont.name fontName="Cantarell" height="11" style="1" pixels="false">Default Bold</opifont.name>
+      <opifont.name fontName="Sans" height="10" style="1" pixels="false">Default Bold</opifont.name>
     </axis_2_title_font>
     <axis_2_visible>true</axis_2_visible>
     <axis_2_y_axis>true</axis_2_y_axis>
@@ -170,13 +170,13 @@ $(pv_value)</tooltip>
     <axis_3_maximum>100.0</axis_3_maximum>
     <axis_3_minimum>0.0</axis_3_minimum>
     <axis_3_scale_font>
-      <opifont.name fontName="Cantarell" height="11" style="0" pixels="false">Default</opifont.name>
+      <opifont.name fontName="Sans" height="10" style="0" pixels="false">Default</opifont.name>
     </axis_3_scale_font>
     <axis_3_scale_format></axis_3_scale_format>
     <axis_3_show_grid>true</axis_3_show_grid>
     <axis_3_time_format>0</axis_3_time_format>
     <axis_3_title_font>
-      <opifont.name fontName="Cantarell" height="11" style="1" pixels="false">Default Bold</opifont.name>
+      <opifont.name fontName="Sans" height="10" style="1" pixels="false">Default Bold</opifont.name>
     </axis_3_title_font>
     <axis_3_visible>true</axis_3_visible>
     <axis_3_y_axis>true</axis_3_y_axis>
@@ -215,13 +215,13 @@ $(pv_value)</tooltip>
     <show_toolbar>true</show_toolbar>
     <title></title>
     <title_font>
-      <opifont.name fontName="Cantarell" height="11" style="1" pixels="false">Default Bold</opifont.name>
+      <opifont.name fontName="Sans" height="10" style="1" pixels="false">Default Bold</opifont.name>
     </title_font>
     <tooltip>$(trace_0_y_pv)
 $(trace_0_y_pv_value)</tooltip>
     <trace_0_anti_alias>true</trace_0_anti_alias>
-    <trace_0_buffer_size>100</trace_0_buffer_size>
-    <trace_0_concatenate_data>true</trace_0_concatenate_data>
+    <trace_0_buffer_size>0</trace_0_buffer_size>
+    <trace_0_concatenate_data>false</trace_0_concatenate_data>
     <trace_0_line_width>1</trace_0_line_width>
     <trace_0_name>$(trace_0_y_pv)</trace_0_name>
     <trace_0_plot_mode>0</trace_0_plot_mode>
@@ -451,8 +451,8 @@ $(trace_0_y_pv_value)</tooltip>
     <trace_19_y_pv></trace_19_y_pv>
     <trace_19_y_pv_value />
     <trace_1_anti_alias>true</trace_1_anti_alias>
-    <trace_1_buffer_size>100</trace_1_buffer_size>
-    <trace_1_concatenate_data>true</trace_1_concatenate_data>
+    <trace_1_buffer_size>0</trace_1_buffer_size>
+    <trace_1_concatenate_data>false</trace_1_concatenate_data>
     <trace_1_line_width>1</trace_1_line_width>
     <trace_1_name>$(trace_1_y_pv)</trace_1_name>
     <trace_1_plot_mode>0</trace_1_plot_mode>
@@ -472,8 +472,8 @@ $(trace_0_y_pv_value)</tooltip>
     <trace_1_y_pv>$(P)$(S).D$(N2)CV</trace_1_y_pv>
     <trace_1_y_pv_value />
     <trace_2_anti_alias>true</trace_2_anti_alias>
-    <trace_2_buffer_size>100</trace_2_buffer_size>
-    <trace_2_concatenate_data>true</trace_2_concatenate_data>
+    <trace_2_buffer_size>0</trace_2_buffer_size>
+    <trace_2_concatenate_data>false</trace_2_concatenate_data>
     <trace_2_line_width>1</trace_2_line_width>
     <trace_2_name>$(trace_2_y_pv)</trace_2_name>
     <trace_2_plot_mode>0</trace_2_plot_mode>
@@ -493,8 +493,8 @@ $(trace_0_y_pv_value)</tooltip>
     <trace_2_y_pv>$(P)$(S).D$(N3)CV</trace_2_y_pv>
     <trace_2_y_pv_value />
     <trace_3_anti_alias>true</trace_3_anti_alias>
-    <trace_3_buffer_size>100</trace_3_buffer_size>
-    <trace_3_concatenate_data>true</trace_3_concatenate_data>
+    <trace_3_buffer_size>0</trace_3_buffer_size>
+    <trace_3_concatenate_data>false</trace_3_concatenate_data>
     <trace_3_line_width>1</trace_3_line_width>
     <trace_3_name>$(trace_3_y_pv)</trace_3_name>
     <trace_3_plot_mode>0</trace_3_plot_mode>
@@ -514,8 +514,8 @@ $(trace_0_y_pv_value)</tooltip>
     <trace_3_y_pv>$(P)$(S).D$(N4)CV</trace_3_y_pv>
     <trace_3_y_pv_value />
     <trace_4_anti_alias>true</trace_4_anti_alias>
-    <trace_4_buffer_size>100</trace_4_buffer_size>
-    <trace_4_concatenate_data>true</trace_4_concatenate_data>
+    <trace_4_buffer_size>0</trace_4_buffer_size>
+    <trace_4_concatenate_data>false</trace_4_concatenate_data>
     <trace_4_line_width>1</trace_4_line_width>
     <trace_4_name>$(trace_4_y_pv)</trace_4_name>
     <trace_4_plot_mode>0</trace_4_plot_mode>
@@ -535,8 +535,8 @@ $(trace_0_y_pv_value)</tooltip>
     <trace_4_y_pv>$(P)$(S).D$(N5)CV</trace_4_y_pv>
     <trace_4_y_pv_value />
     <trace_5_anti_alias>true</trace_5_anti_alias>
-    <trace_5_buffer_size>100</trace_5_buffer_size>
-    <trace_5_concatenate_data>true</trace_5_concatenate_data>
+    <trace_5_buffer_size>0</trace_5_buffer_size>
+    <trace_5_concatenate_data>false</trace_5_concatenate_data>
     <trace_5_line_width>1</trace_5_line_width>
     <trace_5_name>$(trace_5_y_pv)</trace_5_name>
     <trace_5_plot_mode>0</trace_5_plot_mode>
@@ -556,8 +556,8 @@ $(trace_0_y_pv_value)</tooltip>
     <trace_5_y_pv>$(P)$(S).D$(N6)CV</trace_5_y_pv>
     <trace_5_y_pv_value />
     <trace_6_anti_alias>true</trace_6_anti_alias>
-    <trace_6_buffer_size>100</trace_6_buffer_size>
-    <trace_6_concatenate_data>true</trace_6_concatenate_data>
+    <trace_6_buffer_size>0</trace_6_buffer_size>
+    <trace_6_concatenate_data>false</trace_6_concatenate_data>
     <trace_6_line_width>1</trace_6_line_width>
     <trace_6_name>$(trace_6_y_pv)</trace_6_name>
     <trace_6_plot_mode>0</trace_6_plot_mode>
@@ -577,8 +577,8 @@ $(trace_0_y_pv_value)</tooltip>
     <trace_6_y_pv>$(P)$(S).D$(N7)CV</trace_6_y_pv>
     <trace_6_y_pv_value />
     <trace_7_anti_alias>true</trace_7_anti_alias>
-    <trace_7_buffer_size>100</trace_7_buffer_size>
-    <trace_7_concatenate_data>true</trace_7_concatenate_data>
+    <trace_7_buffer_size>0</trace_7_buffer_size>
+    <trace_7_concatenate_data>false</trace_7_concatenate_data>
     <trace_7_line_width>1</trace_7_line_width>
     <trace_7_name>$(trace_7_y_pv)</trace_7_name>
     <trace_7_plot_mode>0</trace_7_plot_mode>
@@ -662,10 +662,10 @@ $(trace_0_y_pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="21" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="21" style="0" pixels="false" />
     </font>
     <foreground_color>
-      <color name="Gray_14" red="0" green="0" blue="0" />
+      <color red="0" green="0" blue="0" />
     </foreground_color>
     <height>40</height>
     <horizontal_alignment>0</horizontal_alignment>
@@ -695,7 +695,7 @@ $(trace_0_y_pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Gray_14" red="0" green="0" blue="0" />
+      <color red="0" green="0" blue="0" />
     </background_color>
     <border_alarm_sensitive>true</border_alarm_sensitive>
     <border_color>
@@ -705,11 +705,11 @@ $(trace_0_y_pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color name="Gray_0" red="255" green="255" blue="255" />
+      <color red="255" green="255" blue="255" />
     </foreground_color>
     <format_type>1</format_type>
     <height>13</height>
@@ -753,10 +753,10 @@ $(pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <foreground_color>
-      <color name="Gray_0" red="255" green="255" blue="255" />
+      <color red="255" green="255" blue="255" />
     </foreground_color>
     <height>13</height>
     <horizontal_alignment>1</horizontal_alignment>
@@ -786,7 +786,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Gray_14" red="0" green="0" blue="0" />
+      <color red="0" green="0" blue="0" />
     </background_color>
     <border_alarm_sensitive>true</border_alarm_sensitive>
     <border_color>
@@ -796,11 +796,11 @@ $(pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color name="softGlue_output" red="205" green="97" blue="0" />
+      <color red="205" green="97" blue="0" />
     </foreground_color>
     <format_type>1</format_type>
     <height>13</height>
@@ -837,7 +837,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Gray_14" red="0" green="0" blue="0" />
+      <color red="0" green="0" blue="0" />
     </background_color>
     <border_alarm_sensitive>true</border_alarm_sensitive>
     <border_color>
@@ -847,11 +847,11 @@ $(pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color name="warning" red="251" green="243" blue="74" />
+      <color red="251" green="243" blue="74" />
     </foreground_color>
     <format_type>1</format_type>
     <height>13</height>
@@ -888,7 +888,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Gray_14" red="0" green="0" blue="0" />
+      <color red="0" green="0" blue="0" />
     </background_color>
     <border_alarm_sensitive>true</border_alarm_sensitive>
     <border_color>
@@ -898,11 +898,11 @@ $(pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color name="MEDM_COLOR_15" red="0" green="216" blue="0" />
+      <color red="0" green="216" blue="0" />
     </foreground_color>
     <format_type>1</format_type>
     <height>13</height>
@@ -939,7 +939,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Gray_14" red="0" green="0" blue="0" />
+      <color red="0" green="0" blue="0" />
     </background_color>
     <border_alarm_sensitive>true</border_alarm_sensitive>
     <border_color>
@@ -949,11 +949,11 @@ $(pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color name="MEDM_COLOR_50" red="153" green="255" blue="255" />
+      <color red="153" green="255" blue="255" />
     </foreground_color>
     <format_type>1</format_type>
     <height>13</height>
@@ -990,7 +990,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Gray_14" red="0" green="0" blue="0" />
+      <color red="0" green="0" blue="0" />
     </background_color>
     <border_alarm_sensitive>true</border_alarm_sensitive>
     <border_color>
@@ -1000,11 +1000,11 @@ $(pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color name="recdynlink_bg" red="255" green="176" blue="255" />
+      <color red="255" green="176" blue="255" />
     </foreground_color>
     <format_type>1</format_type>
     <height>13</height>
@@ -1041,7 +1041,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Gray_14" red="0" green="0" blue="0" />
+      <color red="0" green="0" blue="0" />
     </background_color>
     <border_alarm_sensitive>true</border_alarm_sensitive>
     <border_color>
@@ -1051,11 +1051,11 @@ $(pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color name="Gray_0" red="255" green="255" blue="255" />
+      <color red="255" green="255" blue="255" />
     </foreground_color>
     <format_type>1</format_type>
     <height>13</height>
@@ -1092,7 +1092,7 @@ $(pv_value)</tooltip>
     <auto_size>false</auto_size>
     <backcolor_alarm_sensitive>false</backcolor_alarm_sensitive>
     <background_color>
-      <color name="Gray_14" red="0" green="0" blue="0" />
+      <color red="0" green="0" blue="0" />
     </background_color>
     <border_alarm_sensitive>true</border_alarm_sensitive>
     <border_color>
@@ -1102,11 +1102,11 @@ $(pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <forecolor_alarm_sensitive>false</forecolor_alarm_sensitive>
     <foreground_color>
-      <color name="MEDM_COLOR_46" red="183" green="157" blue="92" />
+      <color red="183" green="157" blue="92" />
     </foreground_color>
     <format_type>1</format_type>
     <height>13</height>
@@ -1150,10 +1150,10 @@ $(pv_value)</tooltip>
     <border_width>1</border_width>
     <enabled>true</enabled>
     <font>
-      <fontdata fontName="Cantarell" height="8" style="0" pixels="false" />
+      <fontdata fontName="Sans" height="8" style="0" pixels="false" />
     </font>
     <foreground_color>
-      <color name="Gray_0" red="255" green="255" blue="255" />
+      <color red="255" green="255" blue="255" />
     </foreground_color>
     <height>13</height>
     <horizontal_alignment>1</horizontal_alignment>
