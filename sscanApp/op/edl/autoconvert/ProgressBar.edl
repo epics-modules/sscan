@@ -1,28 +1,28 @@
-4 0 0
+4 0 1
 beginScreenProperties
 major 4
 minor 0
-release 0
+release 1
 x 597
 y 248
 w 360
 h 90
 font "helvetica-medium-r-18.0"
-ctlFont "helvetica-medium-r-8.0"
+ctlFont "helvetica-bold-r-10.0"
 btnFont "helvetica-medium-r-18.0"
-fgColor index 14
-bgColor index 2
-textColor index 14
-ctlFgColor1 index 30
-ctlFgColor2 index 32
-ctlBgColor1 index 34
-ctlBgColor2 index 35
-topShadowColor index 37
-botShadowColor index 44
+fgColor rgb 0 0 0
+bgColor rgb 55808 55808 55808
+textColor rgb 0 0 0
+ctlFgColor1 rgb 64256 62208 18944
+ctlFgColor2 rgb 60928 46592 11008
+ctlBgColor1 rgb 52480 24832 0
+ctlBgColor2 rgb 65280 45056 65280
+topShadowColor rgb 44544 19968 48128
+botShadowColor rgb 13312 13056 34304
+showGrid
 snapToGrid
-gridSize 5
+gridSize 4
 endScreenProperties
-
 
 # (Group)
 object activeGroupClass
@@ -37,22 +37,22 @@ h 18
 
 beginGroup
 
-
 # (Static Text)
 object activeXTextClass
 beginObjectProperties
 major 4
-minor 0
-release 0
+minor 1
+release 1
 x 3
 y 69
 w 50
 h 18
-font "helvetica-medium-r-8.0"
-fgColor index 17
+font "helvetica-medium-r-14.0"
+fgColor rgb 13056 39168 0
+bgColor index 3
 useDisplayBg
 value {
- "end"
+  "end"
 }
 visPv "CALC\\\{(A)\}($(B)running)"
 visInvert
@@ -64,17 +64,18 @@ endObjectProperties
 object activeXTextClass
 beginObjectProperties
 major 4
-minor 0
-release 0
+minor 1
+release 1
 x 3
 y 69
 w 50
 h 18
-font "helvetica-medium-r-8.0"
-fgColor index 14
+font "helvetica-medium-r-14.0"
+fgColor rgb 0 0 0
+bgColor index 3
 useDisplayBg
 value {
- "end"
+  "end"
 }
 visPv "CALC\\\{(!A)\}($(B)running)"
 visInvert
@@ -82,28 +83,28 @@ visMin 0
 visMax 1
 endObjectProperties
 
-# (Text Control)
-object activeXTextDspClass
+# (Text Monitor)
+object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 0
+minor 7
 release 0
 x 50
 y 69
 w 305
 h 18
 controlPv "$(B)endingTimeStr"
-font "helvetica-medium-r-8.0"
+format "string"
+font "helvetica-medium-r-14.0"
+fontAlign "left"
+fgColor rgb 0 0 0
+bgColor rgb 55808 55808 55808
+limitsFromDb
+nullColor rgb 60928 46592 11008
 smartRefresh
 fastUpdate
-fgColor index 14
-bgColor index 2
-autoHeight
-format "string"
-nullColor index 32
-useHexPrefix
-objType "controls"
 newPos
+objType "controls"
 endObjectProperties
 
 endGroup
@@ -121,9 +122,9 @@ x 7
 y 3
 w 304
 h 13
-lineColor index 1
+lineColor rgb 60416 60416 60416
 fill
-fillColor index 1
+fillColor rgb 60416 60416 60416
 lineWidth 0
 endObjectProperties
 
@@ -131,61 +132,62 @@ endObjectProperties
 object activeXTextClass
 beginObjectProperties
 major 4
-minor 0
-release 0
+minor 1
+release 1
 x 7
 y 3
 w 305
 h 14
-font "helvetica-medium-r-8.0"
+font "helvetica-medium-r-12.0"
 fontAlign "center"
-fgColor index 54
+fgColor rgb 2560 0 47104
+bgColor index 3
 useDisplayBg
 value {
- "$(P)"
+  "$(P)"
 }
 endObjectProperties
 
-# (Text Control)
-object activeXTextDspClass
+# (Text Monitor)
+object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 0
+minor 7
 release 0
 x 285
 y 49
 w 50
 h 18
 controlPv "$(B)percentDone"
-font "helvetica-medium-r-8.0"
+format "string"
+font "helvetica-medium-r-14.0"
 fontAlign "right"
+fgColor rgb 0 0 0
+bgColor rgb 55808 55808 55808
+limitsFromDb
+nullColor rgb 60928 46592 11008
 smartRefresh
 fastUpdate
-fgColor index 14
-bgColor index 2
-autoHeight
-format "string"
-nullColor index 32
-useHexPrefix
-objType "controls"
 newPos
+objType "controls"
 endObjectProperties
 
 # (Static Text)
 object activeXTextClass
 beginObjectProperties
 major 4
-minor 0
-release 0
+minor 1
+release 1
 x 337
 y 49
-w 20
+w 26
 h 18
-font "helvetica-medium-r-8.0"
-fgColor index 14
+font "helvetica-medium-r-14.0"
+fgColor rgb 0 0 0
+bgColor index 3
 useDisplayBg
 value {
- "%"
+  "%"
 }
 endObjectProperties
 
@@ -202,47 +204,47 @@ h 18
 
 beginGroup
 
-
 # (Static Text)
 object activeXTextClass
 beginObjectProperties
 major 4
-minor 0
-release 0
+minor 1
+release 1
 x 3
 y 49
 w 120
 h 18
-font "helvetica-medium-r-8.0"
-fgColor index 14
+font "helvetica-medium-r-14.0"
+fgColor rgb 0 0 0
+bgColor index 3
 useDisplayBg
 value {
- "total time"
+  "total time"
 }
 endObjectProperties
 
-# (Text Control)
-object activeXTextDspClass
+# (Text Monitor)
+object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 0
+minor 7
 release 0
 x 130
 y 49
 w 130
 h 18
 controlPv "$(B)totalElapsedTimeStr"
-font "helvetica-medium-r-8.0"
+format "string"
+font "helvetica-medium-r-14.0"
+fontAlign "left"
+fgColor rgb 0 0 0
+bgColor rgb 55808 55808 55808
+limitsFromDb
+nullColor rgb 60928 46592 11008
 smartRefresh
 fastUpdate
-fgColor index 14
-bgColor index 2
-autoHeight
-format "string"
-nullColor index 32
-useHexPrefix
-objType "controls"
 newPos
+objType "controls"
 endObjectProperties
 
 endGroup
@@ -266,7 +268,6 @@ h 28
 
 beginGroup
 
-
 # (Rectangle)
 object activeRectangleClass
 beginObjectProperties
@@ -277,8 +278,8 @@ x 2
 y 21
 w 356
 h 26
-lineColor index 14
-fillColor index 14
+lineColor rgb 0 0 0
+fillColor rgb 0 0 0
 lineWidth 2
 endObjectProperties
 # (Bar)
@@ -291,11 +292,11 @@ x 3
 y 22
 w 354
 h 24
-indicatorColor index 41
-fgColor index 14
-bgColor index 3
+indicatorColor rgb 34560 37632 57856
+fgColor rgb 0 0 0
+bgColor rgb 51200 51200 51200
 indicatorPv "$(B)percentDone"
-font "helvetica-medium-r-8.0"
+font "helvetica-bold-r-10.0"
 labelTicks 1
 majorTicks 10
 minorTicks 0
@@ -326,7 +327,6 @@ h 28
 
 beginGroup
 
-
 # (Rectangle)
 object activeRectangleClass
 beginObjectProperties
@@ -337,8 +337,8 @@ x 1
 y 21
 w 356
 h 26
-lineColor index 14
-fillColor index 14
+lineColor rgb 0 0 0
+fillColor rgb 0 0 0
 lineWidth 2
 endObjectProperties
 # (Bar)
@@ -351,11 +351,11 @@ x 3
 y 22
 w 354
 h 24
-indicatorColor index 32
-fgColor index 14
-bgColor index 3
+indicatorColor rgb 60928 46592 11008
+fgColor rgb 0 0 0
+bgColor rgb 51200 51200 51200
 indicatorPv "$(B)percentDone"
-font "helvetica-medium-r-8.0"
+font "helvetica-bold-r-10.0"
 labelTicks 1
 majorTicks 10
 minorTicks 0
@@ -385,7 +385,6 @@ w 358
 h 28
 
 beginGroup
-
 # (Bar)
 object activeBarClass
 beginObjectProperties
@@ -396,11 +395,11 @@ x 3
 y 22
 w 354
 h 24
-indicatorColor index 16
-fgColor index 14
-bgColor index 3
+indicatorColor rgb 7680 47872 0
+fgColor rgb 0 0 0
+bgColor rgb 51200 51200 51200
 indicatorPv "$(B)percentDone"
-font "helvetica-medium-r-8.0"
+font "helvetica-bold-r-10.0"
 labelTicks 1
 majorTicks 10
 minorTicks 0
@@ -419,8 +418,8 @@ x 1
 y 21
 w 356
 h 26
-lineColor index 14
-fillColor index 14
+lineColor rgb 0 0 0
+fillColor rgb 0 0 0
 lineWidth 2
 endObjectProperties
 
@@ -446,46 +445,46 @@ h 18
 
 beginGroup
 
-
-# (Text Control)
-object activeXTextDspClass
+# (Text Monitor)
+object activeXTextDspClass:noedit
 beginObjectProperties
 major 4
-minor 0
+minor 7
 release 0
 x 128
 y 49
 w 130
 h 18
 controlPv "$(B)remainingTimeStr"
-font "helvetica-medium-r-8.0"
+format "string"
+font "helvetica-medium-r-14.0"
+fontAlign "left"
+fgColor rgb 0 0 0
+bgColor rgb 55808 55808 55808
+limitsFromDb
+nullColor rgb 60928 46592 11008
 smartRefresh
 fastUpdate
-fgColor index 14
-bgColor index 2
-autoHeight
-format "string"
-nullColor index 32
-useHexPrefix
-objType "controls"
 newPos
+objType "controls"
 endObjectProperties
 
 # (Static Text)
 object activeXTextClass
 beginObjectProperties
 major 4
-minor 0
-release 0
+minor 1
+release 1
 x 3
 y 49
 w 120
 h 18
-font "helvetica-medium-r-8.0"
-fgColor index 17
+font "helvetica-medium-r-14.0"
+fgColor rgb 13056 39168 0
+bgColor index 3
 useDisplayBg
 value {
- "remaining time"
+  "remaining time"
 }
 visPv "CALC\\\{(A)\}($(B)running)"
 visInvert
@@ -514,7 +513,6 @@ h 18
 
 beginGroup
 
-
 endGroup
 
 endObjectProperties
@@ -531,7 +529,6 @@ w 257
 h 18
 
 beginGroup
-
 
 endGroup
 
@@ -552,7 +549,6 @@ w 358
 h 28
 
 beginGroup
-
 
 endGroup
 
@@ -575,7 +571,6 @@ h 28
 
 beginGroup
 
-
 endGroup
 
 visPv "CALC\\\{(A)\}($(B)paused)"
@@ -597,7 +592,6 @@ h 28
 
 beginGroup
 
-
 endGroup
 
 visPv "CALC\\\{(A && !B)\}($(B)running, $(B)paused)"
@@ -618,7 +612,6 @@ w 255
 h 18
 
 beginGroup
-
 
 endGroup
 
@@ -639,24 +632,27 @@ x 315
 y 1
 w 45
 h 18
-fgColor index 14
-bgColor index 4
-topShadowColor index 2
-botShadowColor index 12
+fgColor rgb 0 0 0
+bgColor rgb 47872 47872 47872
+topShadowColor rgb 55808 55808 55808
+botShadowColor rgb 17920 17920 17920
 font "helvetica-medium-r-10.0"
 buttonLabel "More"
 numPvs 2
 numDsps 1
 displayFileName {
-  0 ProgressBarMore.edl
+  0 "ProgressBarMore.edl"
 }
 menuLabel {
-  0 More
+  0 "More"
 }
 symbols {
   0 "B=$(B),P=$(P)"
 }
 closeAction {
+  0 1
+}
+replaceSymbols {
   0 1
 }
 closeDisplay {
