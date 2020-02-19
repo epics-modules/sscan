@@ -2248,7 +2248,6 @@ LOCAL void getExtraPV()
 LOCAL int saveExtraPV(FILE *fd)
 {
 	PV_NODE* pcur;
-	chid     channel;
 	int      type;
 	DBR_VAL* pval;
 	long     count;
@@ -2264,7 +2263,6 @@ LOCAL int saveExtraPV(FILE *fd)
 		while (pcur) {
 			epicsMutexLock(pcur->lock);
 
-			channel= pcur->channel;
 			pval= pcur->pval;
 			
 			cptr= pcur->name;
@@ -3558,8 +3556,8 @@ LOCAL void remount_file_system(char* filesystem)
 		strncpy(msg, "Invalid file system !!!", MAX_STRING_SIZE);
 	} else {
 		/* extract the host name */
-		cout= hostname;
 		int i = 0;
+		cout= hostname;
 		while ((*filesystem!='\0') && (*filesystem!='/') && i<40) {
 			*(cout++)= *(filesystem++);
 			i++;

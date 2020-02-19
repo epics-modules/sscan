@@ -2113,9 +2113,8 @@ get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd)
 	/* for testing .... */
 	/* return upper_disp_limit and lower_disp_limit as control limits */
 	struct dbr_grDouble grDblStruct;
-	long            status;
 
-	status = get_graphic_double(paddr, &grDblStruct);
+	get_graphic_double(paddr, &grDblStruct);
 	pcd->upper_ctrl_limit = grDblStruct.upper_disp_limit;
 	pcd->lower_ctrl_limit = grDblStruct.lower_disp_limit;
 
@@ -2285,7 +2284,6 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 {
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	recDynLinkPvt  *puserPvt, *pPosOut_userPvt;
-	posFields      *pPos;
 	char           *ppvn;
 	char           *pdesc = ".DESC";
 	char           *pval = ".VAL";
@@ -2298,7 +2296,6 @@ lookupPV(sscanRecord * psscan, unsigned short i)
 	ppvn = &psscan->p1pv[0] + (i * PVN_SIZE);
 	pPvStat = &psscan->p1nv + i;	/* pointer arithmetic */
 	puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[i].puserPvt;
-	pPos = (posFields *) &psscan->p1pp + i;
 
 
 	/* If PV field name = DESC, change to VAL */
@@ -2540,7 +2537,6 @@ userGetCallback(recDynLink * precDynLink)
 	sscanRecord		*psscan = puserPvt->psscan;
 	recPvtStruct	*precPvt = (recPvtStruct *) psscan->rpvt;
 	size_t			nRequest;
-	long			status;
 	int				numGetCb;
 
 	if (sscanRecordDebug >= 5) errlogPrintf("%s:userGetCallback, faze='%s', data_state='%s', link='%s'\n",
@@ -2552,7 +2548,7 @@ userGetCallback(recDynLink * precDynLink)
 			psscan->name, precDynLink->status, linkNames[puserPvt->linkIndex]);
 		/* Retry. */
 		nRequest = (psscan->faze == sscanFAZE_RECORD_SCALAR_DATA) ? 1 : psscan->npts;
-		status = recDynLinkGetCallback(precDynLink, &nRequest, userGetCallback);
+		recDynLinkGetCallback(precDynLink, &nRequest, userGetCallback);
 		return;
 	}
 
@@ -2984,7 +2980,7 @@ posMonCallbackGetCB(recDynLink * precDynLink)
 	unsigned short  linkIndex = puserPvt->linkIndex;
 	unsigned short  pvIndex = linkIndex % NUM_PVS;
 	posFields      *pPos = (posFields *) & psscan->p1pp + pvIndex;
-	long            status, i;
+	long            i;
 	size_t          nRequest = 1;
 	unsigned short *pPvStat = &psscan->p1nv + pvIndex;
 	int				badPv;
@@ -2998,7 +2994,7 @@ posMonCallbackGetCB(recDynLink * precDynLink)
 	 */
 	if (puserPvt->waitingForPosMon) {
 		puserPvt->waitingForPosMon = 0;
-		status = recDynLinkGet(&precPvt->caLinkStruct[linkIndex], &pPos->p_cv, &nRequest, 0, 0, 0);
+		recDynLinkGet(&precPvt->caLinkStruct[linkIndex], &pPos->p_cv, &nRequest, 0, 0, 0);
 		if (sscanRecordDebug) {
 			errlogPrintf("%s:posMonCallbackGetCB: pvIndex=%d, cv=%f\n", psscan->name, pvIndex,
 					pPos->p_cv);
@@ -3844,7 +3840,6 @@ packData(sscanRecord *psscan, int caller)
 	long			i, j, markIndex, found;
 	double			highVal, lowVal, aveDiff;
 	int 			highIndex, lowIndex, moveToRef=0;
-	detFields		*pDet;
 	posFields		*pPos;
 	double			d, *pPBuf, sum1, sum2;
 	float			*pDBuf, *pf, *pf1, *pf2;
@@ -3929,7 +3924,6 @@ packData(sscanRecord *psscan, int caller)
 		}
 
 		/* Make sure reference detector is valid */
-		pDet = ((detFields *) &psscan->d01hr) + (psscan->refd - 1);
 		pDBuf = precPvt->detBufPtr[psscan->refd - 1].pFill;
 
 		/* copy detector data to spare array, and (optionally) smooth it */

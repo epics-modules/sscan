@@ -389,7 +389,7 @@ ss scanPauseUpdate {
 
 	state idlePause {								/* loop for maintaining paused */
 		when (efTest(pause1_mon) || efTest(pause2_mon) || efTest(pause3_mon) || efTest(pause4_mon)) {
-			sprintf(new_msg, "at top of state idlePause, monitors are : =%d,  %d,  %d,  %d",pause1_mon,pause2_mon,pause3_mon,pause4_mon);
+			sprintf(new_msg, "at top of state idlePause, monitors are : %p,  %p,  %p,  %p",pause1_mon,pause2_mon,pause3_mon,pause4_mon);
 			DEBUG_PRINT(7, new_msg);
 			/* one of the pause states has changed, so reset paused */
 			efClear(pause1_mon);
