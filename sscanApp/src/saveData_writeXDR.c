@@ -176,11 +176,13 @@
 #ifdef vxWorks
 	#include <usrLib.h>
 	#include <ioLib.h>
-
+	/*#include "nfs/nfsCommon.h"*/
+	
 	/* nfsDrv.h was renamed nfsDriver.h in Tornado 2.2.2 */
 	/* #include	<nfsDrv.h> */
 	extern STATUS nfsMount(char *host, char *fileSystem, char *localName);
 	extern STATUS nfsUnmount(char *localName);
+	extern UINT32 nfs3CacheOptions;
 
 #else
 	#include <sys/stat.h>
@@ -3533,6 +3535,8 @@ LOCAL void remount_file_system(char* filesystem)
 #ifdef vxWorks
 	char  hostname[40];
 	char *cout;
+	int  i;
+	UINT32 savedCacheOptions;
 #endif
 
 #ifdef vxWorks
@@ -3564,6 +3568,11 @@ LOCAL void remount_file_system(char* filesystem)
 		}
 		*cout='\0';
 		
+		/* Enable write-through cache */
+		savedCacheOptions = nfs3CacheOptions;
+		/*nfs3CacheOptions = NFS_CACHE_WRITE_THROUGH;*/
+		nfs3CacheOptions = 1;
+		
 		/* Mount the new file system */
 		if (nfsMount(hostname, filesystem, "/data")==ERROR) {
 			strncpy(msg, "Unable to mount file system !!!!", MAX_STRING_SIZE);
@@ -3571,6 +3580,9 @@ LOCAL void remount_file_system(char* filesystem)
 			file_system_state= FS_MOUNTED;
 			path = local_pathname;
 		}
+		
+		/* Restore saved cache options */
+		nfs3CacheOptions = savedCacheOptions;
 	}
 
 #else
