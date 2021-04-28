@@ -208,6 +208,7 @@
 #include <dbDefs.h>         /* for PVNAME_STRINGSZ */
 #include <epicsTypes.h>     /* for MAX_STRING_SIZE */
 #include <epicsStdio.h>		/* for epicsSnprintf() */
+#include <shareLib.h>       /* for READONLY */
 
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #define MIN(a,b) ((a)<(b)?(a):(b))
