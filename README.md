@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/epics-modules/sscan.svg?branch=master)](https://travis-ci.org/epics-modules/sscan)
+[![SSCAN](https://github.com/epics-modules/sscan/actions/workflows/ci-scripts-build.yml/badge.svg)](https://github.com/epics-modules/sscan/actions/workflows/ci-scripts-build.yml)
 
 # sscan
 APS BCDA synApps module: sscan
