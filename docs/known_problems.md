@@ -4,7 +4,7 @@ sscan\_known\_problems
 R2-10-2 and earlier
 -------------------
 
-On Windows, built with Visual Studio 2010, scanProg.st crashes because it uses a strftime() format character that is not implemented by Visual Studio 2010.
+*   On Windows, built with Visual Studio 2010, scanProg.st crashes because it uses a strftime() format character that is not implemented by Visual Studio 2010.
 
 sscan 2-7
 ---------
@@ -26,7 +26,7 @@ sscan 2-6-4
 sscan 2-6-3
 -----------
 
-saveData crashed under tornado 2.2*   .
+*   saveData crashed under tornado 2.2.*
 
 sscan 2-6-2
 -----------

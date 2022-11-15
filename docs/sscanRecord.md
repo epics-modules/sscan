@@ -44,7 +44,9 @@ Contents:
 
 - - - - - -
 
-The purpose of the sscan record is to move *positioners* through a series of positions and record *detector* data at each of the positions. This series of operations is commonly referred to as a *scan*, or as one loop of a multi-dimensional scan. After parameters defining the scan have been initialized and the scan has been launched, the sscan record begins a possibly long and involved sequence of operations normally without further input, and notifies any interested clients as the scan progresses. The data are collected into arrays within the record so that clients needn't handle them point by point. A separate piece of software ("saveData", which is included with the sscan record in the synApps sscan module) can coordinate with the sscan record to write scan data to disk. > Note that the word "scan" is used frequently in other EPICS documentation to mean something quite different from what is meant here. In the *EPICS Application Developers Guide*, "scan" connotes record processing or execution, as in "Database scanning is the mechanism for deciding when to process a record." Also, periodic record processing is performed by "scan tasks", and the field that controls when a record will be processed is named "SCAN". None of these uses of "scan" have anything to do with the sscan record, and the word will not have the EPICS meaning in the rest of this documentation.
+The purpose of the sscan record is to move *positioners* through a series of positions and record *detector* data at each of the positions. This series of operations is commonly referred to as a *scan*, or as one loop of a multi-dimensional scan. After parameters defining the scan have been initialized and the scan has been launched, the sscan record begins a possibly long and involved sequence of operations normally without further input, and notifies any interested clients as the scan progresses. The data are collected into arrays within the record so that clients needn't handle them point by point. A separate piece of software ("saveData", which is included with the sscan record in the synApps sscan module) can coordinate with the sscan record to write scan data to disk. 
+
+> Note that the word "scan" is used frequently in other EPICS documentation to mean something quite different from what is meant here. In the *EPICS Application Developers Guide*, "scan" connotes record processing or execution, as in "Database scanning is the mechanism for deciding when to process a record." Also, periodic record processing is performed by "scan tasks", and the field that controls when a record will be processed is named "SCAN". None of these uses of "scan" have anything to do with the sscan record, and the word will not have the EPICS meaning in the rest of this documentation.
 
 A single sscan record supports a one dimensional scan. Several sscan records can be linked together to perform a multi-dimensional scan. Each sscan record can control up to four positioners, trigger up to four detectors, and acquire data from up to 74 process variables (70 detector values of type floatand four positioner readbacks of type double).
 
@@ -176,12 +178,13 @@ Note that this form of handshaking doesn't do a very thorough job of data protec
 
 ### 1.3.6 Handshaking with CA clients that implement positioners or detectors
 
-A channel-access client can participate in scans driven by the sscan record if two criteria are met: 1. The client is driven by a PV to which one of the sscan record's positioner or detector-trigger links writes.
+A channel-access client can participate in scans driven by the sscan record if two criteria are met:  
+1. The client is driven by a PV to which one of the sscan record's positioner or detector-trigger links writes.
 2. The client can signal completion in a way that the sscan record understands.
 
 There are two mechanisms the client can use to signal completion that will work with the sscan record:
 
-__putNotify-based completion signalling__This is the method the sscan record expects everything it drives to use for signalling completion, and it is the method the sscan record itself uses to signal completion. Clients can't signal completion directly using putNotify, because their execution is not managed by EPICS. But they can do it indirectly, by writing to a *busy* record.
+*putNotify-based completion signalling* - This is the method the sscan record expects everything it drives to use for signalling completion, and it is the method the sscan record itself uses to signal completion. Clients can't signal completion directly using putNotify, because their execution is not managed by EPICS. But they can do it indirectly, by writing to a *busy* record.
 
 A *busy* record is a custom EPICS record, supplied as part of the synApps package, that looks and operates almost exactly like the binary-output ("bo") record, except that it executes its forward link, FLNK, only when its VAL field has the value zero. As it happens, EPICS' putNotify completion mechanism is implemented as part of the processing of forward links, so the fact that the *busy* record allows a CA client to control the execution of its forward link means that the client can control the timing of a putNotify callback.
 
@@ -297,8 +300,8 @@ In one common implementation of an array-mode scan, detector data are acquired b
 
 <a name="HEADING_2"></a>
 
-2. sscan-Record Fields
-======================
+sscan-Record Fields
+===================
 
 - - - - - -
 
@@ -318,6 +321,7 @@ __Field__The name of the sscan-record field__Summary__Basic purpose of the field
 > PASM allows the user to control where positioners are left after a scan is finished. Here are the possibilities:  "STAY"Do nothing. Leave positioners where they were when the last data point was acquired. "START POS"Go the the position of the first data point acquired. "PRIOR POS"Go to the position they occupied prior to the scan. "PEAK POS"Attempt to find the highest point in the data from the detector specified by the REFD field. If a highest point is found, go to its position, else "STAY". "VALLEY POS"Attempt to find the lowest point in the data from the detector specified by the REFD field. If a lowest point is found, go to its position, else "STAY". "+EDGE POS"Take the derivative of the REFD data, then do "PEAK POS". "-EDGE POS"Take the derivative of the REFD data, then do "VALLEY POS". "CNTR OF MASS"Like "PEAK POS", but sends positioner(s) the position of the center of mass of the data, as calculated with reference to positioner 1. Note that the calculated center of mass depends on the distribution of positioner data. If multiple positioners are involved in a scan, they will not, in general, have the same center of mass.
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
+|---|---|---|---|---|---|---|---|---|
 | REFD | Reference detector for After-Scan mode | SHORT | Yes | 1 | Yes | Yes | No | No |
 | BSPV | Before-Scan Process Variable link | STRING \[40\] | Yes | Null | Yes | Yes | No | No |
 | BSNV | BSPV Name Valid | MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV illegal2", "PV BAD")   "PV OK" and "No PV" are good states; all others will prevent a scan from starting | No | 0 | Yes | No | Yes | No |
@@ -327,6 +331,7 @@ __Field__The name of the sscan-record field__Summary__Basic purpose of the field
 > BSPV, BSNV, BSCD, and BSWAIT allow the user to specify a PV to be written to before every scan starts. (If the sscan record is part of a multidimensional scan, each participating sscan record has its own set of before-scan parameters, so you can cause an action to occur before the whole scan starts, and before each nested loop starts.) To specify a before-scan PV write, write the name of the PV to BSPV, and the value to be written to BSCD. If you want the sscan record to wait for completion of processing triggered by the write, before going on with the rest of the scan, set BSWAIT to "YES" (1). You can check to status of the link by looking at BSNV. If the link is good, BSNV will be zero. >  > Note that the before-scan link is permitted to change only selected fields of its own sscan record: it cannot change PV names (i.e., links); and it cannot change the acquisition type (ACQT) or mode (ACQM). If this sscan record is part of a multidimensional scan, the before-scan link can change any field of a lower-level sscan record (i.e., one that its record it driving), and no field of a higher level scan record.
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
+|---|---|---|---|---|---|---|---|---|
 | ASPV | After-Scan Process Variable link | STRING \[40\] | Yes | Null | Yes | Yes | No | No |
 | ASNV | ASPV Name Valid | MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV illegal2", "PV BAD")   "PV OK" and "No PV" are good states; all others will prevent a scan from starting | No | 0 | Yes | No | Yes | No |
 | ASCD | After-Scan Command Data | FLOAT | Yes | 1 | Yes | Yes | No | No |
@@ -336,6 +341,7 @@ __Field__The name of the sscan-record field__Summary__Basic purpose of the field
 
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
+|---|---|---|---|---|---|---|---|---|
 | A1PV | Array-read trigger 1 PV Name | STRING \[40\] | Yes | Null | Yes | Yes | No | No |
 | A1NV | A1PV Name Valid | MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV illegal2", "PV BAD")   "PV OK" and "No PV" are good states; all others will prevent a scan from starting | No | 0 | Yes | No | Yes | No |
 | A1CD | A1 Cmnd | FLOAT | Yes | 1 | Yes | Yes | No | No |
@@ -398,7 +404,7 @@ For *n* in \[1..4\]:
 
 Clients that display scan data will most likely be interested in only one of the two positioner-array fields: P*n*CA or P*n*RA. These array fields are backed by the same double-buffered arrays, so they cannot be posted separately.
 
-P*n*CA will yield data from the scan that currently is executing. This array can be read at any time during the scan, and it may be posted with the mask, DBE\_VALUE, while the scan is in progress. (ATIMEcontrols this.) When the scan completes, P*n*CA will be posted with the mask, DBE\_VALUE|DBE\_LOG.
+P*n*CA will yield data from the scan that currently is executing. This array can be read at any time during the scan, and it may be posted with the mask, DBE\_VALUE, while the scan is in progress. (ATIMEcontrols this.) When the scan completes, P*n*CA will be posted with the mask, DBE\_VALUE\|DBE\_LOG.
 
 P*n*RA will yield data from the most recently completed scan. This array's data will remain available while the next scan's data are being acquired, and will become unavailable when that scan completes. Clients interested only in completed-scan data should use this field. Clients that monitor this field should always specify the mask, DBE\_LOG, in their ca\_add\_event() or ca\_create\_subscription() call. If this field is monitored with the mask, DBE\_VALUE, the client may receive multiple postings of the same data.
 
@@ -562,10 +568,10 @@ Special Acquisition Parameters:
 | ACQT | Acquisition Type | Menu ("SCALAR", "1D ARRAY") | Yes | "SCALAR" (0) | Yes | Yes | No | No |
 
 Data and related PV's:
+For *nn* in \[01..70\] (e.g., "D01PV", "D02PV", ... "D70PV")
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
 |---|---|---|---|---|---|---|---|---|
-| For *nn* in \[01..70\] (e.g., "D01PV", "D02PV", ... "D70PV") : |
 | D*nn*PV | data *nn* Process Variable name | STRING \[40\] | Yes | Null | Yes | Yes | No | No |
 | D*nn*NV | data *nn* Name Valid | MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV illegal2", "PV BAD")   "PV OK" and "No PV" are good states; all others will prevent a scan from starting, though "PV NoWrite" is impossible for these readback PVs | No | 0 | Yes | Yes | Yes | No |
 | D*nn*DA | Detector *nn* End-Of-Scan Data Array | FLOAT\[ \] | No | Null | Yes | No | Yes | No |

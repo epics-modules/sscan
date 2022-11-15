@@ -93,10 +93,8 @@ In addition to fields common to all record types (see the EPICS Record Reference
 | [ VAL ](#Fields_misc) | DBF\_DOUBLE | Result | R | No |
 | [ VERS ](#Fields_misc) | DBF\_FLOAT | Code Version | R | No |
 
-Alphabetical list of record-specific fields 
--------------------------------------------  
-
 NOTE: Hot links in this table take you only to the *section* in which the linked item is described in detail. You'll probably have to scroll down to find the actual item.  
+
 Note: In the __Access__ column above:
 * R \| Read only \|  
 * R/W \| Read and write are allowed \| 
@@ -111,20 +109,21 @@ a channel-access write triggers record processing if the record's SCAN field is 
 
 ### Fields involved in sending information out
 
-| value field | type | output link | typical target field | purpose |
-| PRE | DBF\_SHORT | OPRE | &lt;sscan&gt;.CMND | clear old positioner configuration |
-| SM | DBF\_MENU(sscanP1SM) | OSM | &lt;sscan&gt;.P1SM | positioner scan mode (e.g., linear, table, fly) |
-| AR | DBF\_MENU(sscanP1AR) | OAR | &lt;sscan&gt;.P1AR | positioner absolute/relative |
-| AFT | DBF\_MENU(sscanPASM) | OAFT | &lt;sscan&gt;.PASM | positioner after-scan mode (e.g., stay, go to start pos,...) |
-| PPV | DBF\_STRING | OPPV | &lt;sscan&gt;.P1PV | positioner drive PV name |
-| RPV | DBF\_STRING | ORPV | &lt;sscan&gt;.R1PV | positioner readback PV name |
-| TPV | DBF\_STRING | OTPV | &lt;sscan&gt;.T1PV | detector-trigger PV name |
-| DPV | DBF\_STRING | ODPV | &lt;sscan&gt;.D01PV | detector PV name |
-| SP | DBF\_DOUBLE | OSP | &lt;sscan&gt;.P1SP | positioner start point |
-| EP | DBF\_DOUBLE | OEP | &lt;sscan&gt;.P1EP | positioner end point |
-| NP | DBF\_LONG | ONP | &lt;sscan&gt;.NPTS | number of data points to acquire |
-| SC | DBF\_SHORT | OSC | &lt;sscan&gt;.EXSC | start the scan |
-| AQT | DBF\_DOUBLE | OAQT | &lt;scaler&gt;.TP | acquire time |
+| Value Field | Type | Output Link | Typical Target Field | Purpose |
+|---|---|---|---|---|
+| PRE | DBF\_SHORT | OPRE | <sscan>.CMND | clear old positioner configuration |
+| SM | DBF\_MENU(sscanP1SM) | OSM | <sscan>.P1SM | positioner scan mode (e.g., linear, table, fly) |
+| AR | DBF\_MENU(sscanP1AR) | OAR | <sscan>.P1AR | positioner absolute/relative |
+| AFT | DBF\_MENU(sscanPASM) | OAFT | <sscan>.PASM | positioner after-scan mode (e.g., stay, go to start pos,...) |
+| PPV | DBF\_STRING | OPPV | <sscan>.P1PV | positioner drive PV name |
+| RPV | DBF\_STRING | ORPV | <sscan>.R1PV | positioner readback PV name |
+| TPV | DBF\_STRING | OTPV | <sscan>.T1PV | detector-trigger PV name |
+| DPV | DBF\_STRING | ODPV | <sscan>.D01PV | detector PV name |
+| SP | DBF\_DOUBLE | OSP | <sscan>.P1SP | positioner start point |
+| EP | DBF\_DOUBLE | OEP | <sscan>.P1EP | positioner end point |
+| NP | DBF\_LONG | ONP | <sscan>.NPTS | number of data points to acquire |
+| SC | DBF\_SHORT | OSC | <sscan>.EXSC | start the scan |
+| AQT | DBF\_DOUBLE | OAQT | <scaler>.TP | acquire time |
 
 - - - - - -
 
@@ -132,19 +131,20 @@ a channel-access write triggers record processing if the record's SCAN field is 
 
 ### Fields involved in collecting information
 
-| input link | value field | typical target field | purpose |
-| IMP | MP | &lt;sscan&gt;.MPTS | get the maximum permitted number of data points |
-| IACT | ACT | &lt;sscan&gt;.BUSY | determine whether the target sscan record is active |
+| Input Link | Value Field | Typical Target Field | Purpose |
+|---|---|---|---|
+| IMP | MP | <sscan>.MPTS | get the maximum permitted number of data points |
+| IACT | ACT | <sscan>.BUSY | determine whether the target sscan record is active |
 
 - - - - - -
 
 <a name="Fields_command"></a>
 
-| Fields involved in managing execution. |
-|---|
-| value field | output link | typical target field | purpose |
-| LOAD | OLOAD | &lt;scanparm&gt;.LOAD | cause the scanparm record to write parameters to the sscan record. If more than one scanparm record is needed to define a scan (e.g., for a multi-positioner scan, or a multi-dimensional scan), the OLOAD field should link to the next scanparm record. |
-| GO | OGO | &lt;scanparm&gt;.GO | Cause the scanparm record to write parameters to the sscan record and also cause the sscan record to begin the scan. If more than one scanparm record is needed to define a scan (e.g., for a multi-positioner scan, or a multi-dimensional scan), the OGO field should link to the next scanparm record, and the last scanparm record to execute should use its OGO link to cause its sscan record to start scanning. |
+### Fields involved in managing execution.
+
+| Value field | Output Link | Typical Target Field | Purpose |
+| LOAD | OLOAD | <scanparm>.LOAD | cause the scanparm record to write parameters to the sscan record. If more than one scanparm record is needed to define a scan (e.g., for a multi-positioner scan, or a multi-dimensional scan), the OLOAD field should link to the next scanparm record. |
+| GO | OGO | <scanparm>.GO | Cause the scanparm record to write parameters to the sscan record and also cause the sscan record to begin the scan. If more than one scanparm record is needed to define a scan (e.g., for a multi-positioner scan, or a multi-dimensional scan), the OGO field should link to the next scanparm record, and the last scanparm record to execute should use its OGO link to cause its sscan record to start scanning. |
 
 - - - - - -
 
@@ -154,6 +154,7 @@ Files
 The following table briefly describes the files required to implement and use the scanparm record.
 
 ### SOURCE CODE 
+
 | scanparmRecord.c | Record support for the scanparm record |
 | scanparmRecord.dbd | This file defines all of the fields menus, etc. for the scanparm record. |
 
@@ -165,6 +166,7 @@ The following table briefly describes the files required to implement and use th
 | scanParms2D.db | database used for two-dimensional scans. |
 
 ### MEDM DISPLAY FILES
+
 | scanParms.adl |  |
 | scanParmsRemote.adl |  |
 | scanParmsCustom.adl |  |

@@ -59,34 +59,40 @@ The **sscan** module is not intended to run an IOC application directly, but rat
 The essential steps in applying **sscan**\-module code in an IOC application ("example") are the following:
 
 1.  Include the following line in example/configure/RELEASE.
-    
+    ```
     SSCAN=<full path to **sscan** module>
+    ```
     
 2.  Include the following line in example/exampleApp/src/iocexampleInclude.dbd.
-    
+    ```
     include "sscanSupport.dbd"
     include "scanProgressSupport.dbd"
+    ```
     
 3.  Include the following line in example/exampleApp/src/Makefile.
-    
+    ```
     example\_LIBS += sscan scanProgress
+    ```
     
 4.  Load the databases standardScans, and saveData, by including the following lines in st.cmd:
-    
+    ```    
     dbLoadRecords("$(SSCAN)/sscanApp/Db/standardScans.db","P=xxx:,MAXPTS1=2000,MAXPTS2=1000,MAXPTS3=1000,MAXPTS4=10,MAXPTSH=2000")
     dbLoadRecords("$(SSCAN)/sscanApp/Db/saveData.db","P=xxx:")
     dbLoadRecords("$(SSCAN)/sscanApp/Db/scanProgress.db","P=xxx:scanProgress:")
+    ```
     
 5.  If you use autosave, include standardScans\_settings.req, and saveData\_settings.req in your autosave request file:
-    
+    ```
     file standardScans\_settings.req P=$(P)
     file saveData\_settings.req P=$(P)
+    ```
     
 6.  Tell saveData how to initialize by editing the file `saveData.req`, and placing it in the ioc's startup directory. Usually, the only part of this file that you modify is the section marked `[extraPV]`. In this section, enter the names of the PV's you want saveData to include in every scan-data file. If a PV is not well described by it's record's `.DESC` field, you can append your own description.
     
 7.  Initialize saveData by including the following line in st.cmd, after iocInit:
-    
+    ```
     saveData\_Init("saveData.req", "P=xxx:")
+    ```
     
 8.  Before running any scans, specify where saveData is to write scan-data files. Bring up the medm display, `scan_saveData.adl` and fill in the "File system" and "Subdirectory" fields (i.e., the PV's `$(P)saveData_fileSystem` and `$(P)saveData_subDir`).
 
