@@ -1,301 +1,208 @@
-<HTML>
-<HEAD>
-<TITLE>Scanparm Record and related software</TITLE>
-</HEAD>
-<BODY>
-<H1>Scanparm Record and related software</H1>
+Scanparm Record and related softwareScanparm Record and related software
+====================================
 
-<ADDRESS>Tim Mooney</ADDRESS>
+Tim Mooney
 
-<HR>
-<H2>Contents</H2>
-<UL>
-<LI><A HREF="#Overview">Overview</A>
-<LI><A HREF="#Fields">Field Descriptions</A>
-<LI><A HREF="#Files">Files</A>
-<LI><A HREF="#Restrictions">Restrictions</A>
-</UL>
+- - - - - -
 
-<A NAME="Overview">
-<H2>Overview</H2></A>
+Contents
+--------
 
-<P>This documentation describes the EPICS scanparm record, and
-related EPICS software required to build and use it.  This version of the
-record is compatible with EPICS 3.14.8.2, and is incompatible with any 3.13.x
-version of EPICS.
+- [Overview](#Overview)
+- [Field Descriptions](#Fields)
+- [Files](#Files)
+- [Restrictions](#Restrictions)
 
-<P>The scanparm record stores parameters intended to be written to the EPICS sscan
-record, and provides the EPICS end user with a convenient way to load those
-parameters into the sscan record and cause the sscan record to perform a scan.  The
-idea is to allow the user to configure and execute a predefined scan with a single
-mouse click.
+Overview
+--------
 
-<blockquote>
-<P>By the way, the word <i>scan</i>, in EPICS, normally refers to the execution of a
-record, and particularly to the method by which a record is selected for execution. 
-In this documentation, <i>scan</i> will never have that meaning.  Here, a
-<i>scan</i> is what the sscan record does:
-<ul>
-<li>send a positioner to some position, and wait for it to arrive
-<li>trigger a detector, and wait for it to finish acquiring
-<li>read and store data from the positioner and detector
-<li>repeat
-</ul>
-For more about scans, see the sscan record documentation.
-</blockquote>
+This documentation describes the EPICS scanparm record, and related EPICS software required to build and use it. This version of the record is compatible with EPICS 3.14.8.2, and is incompatible with any 3.13.x version of EPICS.
 
-<P>In the simplest and most common use, a scanparm record is associated at
-boot time with a particular positioner (e.g., a motor) and targeted to configure and
-run a particular sscan record. At run time, the user typically will write start and
-end positions, and the number of data points to be acquired, to a scanparm record,
-and from then on can run that scan with a single write to the scanparm record.  It is
-possible to have more than one scanparm record associated with a positioner, and it
-is possible to gang scanparm records together into a database that stores parameters
-for scans involving more than one positioner, and more than one sscan record.
+The scanparm record stores parameters intended to be written to the EPICS sscan record, and provides the EPICS end user with a convenient way to load those parameters into the sscan record and cause the sscan record to perform a scan. The idea is to allow the user to configure and execute a predefined scan with a single mouse click.
 
-<P>The scanparm record contains sets of paired fields for parameters it writes, for
-parameters it reads, and for commands it receives from the user and may forward to
-another record.
+> By the way, the word *scan*, in EPICS, normally refers to the execution of a record, and particularly to the method by which a record is selected for execution. In this documentation, *scan* will never have that meaning. Here, a *scan* is what the sscan record does:
+> 
+> - send a positioner to some position, and wait for it to arrive
+> - trigger a detector, and wait for it to finish acquiring
+> - read and store data from the positioner and detector
+> - repeat
+> 
+> For more about scans, see the sscan record documentation.
 
+In the simplest and most common use, a scanparm record is associated at boot time with a particular positioner (e.g., a motor) and targeted to configure and run a particular sscan record. At run time, the user typically will write start and end positions, and the number of data points to be acquired, to a scanparm record, and from then on can run that scan with a single write to the scanparm record. It is possible to have more than one scanparm record associated with a positioner, and it is possible to gang scanparm records together into a database that stores parameters for scans involving more than one positioner, and more than one sscan record.
 
-<A NAME="Fields">
-<H2>Field Descriptions</H2></A>
-<P>In addition to fields common to all record types (see the EPICS
-Record Reference Manual for these) the scanparm record has the fields
-described below.
-<UL>
-<LI><A HREF="#Fields_alphabetical">Alphabetical listing of record-specific fields</A>
-<LI><A HREF="#Fields_write">Fields involved in sending information out</A>
-<LI><A HREF="#Fields_read">Fields involved in collecting information</A>
-<LI><A HREF="#Fields_command">Fields involved in managing execution</A>
-<LI><A HREF="#Fields_misc">Miscellaneous fields</A>
-<LI><A HREF="#Fields_private">Private fields</A>
-</UL>
-<HR>
-<TABLE BORDER CELLPADDING=1>
-<A NAME="Fields_alphabetical">
-<CAPTION><H2>Alphabetical list of record-specific fields</H2>
-NOTE: Hot links in this table take you only to the <EM>section</EM> in which
-the linked item is described in detail.  You'll probably have to scroll down to
-find the actual item.</CAPTION></A>
-
-<tr>							<th>Name			<td>Type				<td>DCT prompt			<td>Access	<td>DCT
-<tr><td><A HREF="#Fields_read">		ACT		</A>	<td>DBF_SHORT			<td>ScanActive			<td>R		<td>No
-<tr><td><A HREF="#Fields_write">	AFT		</A>	<td>DBF_MENU(sscanPASM)	<td>After				<td>R/W		<td>Yes
-<tr><td><A HREF="#Fields_write">	AR		</A>	<td>DBF_MENU(sscanP1AR)	<td>absRel				<td>R/W		<td>Yes
-<tr><td><A HREF="#Fields_write">	AQT		</A>	<td>DBF_DOUBLE			<td>Acquire time		<td>R/W*	<td>Yes
-<tr><td><A HREF="#Fields_write">	DPV		</A>	<td>DBF_STRING			<td>DetPVName			<td>R/W		<td>Yes
-<tr><td><A HREF="#Fields_write">	EP		</A>	<td>DBF_DOUBLE			<td>EndPos				<td>R/W*	<td>Yes
-<tr><td><A HREF="#Fields_command">	GO		</A>	<td>DBF_SHORT			<td>Go					<td>R/W*	<td>Yes
-<tr><td><A HREF="#Fields_read">		IACT	</A>	<td>DBF_INLINK			<td>InLink				<td>R		<td>Yes
-<tr><td><A HREF="#Fields_read">		IMP		</A>	<td>DBF_INLINK			<td>MP InLink			<td>R		<td>Yes
-<tr><td><A HREF="#Fields_command">	LOAD	</A>	<td>DBF_SHORT			<td>Load				<td>R/W*	<td>Yes
-<tr><td><A HREF="#Fields_misc">		LSTP	</A>	<td>DBF_DOUBLE			<td>Last stepSize		<td>R		<td>No
-<tr><td><A HREF="#Fields_read">		MP		</A>	<td>DBF_LONG			<td>MaxPts				<td>R		<td>No
-<tr><td><A HREF="#Fields_write">	NP		</A>	<td>DBF_LONG			<td>nPts				<td>R/W*	<td>Yes
-<tr><td><A HREF="#Fields_write">	OAFT	</A>	<td>DBF_OUTLINK			<td>AFT OutLink			<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	OAQT	</A>	<td>DBF_OUTLINK			<td>AQT OutLink			<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	OAR		</A>	<td>DBF_OUTLINK			<td>AR OutLink			<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	ODPV	</A>	<td>DBF_OUTLINK			<td>D1PV OutLink		<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	OEP		</A>	<td>DBF_OUTLINK			<td>EP OutLink			<td>R		<td>Yes
-<tr><td><A HREF="#Fields_command">	OGO		</A>	<td>DBF_OUTLINK			<td>GO OutLink			<td>R		<td>Yes
-<tr><td><A HREF="#Fields_command">	OLOAD	</A>	<td>DBF_OUTLINK			<td>LOAD OutLink		<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	ONP		</A>	<td>DBF_OUTLINK			<td>NP OutLink			<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	OPPV	</A>	<td>DBF_OUTLINK			<td>P1PV OutLink		<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	OPRE	</A>	<td>DBF_OUTLINK			<td>PRE-write OutLink	<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	ORPV	</A>	<td>DBF_OUTLINK			<td>R1PV OutLink		<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	OSC		</A>	<td>DBF_OUTLINK			<td>SC OutLink			<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	OSM		</A>	<td>DBF_OUTLINK			<td>SM OutLink			<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	OSP		</A>	<td>DBF_OUTLINK			<td>SP OutLink			<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	OTPV	</A>	<td>DBF_OUTLINK			<td>T1PV OutLink		<td>R		<td>Yes
-<tr><td><A HREF="#Fields_write">	PPV		</A>	<td>DBF_STRING			<td>PositionerPVName	<td>R/W		<td>Yes
-<tr><td><A HREF="#Fields_write">	PRE		</A>	<td>DBF_SHORT			<td>PRE-write command	<td>R/W*	<td>Yes
-<tr><td><A HREF="#Fields_misc">		PREC	</A>	<td>DBF_SHORT			<td>Display Precision	<td>R/W		<td>Yes
-<tr><td><A HREF="#Fields_write">	RPV		</A>	<td>DBF_STRING			<td>ReadbackPVName		<td>R/W		<td>Yes
-<tr><td><A HREF="#Fields_write">	SC		</A>	<td>DBF_SHORT			<td>StartCmd			<td>R/W		<td>Yes
-<tr><td><A HREF="#Fields_write">	SM		</A>	<td>DBF_MENU(sscanP1SM)	<td>StepMode			<td>R/W		<td>Yes
-<tr><td><A HREF="#Fields_write">	SP		</A>	<td>DBF_DOUBLE			<td>StartPos			<td>R/W*	<td>Yes
-<tr><td><A HREF="#Fields_misc">		STEP	</A>	<td>DBF_DOUBLE			<td>StepSize			<td>R		<td>No
-<tr><td><A HREF="#Fields_write">	TPV		</A>	<td>DBF_STRING			<td>TrigPVName			<td>R/W		<td>Yes
-<tr><td><A HREF="#Fields_misc">		VAL		</A>	<td>DBF_DOUBLE			<td>Result				<td>R		<td>No
-<tr><td><A HREF="#Fields_misc">		VERS	</A>	<td>DBF_FLOAT			<td>Code Version		<td>R		<td>No
-
-
-<TR VALIGN=TOP>
-<TD COLSPAN=5, ALIGN=LEFT>
-<TABLE>
-<TD COLSPAN=3> Note: In the <B>Access</B> column above: </TD>
-<TR VALIGN=TOP>
-<TD>R</TD>    <TD>Read only<TD>
-</TR>
-<TR VALIGN=TOP>
-<TD>R/W</TD>  <TD>Read and write are allowed</TD>
-</TR>
-<TR VALIGN=TOP>
-<TD>R/W*</TD> <TD>Read and write are allowed; a channel-access write triggers record 
-processing if the record's SCAN field is set to "Passive."</TD>
-</TR>
-<TR VALIGN=TOP>
-<TD>N</TD>    <TD>No access allowed</TD>
-</TR>
-</TABLE>
-
-</TABLE>
-</HR>
-
-
-<hr>
-<A NAME="Fields_write">
-<P><table border>
-<tr><th colspan=5>Fields involved in sending information out
-<tr><th>value field<th>type<th>output link<th>typical target field<th>purpose
-<tr><td>PRE<td>DBF_SHORT<td>OPRE<td>&lt;sscan&gt;.CMND<td>clear old positioner configuration
-<tr><td>SM<td>DBF_MENU(sscanP1SM)<td>OSM<td>&lt;sscan&gt;.P1SM<td>positioner scan mode (e.g., linear, table, fly)
-<tr><td>AR<td>DBF_MENU(sscanP1AR)<td>OAR<td>&lt;sscan&gt;.P1AR<td>positioner absolute/relative
-<tr><td>AFT<td>DBF_MENU(sscanPASM)<td>OAFT<td>&lt;sscan&gt;.PASM<td>positioner after-scan mode (e.g., stay, go to start pos,...)
-<tr><td>PPV<td>DBF_STRING<td>OPPV<td>&lt;sscan&gt;.P1PV<td>positioner drive PV name
-<tr><td>RPV<td>DBF_STRING<td>ORPV<td>&lt;sscan&gt;.R1PV<td>positioner readback PV name
-<tr><td>TPV<td>DBF_STRING<td>OTPV<td>&lt;sscan&gt;.T1PV<td>detector-trigger PV name
-<tr><td>DPV<td>DBF_STRING<td>ODPV<td>&lt;sscan&gt;.D01PV<td>detector PV name
-<tr><td>SP<td>DBF_DOUBLE<td>OSP<td>&lt;sscan&gt;.P1SP<td>positioner start point
-<tr><td>EP<td>DBF_DOUBLE<td>OEP<td>&lt;sscan&gt;.P1EP<td>positioner end point
-<tr><td>NP<td>DBF_LONG<td>ONP<td>&lt;sscan&gt;.NPTS<td>number of data points to acquire
-<tr><td>SC<td>DBF_SHORT<td>OSC<td>&lt;sscan&gt;.EXSC<td>start the scan
-<tr><td>AQT<td>DBF_DOUBLE<td>OAQT<td>&lt;scaler&gt;.TP<td>acquire time
-</table>
-
-<hr>
-<A NAME="Fields_read">
-<P><table border>
-<tr><th colspan=5>Fields involved in collecting information
-<tr><th>input link<th>value field<th>typical target field<th>purpose
-<tr><td>IMP<td>MP<td>&lt;sscan&gt;.MPTS<td>get the maximum permitted number of data points
-<tr><td>IACT<td>ACT<td>&lt;sscan&gt;.BUSY<td>determine whether the target sscan record is active
-</table>
-
-<hr>
-<A NAME="Fields_command">
-<P><table border>
-<tr><th colspan=5>Fields involved in managing execution.
-<tr><th>value field<th>output link<th>typical target field<th>purpose
-
-<tr><td>LOAD<td>OLOAD<td>&lt;scanparm&gt;.LOAD<td>cause the scanparm record to write
-parameters to the sscan record.  If more than one scanparm record is needed to define
-a scan (e.g., for a multi-positioner scan, or a multi-dimensional scan), the OLOAD field
-should link to the next scanparm record.
-
-<tr><td>GO<td>OGO<td>&lt;scanparm&gt;.GO<td>Cause the scanparm record to write
-parameters to the sscan record and also cause the sscan record to begin the scan.  If
-more than one scanparm record is needed to define a scan (e.g., for a
-multi-positioner scan, or a multi-dimensional scan), the OGO field should link to
-the next scanparm record, and the last scanparm record to execute should use its
-OGO link to cause its sscan record to start scanning.
-
-
-</table>
+The scanparm record contains sets of paired fields for parameters it writes, for parameters it reads, and for commands it receives from the user and may forward to another record. 
 
 
 
+Field Descriptions
+------------------
+
+In addition to fields common to all record types (see the EPICS Record Reference Manual for these) the scanparm record has the fields described below.
+
+- [Alphabetical listing of record-specific fields](#Fields_alphabetical)
+- [Fields involved in sending information out](#Fields_write)
+- [Fields involved in collecting information](#Fields_read)
+- [Fields involved in managing execution](#Fields_command)
+- [Miscellaneous fields](#Fields_misc)
+- [Private fields](#Fields_private)
+
+- - - - - -
+
+<a name="Fields_alphabetical"></a>
+
+| Name | Type | DCT prompt | Access | DCT |
+|---|---|---|---|---|
+| [ ACT ](#Fields_read) | DBF\_SHORT | ScanActive | R | No |
+| [ AFT ](#Fields_write) | DBF\_MENU(sscanPASM) | After | R/W | Yes |
+| [ AR ](#Fields_write) | DBF\_MENU(sscanP1AR) | absRel | R/W | Yes |
+| [ AQT ](#Fields_write) | DBF\_DOUBLE | Acquire time | R/W\* | Yes |
+| [ DPV ](#Fields_write) | DBF\_STRING | DetPVName | R/W | Yes |
+| [ EP ](#Fields_write) | DBF\_DOUBLE | EndPos | R/W\* | Yes |
+| [ GO ](#Fields_command) | DBF\_SHORT | Go | R/W\* | Yes |
+| [ IACT ](#Fields_read) | DBF\_INLINK | InLink | R | Yes |
+| [ IMP ](#Fields_read) | DBF\_INLINK | MP InLink | R | Yes |
+| [ LOAD ](#Fields_command) | DBF\_SHORT | Load | R/W\* | Yes |
+| [ LSTP ](#Fields_misc) | DBF\_DOUBLE | Last stepSize | R | No |
+| [ MP ](#Fields_read) | DBF\_LONG | MaxPts | R | No |
+| [ NP ](#Fields_write) | DBF\_LONG | nPts | R/W\* | Yes |
+| [ OAFT ](#Fields_write) | DBF\_OUTLINK | AFT OutLink | R | Yes |
+| [ OAQT ](#Fields_write) | DBF\_OUTLINK | AQT OutLink | R | Yes |
+| [ OAR ](#Fields_write) | DBF\_OUTLINK | AR OutLink | R | Yes |
+| [ ODPV ](#Fields_write) | DBF\_OUTLINK | D1PV OutLink | R | Yes |
+| [ OEP ](#Fields_write) | DBF\_OUTLINK | EP OutLink | R | Yes |
+| [ OGO ](#Fields_command) | DBF\_OUTLINK | GO OutLink | R | Yes |
+| [ OLOAD ](#Fields_command) | DBF\_OUTLINK | LOAD OutLink | R | Yes |
+| [ ONP ](#Fields_write) | DBF\_OUTLINK | NP OutLink | R | Yes |
+| [ OPPV ](#Fields_write) | DBF\_OUTLINK | P1PV OutLink | R | Yes |
+| [ OPRE ](#Fields_write) | DBF\_OUTLINK | PRE-write OutLink | R | Yes |
+| [ ORPV ](#Fields_write) | DBF\_OUTLINK | R1PV OutLink | R | Yes |
+| [ OSC ](#Fields_write) | DBF\_OUTLINK | SC OutLink | R | Yes |
+| [ OSM ](#Fields_write) | DBF\_OUTLINK | SM OutLink | R | Yes |
+| [ OSP ](#Fields_write) | DBF\_OUTLINK | SP OutLink | R | Yes |
+| [ OTPV ](#Fields_write) | DBF\_OUTLINK | T1PV OutLink | R | Yes |
+| [ PPV ](#Fields_write) | DBF\_STRING | PositionerPVName | R/W | Yes |
+| [ PRE ](#Fields_write) | DBF\_SHORT | PRE-write command | R/W\* | Yes |
+| [ PREC ](#Fields_misc) | DBF\_SHORT | Display Precision | R/W | Yes |
+| [ RPV ](#Fields_write) | DBF\_STRING | ReadbackPVName | R/W | Yes |
+| [ SC ](#Fields_write) | DBF\_SHORT | StartCmd | R/W | Yes |
+| [ SM ](#Fields_write) | DBF\_MENU(sscanP1SM) | StepMode | R/W | Yes |
+| [ SP ](#Fields_write) | DBF\_DOUBLE | StartPos | R/W\* | Yes |
+| [ STEP ](#Fields_misc) | DBF\_DOUBLE | StepSize | R | No |
+| [ TPV ](#Fields_write) | DBF\_STRING | TrigPVName | R/W | Yes |
+| [ VAL ](#Fields_misc) | DBF\_DOUBLE | Result | R | No |
+| [ VERS ](#Fields_misc) | DBF\_FLOAT | Code Version | R | No |
+
+Alphabetical list of record-specific fields 
+-------------------------------------------  
+
+NOTE: Hot links in this table take you only to the *section* in which the linked item is described in detail. You'll probably have to scroll down to find the actual item.  
+Note: In the __Access__ column above:
+* R \| Read only \|  
+* R/W \| Read and write are allowed \| 
+* N \| No access allowed \|
+
+a channel-access write triggers record processing if the record's SCAN field is set to "Passive." 
 
 
+- - - - - -
 
+<a name="Fields_write"></a>
 
+### Fields involved in sending information out
 
+| value field | type | output link | typical target field | purpose |
+| PRE | DBF\_SHORT | OPRE | &lt;sscan&gt;.CMND | clear old positioner configuration |
+| SM | DBF\_MENU(sscanP1SM) | OSM | &lt;sscan&gt;.P1SM | positioner scan mode (e.g., linear, table, fly) |
+| AR | DBF\_MENU(sscanP1AR) | OAR | &lt;sscan&gt;.P1AR | positioner absolute/relative |
+| AFT | DBF\_MENU(sscanPASM) | OAFT | &lt;sscan&gt;.PASM | positioner after-scan mode (e.g., stay, go to start pos,...) |
+| PPV | DBF\_STRING | OPPV | &lt;sscan&gt;.P1PV | positioner drive PV name |
+| RPV | DBF\_STRING | ORPV | &lt;sscan&gt;.R1PV | positioner readback PV name |
+| TPV | DBF\_STRING | OTPV | &lt;sscan&gt;.T1PV | detector-trigger PV name |
+| DPV | DBF\_STRING | ODPV | &lt;sscan&gt;.D01PV | detector PV name |
+| SP | DBF\_DOUBLE | OSP | &lt;sscan&gt;.P1SP | positioner start point |
+| EP | DBF\_DOUBLE | OEP | &lt;sscan&gt;.P1EP | positioner end point |
+| NP | DBF\_LONG | ONP | &lt;sscan&gt;.NPTS | number of data points to acquire |
+| SC | DBF\_SHORT | OSC | &lt;sscan&gt;.EXSC | start the scan |
+| AQT | DBF\_DOUBLE | OAQT | &lt;scaler&gt;.TP | acquire time |
 
+- - - - - -
 
+<a name="Fields_read"></a>
 
-<HR>
-<P>
-<A NAME="Files"><H2>Files</H2></A> The following table
-briefly describes the files required to implement and use the
-scanparm record.
-<P>
-<TABLE BORDER CELLPADDING=5>
-<TR><TH COLSPAN=2>SOURCE CODE<BR></TH></TR>
-<TR VALIGN=TOP><TD>scanparmRecord.c		<TD>Record support for the scanparm record</TR>
+### Fields involved in collecting information
 
-<TR VALIGN=TOP>
-<TD>scanparmRecord.dbd</TD>
-<TD>This file defines all of the fields menus, etc. for the scanparm record.</TD>
-</TR>
-</TABLE>
+| input link | value field | typical target field | purpose |
+| IMP | MP | &lt;sscan&gt;.MPTS | get the maximum permitted number of data points |
+| IACT | ACT | &lt;sscan&gt;.BUSY | determine whether the target sscan record is active |
 
-<P><TABLE BORDER CELLPADDING=5>
-<TR><TH COLSPAN=2>DATABASE and AUTOSAVE-REQUEST FILES<BR></TH></TR>
-<TR><TD>scanParms.db<TD>database used for one-dimensional, one-positioner scans, when the sscan record and the scanparm record have the same prefix.</TR>
-<TR><TD>scanParmsRemote.db<TD>database used for one-dimensional, one-positioner scans, when the sscan record and the scanparm record have different prefixes.</TR>
-<TR><TD>scanParms2Pos.db<TD>database used for one-dimensional, two-positioner scans.</TR>
-<TR><TD>scanParms2D.db<TD>database used for two-dimensional scans.</TR>
-</TABLE>
+- - - - - -
 
-<P><TABLE BORDER CELLPADDING=5>
-<TR><TH COLSPAN=2>MEDM DISPLAY FILES<BR></TH></TR>
-<TR VALIGN=TOP><TD>scanParms.adl		<TD>
-<TR VALIGN=TOP><TD>scanParmsRemote.adl	<TD>
-<TR VALIGN=TOP><TD>scanParmsCustom.adl	<TD>
-<TR VALIGN=TOP><TD>scanParms2Pos.adl	<TD>
-<TR VALIGN=TOP><TD>scanParms2D.adl		<TD>
+<a name="Fields_command"></a>
 
+| Fields involved in managing execution. |
+|---|
+| value field | output link | typical target field | purpose |
+| LOAD | OLOAD | &lt;scanparm&gt;.LOAD | cause the scanparm record to write parameters to the sscan record. If more than one scanparm record is needed to define a scan (e.g., for a multi-positioner scan, or a multi-dimensional scan), the OLOAD field should link to the next scanparm record. |
+| GO | OGO | &lt;scanparm&gt;.GO | Cause the scanparm record to write parameters to the sscan record and also cause the sscan record to begin the scan. If more than one scanparm record is needed to define a scan (e.g., for a multi-positioner scan, or a multi-dimensional scan), the OGO field should link to the next scanparm record, and the last scanparm record to execute should use its OGO link to cause its sscan record to start scanning. |
 
-<TR><TD COLSPAN=2>These files build <CODE>medm</CODE> screens to access the scanparm
-record and related process variables.
-To use one of them from the command line, type, for example
-<PRE>
-medm -x -macro "P=xxx:,Q=m1,PV=m1" scanParms.adl
-medm -x -macro "P=xxx:,Q=yyy:m1,PV=yyy:m1" scanParmsRemote.adl
-medm -x -macro "P=xxx:,Q=m1,EGU=,NAME=,DESC=" scanParmsCustom.adl
-medm -x -macro "P=xxx:,Q=device,PV1=xxx:m1,PV2=xxx:m2,SCAN=yyy:scan1" scanParms2Pos.adl
-medm -x -macro "P=xxx:,Q=device,DESC=,EGU1=,NAME1=,EGU2=,NAME2=" scanParms2D.adl
-</PRE>
-</TD>
-</TR>
-</TABLE>
+- - - - - -
 
+Files
+-----
 
-<P><TABLE BORDER CELLPADDING=5>
-<TR><TH COLSPAN=2>EPICS STARTUP FILE<BR></TH> </TR>
+The following table briefly describes the files required to implement and use the scanparm record.
 
-<TR VALIGN=TOP><TD>st.cmd		<TD>Startup script
-<TR><TD COLSPAN=2>
-This file is not included in the distribution.  Here are annotated excerpts
-from a startup file that supports scanparms: 
-<PRE>
-#######################################################################
-# vxWorks startup script to load and execute system (iocCore) software.
-</PRE>
+### SOURCE CODE 
+| scanparmRecord.c | Record support for the scanparm record |
+| scanparmRecord.dbd | This file defines all of the fields menus, etc. for the scanparm record. |
 
-<B><FONT COLOR=#FFFFFF> scanparm-related databases </FONT></B>
-<PRE>
-# Tell EPICS all about the record types, device-support modules, drivers,
-# etc. in the software we just loaded (xxxApp)
-dbLoadDatabase("dbd/xxxApp.dbd")
+### DATABASE and AUTOSAVE-REQUEST FILES
 
-dbLoadTemplate("scanParms.substitutions")
+| scanParms.db | database used for one-dimensional, one-positioner scans, when the sscan record and the scanparm record have the same prefix. |
+| scanParmsRemote.db | database used for one-dimensional, one-positioner scans, when the sscan record and the scanparm record have different prefixes. |
+| scanParms2Pos.db | database used for one-dimensional, two-positioner scans. |
+| scanParms2D.db | database used for two-dimensional scans. |
 
+### MEDM DISPLAY FILES
+| scanParms.adl |  |
+| scanParmsRemote.adl |  |
+| scanParmsCustom.adl |  |
+| scanParms2Pos.adl |  |
+| scanParms2D.adl |  |
 
+These files build `medm` screens to access the scanparm record and related process variables. To use one of them from the command line, type, for example 
+```  
+medm -x -macro "P=xxx:,Q=m1,PV=m1" scanParms.adl 
+medm -x -macro "P=xxx:,Q=yyy:m1,PV=yyy:m1" scanParmsRemote.adl 
+medm -x -macro "P=xxx:,Q=m1,EGU=,NAME=,DESC=" scanParmsCustom.adl 
+medm -x -macro "P=xxx:,Q=device,PV1=xxx:m1,PV2=xxx:m2,SCAN=yyy:scan1" scanParms2Pos.adl 
+medm -x -macro "P=xxx:,Q=device,DESC=,EGU1=,NAME1=,EGU2=,NAME2=" scanParms2D.adl 
+```
 
-</TD>
-</TR>
-</TABLE>
+### EPICS STARTUP FILE
 
-<P><TABLE BORDER CELLPADDING=5>
-<TR><TH COLSPAN=2>AUTOSAVE REQUEST FILE<BR></TH></TR>
-<TR VALIGN=TOP><TD>scanParms_Settings.req   <TD>sample request file to be included in auto_settings.req
-to save the user modifiable settings of one scanParms.db database.
-To use this, add a line of the following form in auto_settings.req for each scanParms database:
-<P><code>file scanParms_settings.req P=xxx: M=m1</code>
-</TABLE>
+| st.cmd | Startup script |
 
+This file is not included in the distribution. Here are annotated excerpts from a startup file that supports scanparms: 
+```
+####################################################################### 
+# vxWorks startup script to load and execute system (iocCore) software. 
+# Tell EPICS all about the record types, device-support modules, drivers, 
+# etc. in the software we just loaded (xxxApp) 
+dbLoadDatabase("dbd/xxxApp.dbd")  
+dbLoadTemplate("scanParms.substitutions")    
+```
 
-<HR>
-<A NAME="Restrictions"><H2>Restrictions</H2></A>
+### AUTOSAVE REQUEST FILE
 
-<ADDRESS>
-Suggestions and comments to: 
-<BR><A HREF="mailto:mooney@aps.anl.gov">Tim Mooney</A> : (mooney@aps.anl.gov)
-<BR>
+| scanParms\_Settings.req | sample request file to be included in auto\_settings.req to save the user modifiable settings of one scanParms.db database. To use this, add a line of the following form in auto\_settings.req for each scanParms database: `file scanParms_settings.req P=xxx: M=m1` |
+
+- - - - - -
+
+Restrictions
+------------
+
+Suggestions and comments to:   
+[Tim Mooney](mailto:mooney@aps.anl.gov) : (mooney@aps.anl.gov)   
 Last modified: December 11, 2007
-</ADDRESS>
-
-</BODY>
-</HTML>
