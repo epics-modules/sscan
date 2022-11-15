@@ -1,4 +1,11 @@
-Scanparm Record and related softwareScanparm Record and related software
+---
+layout: default
+title: Scanparm Record
+nav_order: 5
+---
+
+
+Scanparm Record and Related Software
 ====================================
 
 Tim Mooney

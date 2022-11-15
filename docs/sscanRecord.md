@@ -1,3 +1,10 @@
+---
+layout: default
+title: sscan Record
+nav_order: 4
+---
+
+
 The sscan record
 ================
 
