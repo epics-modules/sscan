@@ -722,6 +722,17 @@ LOCAL int fileStatus(char* fname)
 	int retVal;
 
 	errno = 0;
+	
+	int len;
+	char lastChar;
+
+	len = strlen(fname);
+	lastChar = fname[len-1];
+	if ((lastChar == '/') || (lastChar == '\\')) 
+	{
+		fname[len-1] = 0;
+	}
+	
 	retVal = stat(fname, &status);
 	if ((retVal == -1) && (debug_saveData)) {
 		printf("saveData: stat returned -1 for filename '%s'; errno=%d\n", fname, errno);
