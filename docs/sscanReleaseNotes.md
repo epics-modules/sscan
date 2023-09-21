@@ -8,6 +8,14 @@ nav_order: 3
 sscan Release Notes
 ===================
 
+Release 2-11-6 - Sep 21, 2023
+-----------------------------
+
+*  Fixed subdirectory detection issue for saveData on Windows
+*  scan_settings.req changed to pull required PV's for scan.db,
+   previous uses of scan_settings.req should instead use sscanRecord_settings.req
+
+
 Release 2-11-5 - Oct 19, 2021
 -----------------------------
 
