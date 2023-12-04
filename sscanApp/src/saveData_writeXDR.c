@@ -208,7 +208,6 @@
 #include <dbDefs.h>         /* for PVNAME_STRINGSZ */
 #include <epicsTypes.h>     /* for MAX_STRING_SIZE */
 #include <epicsStdio.h>		/* for epicsSnprintf() */
-#include <shareLib.h>       /* for READONLY */
 
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #define MIN(a,b) ((a)<(b)?(a):(b))
@@ -1850,7 +1849,7 @@ LOCAL void extraValCallback(struct event_handler_args eha)
 	PV_NODE * pnode = eha.usr;
 	long type = eha.type;
 	long count = eha.count;
-	READONLY DBR_VAL * pval = eha.dbr;
+	const DBR_VAL * pval = eha.dbr;
 	char *string;
 
 	size_t size=0;
@@ -1897,7 +1896,7 @@ LOCAL void extraValCallback(struct event_handler_args eha)
 LOCAL void extraDescCallback(struct event_handler_args eha)
 {
 	PV_NODE * pnode = eha.usr;
-	READONLY DBR_VAL * pval = eha.dbr;
+	const DBR_VAL * pval = eha.dbr;
 
 	epicsMutexLock(pnode->lock);
 
