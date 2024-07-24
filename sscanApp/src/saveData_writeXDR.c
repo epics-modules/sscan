@@ -719,23 +719,32 @@ LOCAL int fileStatus(char* fname)
 {
 	struct stat status;
 	int retVal;
-
+	
 	errno = 0;
 	
 	int len;
 	char lastChar;
-
+	char *fnameLocal;
+	
 	len = strlen(fname);
-	lastChar = fname[len-1];
+	
+	/* Use a local copy of the filename */
+	fnameLocal = (char *)calloc(len+1, sizeof(char));
+	strcpy(fnameLocal, fname);
+	
+	lastChar = fnameLocal[len-1];
 	if ((lastChar == '/') || (lastChar == '\\')) 
 	{
-		fname[len-1] = 0;
+		fnameLocal[len-1] = 0;
 	}
 	
-	retVal = stat(fname, &status);
+	retVal = stat(fnameLocal, &status);
 	if ((retVal == -1) && (debug_saveData)) {
-		printf("saveData: stat returned -1 for filename '%s'; errno=%d\n", fname, errno);
+		printf("saveData: stat returned -1 for filename '%s'; errno=%d\n", fnameLocal, errno);
 	}
+	
+	free(fnameLocal);
+	
 	return retVal;
 }
 
