@@ -167,10 +167,8 @@
 	#include <direct.h>
 	#include <io.h>
 	typedef unsigned int    u_int;
-#endif
 
-#if defined(__MINGW32__) || defined(__MINGW64__)
-	#define mkdir(PATH, PERMIS) (mkdir(PATH))
+	#define mkdir(PATH, PERMIS) (_mkdir(PATH))
 #endif
     
 #ifdef vxWorks
