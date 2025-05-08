@@ -104,4 +104,4 @@ The essential steps in applying **sscan**\-module code in an IOC application ("e
 8.  Before running any scans, specify where saveData is to write scan-data files. Bring up the medm display, `scan_saveData.adl` and fill in the "File system" and "Subdirectory" fields (i.e., the PV's `$(P)saveData_fileSystem` and `$(P)saveData_subDir`).
 
 Suggestions and Comments to:  
-[Tim Mooney](mailto:mooney@aps.anl.gov) : (mooney@aps.anl.gov)
+[Keenan Lang](mailto:klang@anl.gov) : (klang@anl.gov)
