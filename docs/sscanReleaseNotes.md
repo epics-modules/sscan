@@ -287,8 +287,4 @@ This version is intended to build with EPICS base 3.14.5. Differences from softw
 *   saveData\_settings.req - new file.
     
 *   scan\_settings.req - added fields ACQT and ACQM.
-    
-
-Suggestions and Comments to:  
-[Tim Mooney](mailto:mooney@aps.anl.gov) : (mooney@aps.anl.gov)  
-Last modified: May 26, 2008
+  
