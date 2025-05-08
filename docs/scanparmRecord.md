@@ -8,7 +8,7 @@ nav_order: 5
 Scanparm Record and Related Software
 ====================================
 
-Tim Mooney
+Original Author: Tim Mooney
 
 - - - - - -
 
