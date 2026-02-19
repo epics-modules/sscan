@@ -34,25 +34,31 @@ record(stringout, "$(P)saveData_fileName") {
   field(DTYP, "Soft Channel")
 }
 
-record(stringout, "$(P)saveData_fileSystem") {
+record(waveform, "$(P)saveData_fileSystem") {
   field(DTYP, "Soft Channel")
+  field(NELM, "256")
+  field(FTVL, "CHAR")
 }
 
 record(stringout, "$(P)saveData_message") {
   field(DTYP, "Soft Channel")
 }
 
-record(stringout, "$(P)saveData_subDir") {
+record(waveform, "$(P)saveData_subDir") {
   field(DTYP, "Soft Channel")
+  field(NELM, "256")
+  field(FTVL, "CHAR")
 }
 
-record(stringout, "$(P)saveData_baseName") {
+record(waveform, "$(P)saveData_baseName") {
   field(DTYP, "Soft Channel")
+  field(NELM, "256")
+  field(FTVL, "CHAR")
 }
 
 record(waveform, "$(P)saveData_fullPathName") {
   field(DTYP, "Soft Channel")
-  field(NELM, "100")
+  field(NELM, "512")
   field(FTVL, "CHAR")
 }
 
