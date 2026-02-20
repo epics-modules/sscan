@@ -2152,6 +2152,9 @@ LOCAL int initSaveDataTask()
 		printf("saveData: fileSystem pv name not defined\n");
 		return -1;
 	}
+	
+	strncat(buff1, ".$", PVNAME_STRINGSZ - strlen(buff1) - 1);
+	
 	if (connectFileSystem(buff1)==-1) {
 		printf("saveData: connectFileSystem(%s) failed \n", buff1);
 		return -1;
@@ -2167,6 +2170,9 @@ LOCAL int initSaveDataTask()
 		printf("saveData: subDir pv name not defined\n");
 		return -1;
 	}
+	
+	strncat(buff1, ".$", PVNAME_STRINGSZ - strlen(buff1) - 1);
+	
 	if (connectSubdir(buff1)==-1) {
 		printf("saveData: connectSubdir(%s) failed \n", buff1);
 		return -1;
@@ -2179,6 +2185,8 @@ LOCAL int initSaveDataTask()
 		if (req_readMacId(rf, buff1, PVNAME_STRINGSZ)==0) {
 			printf("saveData: baseName pv name not defined\n");
 		} else {
+			strncat(buff1, ".$", PVNAME_STRINGSZ - strlen(buff1) - 1);
+		
 			if (connectBasename(buff1)==-1) {
 				printf("saveData: failed to connect to baseName pv\n");
 			}
