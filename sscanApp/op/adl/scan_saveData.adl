@@ -759,7 +759,7 @@ composite {
 		height=14
 	}
 	monitor {
-		chan="$(P)saveData_fullPathName"
+		chan="$(P)saveData_fullPathName.$"
 		clr=53
 		bclr=1
 	}

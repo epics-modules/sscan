@@ -54,10 +54,9 @@ record(lso, "$(P)saveData_baseName") {
   field(SIZV, "256")
 }
 
-record(waveform, "$(P)saveData_fullPathName") {
+record(lso, "$(P)saveData_fullPathName") {
   field(DTYP, "Soft Channel")
-  field(NELM, "512")
-  field(FTVL, "CHAR")
+  field(SIZV, "512")
 }
 
 record(longout, "$(P)saveData_maxAllowedRetries") {

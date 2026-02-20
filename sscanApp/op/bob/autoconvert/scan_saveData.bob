@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Saved on 2026-02-20 13:06:18 by klang-->
+<!--Saved on 2026-02-20 13:39:35 by klang-->
 <display version="2.0.0">
   <name>scan_saveData</name>
   <x>814</x>
@@ -755,7 +755,7 @@
   </widget>
   <widget type="textupdate" version="2.0.0">
     <name>text update #172</name>
-    <pv_name>$(P)saveData_fullPathName</pv_name>
+    <pv_name>$(P)saveData_fullPathName.$</pv_name>
     <x>50</x>
     <y>130</y>
     <width>340</width>

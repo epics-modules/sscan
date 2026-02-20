@@ -2123,6 +2123,7 @@ LOCAL int initSaveDataTask()
 		if (req_readMacId(rf, buff1, PVNAME_STRINGSZ)==0) {
 			printf("saveData: fullPathName pv name not defined\n");
 		} else {
+			strncat(buff1, ".$", PVNAME_STRINGSZ - strlen(buff1) - 1);
 			ca_search(buff1, &full_pathname_chid);
 			ca_pend_io(0.5);
 		}
