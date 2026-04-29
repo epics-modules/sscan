@@ -326,6 +326,7 @@
 #include <dbStaticLib.h>	/* for enumStrings stuff */
 #include <epicsVersion.h>       /* for LT_EPICSBASE macro */
 
+#include <epicsStdio.h>
 #include "epicsExport.h"
 #include "recDynLink.h"
 
@@ -941,16 +942,16 @@ process(dbCommon *pcommon)
 		if (psscan->wcnt) {psscan->wcnt = 0; POST(&psscan->wcnt);}
 		if (psscan->wtng) {psscan->wtng = 0; POST(&psscan->wtng);}
 		if (numPosCb) {
-			sprintf(psscan->smsg, "NOTE: positioner still active");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "NOTE: positioner still active");
 			POST(&psscan->smsg);
 		} else if (numTrigCb) {
-			sprintf(psscan->smsg, "NOTE: detector still active");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "NOTE: detector still active");
 			POST(&psscan->smsg);
 		} else if (numAReadCb) {
-			sprintf(psscan->smsg, "NOTE: array-read still active");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "NOTE: array-read still active");
 			POST(&psscan->smsg);
 		} else if (numGetCb) {
-			sprintf(psscan->smsg, "NOTE: outstanding getCallback(s)");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "NOTE: outstanding getCallback(s)");
 			POST(&psscan->smsg);
 		}
 		psscan->alrt = 0; POST(&psscan->alrt);
@@ -992,7 +993,7 @@ process(dbCommon *pcommon)
 				 */
 				 psscan->dstate = sscanDSTATE_PACKED; POST(&psscan->dstate);
 				 psscan->await = 0; POST(&psscan->await);
-				 sprintf(psscan->smsg, "Abandoning unsaved scan data"); POST(&psscan->smsg);
+				 epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Abandoning unsaved scan data"); POST(&psscan->smsg);
 				 errlogPrintf("%s:process(): Abandoning unsaved scan data\n", psscan->name);
 			}
 			packData(psscan, 0);
@@ -1018,13 +1019,13 @@ process(dbCommon *pcommon)
 	if (psscan->xsc) {
 		/* Make sure it's ok to go */
 		if (psscan->paus) {
-			sprintf(psscan->smsg, "Scan is paused ...");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan is paused ...");
 			POST(&psscan->smsg);
 			/*precPvt->calledBy = UNKNOWN;*/
 			return(-1);
 		}
 		if (psscan->wtng) {
-			sprintf(psscan->smsg, "waiting for client ...");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "waiting for client ...");
 			POST(&psscan->smsg);
 			/*precPvt->calledBy = UNKNOWN;*/
 			return(-1);
@@ -1075,9 +1076,9 @@ process(dbCommon *pcommon)
 				numTrigCb, numAReadCb, numGetCb, psscan->xsc, psscan->pxsc);
 		}
 		if (psscan->paus) {
-			sprintf(psscan->smsg, "Scan is paused");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan is paused");
 		} else {
-			sprintf(psscan->smsg, "Already busy! PTAG_CBs=%1d_%1d_%1d_%02d; CB=0x%x", numPosCb,
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Already busy! PTAG_CBs=%1d_%1d_%1d_%02d; CB=0x%x", numPosCb,
 				numTrigCb, numAReadCb, numGetCb, precPvt->calledBy);
 		}
 		POST(&psscan->smsg);
@@ -1089,7 +1090,7 @@ process(dbCommon *pcommon)
 		/* Brand new scan */
 
 		if (psscan->busy) {
-			sprintf(psscan->smsg, "Still busy! PTAG_CBs=%1d_%1d_%1d_%02d; CB=0x%x", numPosCb,
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Still busy! PTAG_CBs=%1d_%1d_%1d_%02d; CB=0x%x", numPosCb,
 				numTrigCb, numAReadCb, numGetCb, precPvt->calledBy);
 			/*precPvt->calledBy = UNKNOWN;*/
 			return (status);
@@ -1138,13 +1139,13 @@ process(dbCommon *pcommon)
 				packData(psscan, 1);
 				checkMonitors(psscan);
 			}
-			sprintf(psscan->smsg, "Abort: waiting for callback(s)");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Abort: waiting for callback(s)");
 			POST(&psscan->smsg);
 			/*precPvt->calledBy = UNKNOWN;*/
 			return(status);
 		} else {
 			if (strlen(psscan->smsg) == 0) {
-				sprintf(psscan->smsg, "Scan aborted by operator");
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan aborted by operator");
 				POST(&psscan->smsg);
 			}
 			if (psscan->wait) {psscan->wait = 0; POST(&psscan->wait);}
@@ -1165,7 +1166,7 @@ process(dbCommon *pcommon)
 		epicsMutexUnlock(precPvt->pvStatSem);
 		if (badPv) {
 			psscan->alrt = 1; POST(&psscan->alrt);
-			sprintf(psscan->smsg, "Lost connection to Control PV");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Lost connection to Control PV");
 			POST(&psscan->smsg);
 			psscan->exsc = 0; POST(&psscan->exsc);
 			psscan->xsc = 0; POST(&psscan->xsc);
@@ -1185,7 +1186,7 @@ process(dbCommon *pcommon)
 		if (psscan->dstate < sscanDSTATE_PACKED) {
 			packData(psscan, 2);
 			if (psscan->dstate < sscanDSTATE_PACKED) {
-				sprintf(psscan->smsg, "waiting for packData"); POST(&psscan->smsg);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "waiting for packData"); POST(&psscan->smsg);
 				/*precPvt->calledBy = UNKNOWN;*/
 				return(status);
 			}
@@ -1219,7 +1220,7 @@ process(dbCommon *pcommon)
 	if (psscan->busy && (psscan->faze == sscanFAZE_SCAN_DONE) && (psscan->dstate == sscanDSTATE_POSTED)) {
 		psscan->busy = 0; POST(&psscan->busy);
 		psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
-		sprintf(psscan->smsg, "SCAN Complete"); POST(&psscan->smsg);
+		epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "SCAN Complete"); POST(&psscan->smsg);
 		recGblFwdLink(psscan);
 		if (sscanRecordDebug>=2) {
 			epicsTimeGetCurrent(&timeCurrent);
@@ -1351,14 +1352,14 @@ special(struct dbAddr *paddr, int after)
 			if (psscan->exsc) {
 				if (psscan->xsc) {
 					/* redundant request to start scan */
-					sprintf(psscan->smsg, "Already scanning"); POST(&psscan->smsg);
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Already scanning"); POST(&psscan->smsg);
 					return(-1);
 				} else if (psscan->busy) {
 					/* Not scanning, but not done either (saveData wait?) */
 					if (psscan->dstate == sscanDSTATE_SAVE_DATA_WAIT) {
-						sprintf(psscan->smsg, "Waiting for saveData");
+						epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Waiting for saveData");
 					} else {
-						sprintf(psscan->smsg, "Waiting for callback");
+						epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Waiting for callback");
 					}
 					db_post_events(psscan, &psscan->smsg, DBE_VAL_LOG);
 					return(-1);
@@ -1439,21 +1440,21 @@ special(struct dbAddr *paddr, int after)
 				/* EXSC == 0 */
 				if (psscan->xsc) {
 					psscan->xsc = 0; POST(&psscan->xsc);
-					sprintf(psscan->smsg, "Aborting scan");
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Aborting scan");
 					db_post_events(psscan, &psscan->smsg, DBE_VAL_LOG);
 					return(0);
 				} else if (psscan->faze != sscanFAZE_IDLE) {
 					/* The first abort didn't succeed, or is taking too long */
 					psscan->kill++;
 					errlogPrintf("%s:special(): Killing scan (kill=%1d/3).\n", psscan->name, psscan->kill);
-					sprintf(psscan->smsg, "Killing scan (kill=%1d/3)", psscan->kill);
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Killing scan (kill=%1d/3)", psscan->kill);
 					db_post_events(psscan, &psscan->smsg, DBE_VAL_LOG);
 					/* Cancel any outstanding active timer */
 					if (precPvt->dlyCallback.timer) epicsTimerCancel(precPvt->dlyCallback.timer);
 					return(0);
 				} else {
 					/* request to abort scan that is not active.  (This is no longer an error 02/03/2012) */
-					sprintf(psscan->smsg, "Scan record is idle");
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan record is idle");
 					db_post_events(psscan, &psscan->smsg, DBE_VAL_LOG);
 					return(0);
 				}
@@ -1494,14 +1495,14 @@ special(struct dbAddr *paddr, int after)
 					epicsMutexUnlock(precPvt->numCallbacksSem);
 
 
-					sprintf(psscan->smsg, "Scan pause rescinded");
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan pause rescinded");
 					POST(&psscan->smsg);
 					if ((numTrigCb == 0) && (numPosCb == 0) && (numAReadCb == 0) && (numGetCb == 0)) {
 						/* The P, T, R, or G callback that would have sent us to the next scan
 						 * phase came in while we were paused, so we must get the record processed.
 						 */
 						if (psscan->wtng || psscan->await) {
-							sprintf(psscan->smsg, "Waiting for client");
+							epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Waiting for client");
 							POST(&psscan->smsg);
 						} else {
 							precPvt->calledBy = SPECIAL_PAUS;
@@ -1515,7 +1516,7 @@ special(struct dbAddr *paddr, int after)
 				} else {
 					/* Cancel any outstanding delayed unpause */
 					if (precPvt->dlyCallback.timer) epicsTimerCancel(precPvt->dlyCallback.timer);
-					sprintf(psscan->smsg, "Scan pause asserted");
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan pause asserted");
 					POST(&psscan->smsg);
 				}
 			}
@@ -1622,10 +1623,10 @@ special(struct dbAddr *paddr, int after)
 				if (psscan->wtng && (psscan->wcnt == 0)) {
 					psscan->wtng = 0; POST(&psscan->wtng);
 					if (psscan->paus) {
-						sprintf(psscan->smsg, "Wait end, but scan is paused ...");
+						epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Wait end, but scan is paused ...");
 						POST(&psscan->smsg);
 					} else {
-						sprintf(psscan->smsg, "Scanning ...");
+						epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scanning ...");
 						POST(&psscan->smsg);
 						precPvt->calledBy = SPECIAL_WAIT;
 						(void) scanOnce((struct dbCommon *)psscan);
@@ -1745,7 +1746,7 @@ special(struct dbAddr *paddr, int after)
 					zeroPosParms(psscan, (unsigned short) i);
 					precPvt->prevSm[i] = pPos->p_sm;
 					if (precPvt->tablePts[i] < psscan->npts) {
-						sprintf(psscan->smsg, "Pts in P%d Table < # of steps.", i + 1);
+						epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Pts in P%d Table < # of steps.", i + 1);
 						POST(&psscan->smsg);
 						if (!psscan->alrt) {
 							psscan->alrt = 1; POST(&psscan->alrt);
@@ -2007,7 +2008,7 @@ put_array_info(struct dbAddr *paddr, long nNew)
 
 		precPvt->tablePts[group] = nNew;
 		if (nNew < psscan->npts) {
-			sprintf(psscan->smsg, "Pts in P%d Table < # of Steps.", group + 1);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Pts in P%d Table < # of Steps.", group + 1);
 			POST(&psscan->smsg);
 			if (!psscan->alrt) {
 				psscan->alrt = 1; POST(&psscan->alrt);
@@ -2404,7 +2405,7 @@ delayCallback(CALLBACK *pCB)
 	if (sscanRecordDebug > 10) errlogPrintf("%s:delayCallback:entry\n", psscan->name);
 	if (psscan->wcnt) {
 		psscan->wtng = 1; POST(&psscan->wtng);
-		sprintf(psscan->smsg, "Waiting for client");
+		epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Waiting for client");
 		POST(&psscan->smsg);
 	} else {
 		precPvt->calledBy |= DELAY;
@@ -2434,7 +2435,7 @@ notifyCallback(recDynLink * precDynLink)
 
 	if (psscan->faze == sscanFAZE_IDLE) {
 		/* we must have been aborted */
-		sprintf(psscan->smsg, "callback while scan record is idle");
+		epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "callback while scan record is idle");
 		POST(&psscan->smsg);
 		return;
 	}
@@ -2447,7 +2448,7 @@ notifyCallback(recDynLink * precDynLink)
 		if (sscanRecordDebug >= 5) errlogPrintf("%s:notifyCallback: FATAL_ERROR, ending scan\n", psscan->name);
 		psscan->xsc = 0; POST(&psscan->xsc);
 		psscan->exsc = 0; POST(&psscan->exsc);
-		sprintf(psscan->smsg, "Scan aborted by notifyCallback"); POST(&psscan->smsg);
+		epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan aborted by notifyCallback"); POST(&psscan->smsg);
 		psscan->alrt = 1; POST(&psscan->alrt);
 		/* Probably shouldn't say the scan is done when limit trouble is
 		 * encountered, because multidimensional scan could appear to be acquiring
@@ -2464,14 +2465,14 @@ notifyCallback(recDynLink * precDynLink)
 			epicsMutexUnlock(precPvt->numCallbacksSem);
 			if (numTrigCb == 0) {
 				if (psscan->paus) {
-					sprintf(psscan->smsg, "Scan paused by operator");
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan paused by operator");
 					POST(&psscan->smsg);
 					return;
 				}
 				if (psscan->ddly < .001) {
 					if (psscan->wcnt) {
 						psscan->wtng = 1; POST(&psscan->wtng);
-						sprintf(psscan->smsg, "Waiting for client");
+						epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Waiting for client");
 						POST(&psscan->smsg);
 					} else {
 						precPvt->calledBy = NOTIFY_TRIG;
@@ -2490,7 +2491,7 @@ notifyCallback(recDynLink * precDynLink)
 			epicsMutexUnlock(precPvt->numCallbacksSem);
 			if (numAReadCb == 0) {
 				if (psscan->paus) {
-					sprintf(psscan->smsg, "Scan paused by operator");
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan paused by operator");
 					POST(&psscan->smsg);
 					return;
 				}
@@ -2505,7 +2506,7 @@ notifyCallback(recDynLink * precDynLink)
 			epicsMutexUnlock(precPvt->numCallbacksSem);
 			if (numPosCb == 0) {
 				if (psscan->paus) {
-					sprintf(psscan->smsg, "Scan paused by operator");
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan paused by operator");
 					POST(&psscan->smsg);
 					return;
 				}
@@ -2576,7 +2577,7 @@ userGetCallback(recDynLink * precDynLink)
 
 	if (numGetCb == 0) {
 		if (psscan->paus) {
-			sprintf(psscan->smsg, "Scan paused by operator");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan paused by operator");
 			POST(&psscan->smsg);
 			return;
 		}
@@ -2760,7 +2761,7 @@ pvSearchCallback(recDynLink * precDynLink)
 			nelem = puserPvt->pAddr->no_elements;
 		}
 		if (nelem > 1) {
-			sprintf(psscan->smsg, "Array-valued positioner read-back");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Array-valued positioner read-back");
 			POST(&psscan->smsg);
 		}
 
@@ -2818,7 +2819,7 @@ pvSearchCallback(recDynLink * precDynLink)
 		}
 
 		if (nelem > 1) {
-			sprintf(psscan->smsg, "Array-valued detector");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Array-valued detector");
 			POST(&psscan->smsg);
 		}
 		/*
@@ -2891,7 +2892,7 @@ pvSearchCallback(recDynLink * precDynLink)
 			if (sscanRecordDebug >= 2) errlogPrintf("%s:pvSearchCallback: pending scan was aborted\n",
 					psscan->name);
 			psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
-			sprintf(psscan->smsg, "Scan aborted"); POST(&psscan->smsg);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan aborted"); POST(&psscan->smsg);
 		} else {
 
 			/* Have any of the positioners involved in the scan still not called back with a value? */
@@ -3017,7 +3018,7 @@ posMonCallbackGetCB(recDynLink * precDynLink)
 			if (sscanRecordDebug) errlogPrintf("%s:posMonCallbackGetCB: pending scan was aborted\n",
 					psscan->name);
 			psscan->faze = sscanFAZE_IDLE; POST(&psscan->faze);
-			sprintf(psscan->smsg, "Scan aborted"); POST(&psscan->smsg);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan aborted"); POST(&psscan->smsg);
 			epicsMutexUnlock(precPvt->pvStatSem);
 			return;
 		}
@@ -3265,11 +3266,11 @@ initScan(sscanRecord *psscan)
 
 	if ((psscan->bsnv == PV_OK) && (psscan->faze == sscanFAZE_INIT_SCAN)) {
 		psscan->faze = sscanFAZE_BEFORE_SCAN; POST(&psscan->faze);
-		sprintf(psscan->smsg, "Before Scan FLNK ...");
+		epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Before Scan FLNK ...");
 		POST(&psscan->smsg);
 	} else {
 		psscan->faze = sscanFAZE_MOVE_MOTORS; POST(&psscan->faze);
-		sprintf(psscan->smsg, "Scanning ...");
+		epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scanning ...");
 		POST(&psscan->smsg);
 	}
 	/* request callback to do dbPutFields */
@@ -3323,7 +3324,7 @@ contScan(sscanRecord *psscan)
 
 				if ((pPos->r_dl > 0) &&
 				    (fabs(pPos->p_dv - pPos->r_cv) > pPos->r_dl)) {
-					sprintf(psscan->smsg, "SCAN Aborted: P%1d Error > delta", i+1);
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "SCAN Aborted: P%1d Error > delta", i+1);
 					POST(&psscan->smsg);
 					precPvt->scanErr = 1;
 					errlogPrintf("%s: P%1d Error > delta.  Ending scan.\n", psscan->name, i+1);
@@ -3333,7 +3334,7 @@ contScan(sscanRecord *psscan)
 						(fabs(pPos->p_dv - pPos->r_cv) >
 						fabs(pPos->p_si * NINT(pPos->r_dl)))
 					) {
-					sprintf(psscan->smsg, "SCAN Aborted: P%1d Error > stepsize", i+1);
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "SCAN Aborted: P%1d Error > stepsize", i+1);
 					POST(&psscan->smsg);
 					precPvt->scanErr = 1;
 					errlogPrintf("%s: P%1d Error > stepsize.  Ending scan.\n", psscan->name, i+1);
@@ -3907,7 +3908,7 @@ packData(sscanRecord *psscan, int caller)
 		}
 		moveToRef = pos_ok && (psscan->cpt > 1) && precPvt->acqDet[psscan->refd - 1];
 		if (!moveToRef) {
-			sprintf(psscan->smsg, "Can't move to %s ", sscanPASM_strings[psscan->pasm]);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Can't move to %s ", sscanPASM_strings[psscan->pasm]);
 			POST(&psscan->smsg);
 			psscan->alrt = 1; POST(&psscan->alrt);
 		}
@@ -4059,10 +4060,10 @@ packData(sscanRecord *psscan, int caller)
 		for (i=0, pf=precPvt->nullArray; i < psscan->cpt; i++) pf[i] = 0.;
 
 		if (found) {
-			sprintf(psscan->smsg, "%s found.", sscanPASM_strings[psscan->pasm]);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "%s found.", sscanPASM_strings[psscan->pasm]);
 			POST(&psscan->smsg);
 		} else {
-			sprintf(psscan->smsg, "%s NOT found.", sscanPASM_strings[psscan->pasm]);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "%s NOT found.", sscanPASM_strings[psscan->pasm]);
 			POST(&psscan->smsg);
 			psscan->alrt = 1; POST(&psscan->alrt);
 		}
@@ -4139,7 +4140,7 @@ doPuts(CALLBACK *pCB)
 		errlogPrintf("%s:doPuts:entry:faze='%s'\n", psscan->name, sscanFAZE_strings[psscan->faze]);
 
 	if (psscan->paus) {
-		sprintf(psscan->smsg, "Scan paused by operator");
+		epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan paused by operator");
 		POST(&psscan->smsg);
 		return;
 	}
@@ -4178,7 +4179,7 @@ doPuts(CALLBACK *pCB)
 						errlogPrintf("%s:doPuts:...TRIG_ARRAY_READ: notify in progress\n", psscan->name);
 					}
 					psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
-					sprintf(psscan->smsg, "Array-read trigger %d is busy", i+1);
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Array-read trigger %d is busy", i+1);
 					POST(&psscan->smsg);
 				}
 			}
@@ -4206,7 +4207,7 @@ doPuts(CALLBACK *pCB)
 					epicsMutexUnlock(precPvt->numCallbacksSem);
 					if (status == NOTIFY_IN_PROGRESS) {
 						psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
-						sprintf(psscan->smsg, "Before-scan link is busy");
+						epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Before-scan link is busy");
 						POST(&psscan->smsg);
 					}
 				}
@@ -4262,7 +4263,7 @@ doPuts(CALLBACK *pCB)
 					epicsMutexUnlock(precPvt->numCallbacksSem);
 					if (status == NOTIFY_IN_PROGRESS) {
 						psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
-						sprintf(psscan->smsg, "Positioner %1d is already busy", i);
+						epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Positioner %1d is already busy", i);
 						POST(&psscan->smsg);
 					}
 				}
@@ -4346,7 +4347,7 @@ doPuts(CALLBACK *pCB)
 						errlogPrintf("%s:doPuts:...TRIG_DETCTRS: notify in progress\n", psscan->name);
 					}
 					psscan->alrt = NOTIFY_IN_PROGRESS; POST(&psscan->alrt);
-					sprintf(psscan->smsg, "Detector %d is busy", i+1);
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Detector %d is busy", i+1);
 					POST(&psscan->smsg);
 				}
 			}
@@ -4367,14 +4368,14 @@ doPuts(CALLBACK *pCB)
 		 * if it had decremented numTriggerCallbacks to 0.
 		 */ 
 		if (psscan->paus) {
-			sprintf(psscan->smsg, "Scan paused by operator");
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Scan paused by operator");
 			POST(&psscan->smsg);
 			return;
 		}
 		if (psscan->ddly < .001) {
 			if (psscan->wcnt) {
 				psscan->wtng = 1; POST(&psscan->wtng);
-				sprintf(psscan->smsg, "Waiting for client");
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Waiting for client");
 				POST(&psscan->smsg);
 			} else {
 				precPvt->calledBy = DO_PUTS_TRIG;
@@ -4437,7 +4438,7 @@ doPuts(CALLBACK *pCB)
 						precPvt->numPositionerCallbacks--;
 						epicsMutexUnlock(precPvt->numCallbacksSem);
 						psscan->alrt = 1; POST(&psscan->alrt);
-						sprintf(psscan->smsg, "Can't retrace positioner %1d", i);
+						epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Can't retrace positioner %1d", i);
 						POST(&psscan->smsg);
 					}
 				}
@@ -4474,7 +4475,7 @@ doPuts(CALLBACK *pCB)
 					precPvt->numPositionerCallbacks--;
 					epicsMutexUnlock(precPvt->numCallbacksSem);
 					psscan->alrt = 1; POST(&psscan->alrt);
-					sprintf(psscan->smsg, "Can't fire After-scan link");
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Can't fire After-scan link");
 					POST(&psscan->smsg);
 				} else {
 					numPutCallbacks++;
@@ -4545,7 +4546,7 @@ adjLinParms(paddr)
 	if (pParms->p_sm == sscanP1SM_Table) {
 		/* if positioner is in table mode, zero parms and return */
 		zeroPosParms(psscan, (unsigned short) i);
-		sprintf(psscan->smsg, "Positioner #%1d is in Table Mode !", i + 1);
+		epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Positioner #%1d is in Table Mode !", i + 1);
 		psscan->alrt = 1;
 		return;
 	}
@@ -4572,7 +4573,7 @@ adjLinParms(paddr)
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
-				sprintf(psscan->smsg, "P%1d Request Exceeded Maximum Points!", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d Request Exceeded Maximum Points!", i + 1);
 				/* adjust changed field to be consistent */
 				pParms->p_sp = pParms->p_ep - (pParms->p_si * (psscan->npts - 1));
 				POST(&pParms->p_sp);
@@ -4612,7 +4613,7 @@ adjLinParms(paddr)
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
-				sprintf(psscan->smsg, "P%1d Request Exceeded Maximum Points!", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d Request Exceeded Maximum Points!", i + 1);
 				/* adjust changed field to be consistent */
 				pParms->p_sp = pParms->p_cp - ((pParms->p_si * MAX(1,(psscan->npts - 1))) / 2);
 				POST(&pParms->p_sp);
@@ -4653,7 +4654,7 @@ adjLinParms(paddr)
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
-				sprintf(psscan->smsg, "P%1d Request Exceeded Maximum Points !", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d Request Exceeded Maximum Points !", i + 1);
 				/* adjust changed field to be consistent, avoid div by zero  */
 				pParms->p_si = (pParms->p_ep - pParms->p_sp) / MAX(1,(psscan->npts - 1));
 				POST(&pParms->p_si);
@@ -4693,7 +4694,7 @@ adjLinParms(paddr)
 		} else {	/* too constrained !! */
 			pParms->p_si = (pParms->p_ep - pParms->p_sp) / MAX(1,(psscan->npts - 1));
 			POST(&pParms->p_si);
-			sprintf(psscan->smsg, "P%1d SCAN Parameters Too Constrained !", i + 1);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d SCAN Parameters Too Constrained !", i + 1);
 			psscan->alrt = 1;
 			return;
 		}
@@ -4718,7 +4719,7 @@ adjLinParms(paddr)
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
-				sprintf(psscan->smsg, "P%1d Request Exceeded Maximum Points !", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d Request Exceeded Maximum Points !", i + 1);
 				/* adjust changed field to be consistent */
 				pParms->p_ep = pParms->p_sp + (pParms->p_si * MAX(1,(psscan->npts - 1)));
 				POST(&pParms->p_ep);
@@ -4757,7 +4758,7 @@ adjLinParms(paddr)
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
-				sprintf(psscan->smsg, "P%1d Request Exceeded Maximum Points !", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d Request Exceeded Maximum Points !", i + 1);
 				/* adjust changed field to be consistent */
 				pParms->p_ep = pParms->p_cp + (pParms->p_si * MAX(1,(psscan->npts - 1)) / 2);
 				POST(&pParms->p_ep);
@@ -4774,7 +4775,7 @@ adjLinParms(paddr)
 		} else {	/* too constrained !! */
 			pParms->p_ep = pParms->p_sp + (MAX(1,(psscan->npts - 1)) * pParms->p_si);
 			POST(&pParms->p_ep);
-			sprintf(psscan->smsg, "P%1d SCAN Parameters Too Constrained !", i + 1);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d SCAN Parameters Too Constrained !", i + 1);
 			psscan->alrt = 1;
 			return;
 		}
@@ -4818,7 +4819,7 @@ adjLinParms(paddr)
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
-				sprintf(psscan->smsg, "P%1d Request Exceeded Maximum Points !", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d Request Exceeded Maximum Points !", i + 1);
 				/* adjust changed field to be consistent */
 				pParms->p_cp = pParms->p_sp + (pParms->p_si * MAX(1,(psscan->npts - 1)) / 2);
 				POST(&pParms->p_cp);
@@ -4841,7 +4842,7 @@ adjLinParms(paddr)
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
-				sprintf(psscan->smsg, "P%1d Request Exceeded Maximum Points !", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d Request Exceeded Maximum Points !", i + 1);
 				/* adjust changed field to be consistent */
 				pParms->p_cp = pParms->p_ep - (pParms->p_si * MAX(1,(psscan->npts - 1)) / 2);
 				POST(&pParms->p_cp);
@@ -4858,7 +4859,7 @@ adjLinParms(paddr)
 		} else {	/* too constrained !! */
 			pParms->p_cp = pParms->p_sp + (MAX(1,(psscan->npts - 1)) * pParms->p_si) / 2;
 			POST(&pParms->p_cp);
-			sprintf(psscan->smsg, "P%1d SCAN Parameters Too Constrained !", i + 1);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d SCAN Parameters Too Constrained !", i + 1);
 			psscan->alrt = 1;
 			return;
 		}
@@ -4883,7 +4884,7 @@ adjLinParms(paddr)
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
-				sprintf(psscan->smsg, "P%1d Request Exceeded Maximum Points !", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d Request Exceeded Maximum Points !", i + 1);
 				/* adjust changed field to be consistent */
 				pParms->p_wd = (pParms->p_si * MAX(1,(psscan->npts - 1)));
 				POST(&pParms->p_wd);
@@ -4924,7 +4925,7 @@ adjLinParms(paddr)
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
-				sprintf(psscan->smsg, "P%1d Request Exceeded Maximum Points !", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d Request Exceeded Maximum Points !", i + 1);
 				/* adjust changed field to be consistent */
 				pParms->p_wd = (pParms->p_si * MAX(1,(psscan->npts - 1)));
 				POST(&pParms->p_wd);
@@ -4947,7 +4948,7 @@ adjLinParms(paddr)
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
-				sprintf(psscan->smsg, "P%1d Request Exceeded Maximum Points !", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d Request Exceeded Maximum Points !", i + 1);
 				/* adjust changed field to be consistent */
 				pParms->p_wd = (pParms->p_si * MAX(1,(psscan->npts - 1)));
 				POST(&pParms->p_wd);
@@ -4964,7 +4965,7 @@ adjLinParms(paddr)
 		} else {	/* too constrained !! */
 			pParms->p_wd = (pParms->p_ep - pParms->p_sp);
 			POST(&pParms->p_wd);
-			sprintf(psscan->smsg, "P%1d SCAN Parameters Too Constrained !", i + 1);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d SCAN Parameters Too Constrained !", i + 1);
 			psscan->alrt = 1;
 			return;
 		}
@@ -5004,7 +5005,7 @@ changedNpts(psscan)
 		/* Check if Positioner is in TABLE Mode */
 		if ((*pPvStat == PV_OK) && (pParms->p_sm == sscanP1SM_Table)) {
 			if (precPvt->tablePts[i] < psscan->npts) {
-				sprintf(psscan->smsg, "Pts in P%d Table < # of Steps!", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Pts in P%d Table < # of Steps!", i + 1);
 				if (!psscan->alrt) {
 					psscan->alrt = 1;
 				}
@@ -5087,7 +5088,7 @@ changedNpts(psscan)
 				/* The following freezeStates are known to be "Too Constrained" */
 				/* 9,11,13,14,15,25,26,27,28,29,30,31 */
 			default:	/* too constrained !! */
-				sprintf(psscan->smsg, "P%1d SCAN Parameters Too Constrained !", i + 1);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%1d SCAN Parameters Too Constrained !", i + 1);
 				psscan->alrt = 1;
 				break;
 			}
@@ -5156,7 +5157,7 @@ checkScanLimits(psscan)
 					psscan->name, j, pPos->p_pp, status);
 			if (status) {
 				errlogPrintf("%s:checkScanLimits: could not get current value\n", psscan->name);
-				sprintf(psscan->smsg, "Can't get current position"); POST(&psscan->smsg);
+				epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Can't get current position"); POST(&psscan->smsg);
 				if (!psscan->alrt) {psscan->alrt = 1; POST(&psscan->alrt);}
 				return(ERROR);
 			}
@@ -5174,7 +5175,7 @@ checkScanLimits(psscan)
 		if ((*pPvStat == PV_OK) &&
 		    (pPos->p_sm == sscanP1SM_Table) &&
 		    (precPvt->tablePts[i] < psscan->npts)) {
-			sprintf(psscan->smsg, "Pts in P%ld Table < # of Steps", i + 1);
+			epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "Pts in P%ld Table < # of Steps", i + 1);
 			POST(&psscan->smsg);
 			if (!psscan->alrt) {psscan->alrt = 1; POST(&psscan->alrt);}
 			return (ERROR);
@@ -5227,11 +5228,11 @@ checkScanLimits(psscan)
 				}
 
 				if ((pPos->p_lr != 0) && (value < pPos->p_lr)) {
-					sprintf(psscan->smsg, "P%-ld Value < LO_Limit @ point %1ld", i + 1, j);
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%-ld Value < LO_Limit @ point %1ld", i + 1, j);
 					psscan->alrt = 1;
 					return (ERROR);
 				} else if ((pPos->p_hr != 0) && (value > pPos->p_hr)) {
-					sprintf(psscan->smsg, "P%-ld Value > HI_Limit @ point %1ld", i + 1, j);
+					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%-ld Value > HI_Limit @ point %1ld", i + 1, j);
 					psscan->alrt = 1;
 					return (ERROR);
 				}
@@ -5240,7 +5241,7 @@ checkScanLimits(psscan)
 	}
 
 	/* No errors if we made it here ... */
-	sprintf(psscan->smsg, "SCAN Values within limits");
+	epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "SCAN Values within limits");
 	return (OK);
 
 }
