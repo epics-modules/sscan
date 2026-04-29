@@ -2170,11 +2170,15 @@ checkMonitors(sscanRecord *psscan)
 			}
 		}
 
-		if (psscan->pcpt != psscan->cpt) {
-			POST(&psscan->cpt);
-			psscan->pcpt = psscan->cpt;
-			if (psscan->cpt) POST(&psscan->val);
-		}
+	}
+
+	/* Always post CPT when it changes -- not rate-limited, since CPT only
+	 * changes once per scan point and clients depend on it for progress.
+	 */
+	if (psscan->pcpt != psscan->cpt) {
+		POST(&psscan->cpt);
+		psscan->pcpt = psscan->cpt;
+		if (psscan->cpt) POST(&psscan->val);
 	}
 
 	end_of_scan = (psscan->dstate == sscanDSTATE_PACKED);
