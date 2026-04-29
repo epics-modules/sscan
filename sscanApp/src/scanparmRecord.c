@@ -108,7 +108,7 @@ rset scanparmRSET = {
 };
 epicsExportAddress(rset, scanparmRSET);
 
-static void monitor();
+static void monitor(scanparmRecord *psr);
 
 static long init_record(dbCommon *pcommon, int pass)
 {
@@ -272,8 +272,7 @@ static long process(dbCommon *pcommon)
 	return(status);
 }
 
-static void monitor(psr)
-scanparmRecord *psr;
+static void monitor(scanparmRecord *psr)
 {
 	unsigned short monitor_mask;
 	
