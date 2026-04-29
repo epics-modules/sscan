@@ -1,7 +1,7 @@
 
 file {
-	name="/home/oxygen4/MOONEY/epics/synAppsSVN/support/sscan/sscanApp/op/adl/scan_saveData.adl"
-	version=030107
+	name="/home/beams1/KLANG/Documents/Projects/Repository/git/sscan/sscanApp/op/adl/scan_saveData.adl"
+	version=030111
 }
 display {
 	object {
@@ -107,7 +107,7 @@ text {
 		height=20
 	}
 	control {
-		chan="$(P)saveData_fileSystem"
+		chan="$(P)saveData_fileSystem.$"
 		clr=14
 		bclr=51
 	}
@@ -238,58 +238,47 @@ text {
 	}
 	textix="Example: //"
 }
-composite {
+text {
 	object {
 		x=10
+		y=63
+		width=80
+		height=14
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="Subdirectory"
+}
+"text entry" {
+	object {
+		x=100
 		y=60
-		width=380
+		width=260
 		height=20
 	}
-	"composite name"=""
-	children {
-		text {
-			object {
-				x=10
-				y=63
-				width=80
-				height=14
-			}
-			"basic attribute" {
-				clr=14
-			}
-			textix="Subdirectory"
-		}
-		"text entry" {
-			object {
-				x=100
-				y=60
-				width=260
-				height=20
-			}
-			control {
-				chan="$(P)saveData_subDir"
-				clr=14
-				bclr=51
-			}
-			format="string"
-			limits {
-			}
-		}
-		"text entry" {
-			object {
-				x=370
-				y=60
-				width=20
-				height=20
-			}
-			control {
-				chan="$(P)saveData_subDir.DISP"
-				clr=14
-				bclr=51
-			}
-			limits {
-			}
-		}
+	control {
+		chan="$(P)saveData_subDir.$"
+		clr=14
+		bclr=51
+	}
+	format="string"
+	limits {
+	}
+}
+"text entry" {
+	object {
+		x=370
+		y=60
+		width=20
+		height=20
+	}
+	control {
+		chan="$(P)saveData_subDir.DISP"
+		clr=14
+		bclr=51
+	}
+	limits {
 	}
 }
 text {
@@ -312,7 +301,7 @@ text {
 		height=20
 	}
 	control {
-		chan="$(P)saveData_baseName"
+		chan="$(P)saveData_baseName.$"
 		clr=14
 		bclr=51
 	}
@@ -746,74 +735,63 @@ composite {
 		}
 	}
 }
-composite {
+"text update" {
+	object {
+		x=50
+		y=150
+		width=340
+		height=14
+	}
+	monitor {
+		chan="$(P)saveData_fileName.$"
+		clr=53
+		bclr=1
+	}
+	format="string"
+	limits {
+	}
+}
+"text update" {
+	object {
+		x=50
+		y=130
+		width=340
+		height=14
+	}
+	monitor {
+		chan="$(P)saveData_fullPathName.$"
+		clr=53
+		bclr=1
+	}
+	format="string"
+	limits {
+	}
+}
+text {
 	object {
 		x=10
 		y=130
-		width=380
-		height=34
+		width=40
+		height=14
 	}
-	"composite name"=""
-	children {
-		"text update" {
-			object {
-				x=50
-				y=150
-				width=340
-				height=14
-			}
-			monitor {
-				chan="$(P)saveData_fileName"
-				clr=53
-				bclr=1
-			}
-			format="string"
-			limits {
-			}
-		}
-		"text update" {
-			object {
-				x=50
-				y=130
-				width=340
-				height=14
-			}
-			monitor {
-				chan="$(P)saveData_fullPathName"
-				clr=53
-				bclr=1
-			}
-			format="string"
-			limits {
-			}
-		}
-		text {
-			object {
-				x=10
-				y=130
-				width=40
-				height=14
-			}
-			"basic attribute" {
-				clr=14
-			}
-			textix="PATH:"
-			align="horiz. centered"
-		}
-		text {
-			object {
-				x=10
-				y=150
-				width=40
-				height=14
-			}
-			"basic attribute" {
-				clr=14
-			}
-			textix="NAME:"
-			align="horiz. centered"
-		}
+	"basic attribute" {
+		clr=14
 	}
+	textix="PATH:"
+	align="horiz. centered"
+}
+text {
+	object {
+		x=10
+		y=150
+		width=40
+		height=14
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="NAME:"
+	align="horiz. centered"
 }
 text {
 	object {

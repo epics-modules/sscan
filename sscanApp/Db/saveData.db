@@ -30,30 +30,33 @@ record(stringout, "$(P)saveData_comment2") {
   field(DTYP, "Soft Channel")
 }
 
-record(stringout, "$(P)saveData_fileName") {
+record(lso, "$(P)saveData_fileName") {
   field(DTYP, "Soft Channel")
+  field(SIZV, "256")
 }
 
-record(stringout, "$(P)saveData_fileSystem") {
+record(lso, "$(P)saveData_fileSystem") {
   field(DTYP, "Soft Channel")
+  field(SIZV, "256")
 }
 
 record(stringout, "$(P)saveData_message") {
   field(DTYP, "Soft Channel")
 }
 
-record(stringout, "$(P)saveData_subDir") {
+record(lso, "$(P)saveData_subDir") {
   field(DTYP, "Soft Channel")
+  field(SIZV, "256")
 }
 
-record(stringout, "$(P)saveData_baseName") {
+record(lso, "$(P)saveData_baseName") {
   field(DTYP, "Soft Channel")
+  field(SIZV, "256")
 }
 
-record(waveform, "$(P)saveData_fullPathName") {
+record(lso, "$(P)saveData_fullPathName") {
   field(DTYP, "Soft Channel")
-  field(NELM, "100")
-  field(FTVL, "CHAR")
+  field(SIZV, "512")
 }
 
 record(longout, "$(P)saveData_maxAllowedRetries") {
