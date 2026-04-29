@@ -579,7 +579,8 @@ typedef struct string_msg {
 
 #define sendStringMsgWait(t,d,s) { \
 	STRING_MSG msg; \
-	msg.type=t; msg.pdest=(char*)d; strncpy(msg.string, s, COMPONENT_STRING_SIZE); \
+	msg.type=t; msg.pdest=(char*)d; strncpy(msg.string, s, COMPONENT_STRING_SIZE - 1); \
+	msg.string[COMPONENT_STRING_SIZE - 1] = '\0'; \
 	epicsTimeGetCurrent(&(msg.time)); \
 	epicsMessageQueueSend(msg_queue, (void *)&msg, \
 	STRING_SIZE); }
@@ -757,8 +758,9 @@ LOCAL int checkRWpermission(char* path) {
 	int  file;
 	char tmpfile[100];
 	
-	strncpy(tmpfile, path, 100);
-	strncat(tmpfile, "/rix_", 100-strlen(tmpfile));
+	strncpy(tmpfile, path, sizeof(tmpfile) - 1);
+	tmpfile[sizeof(tmpfile) - 1] = '\0';
+	strncat(tmpfile, "/rix_", sizeof(tmpfile) - 1 - strlen(tmpfile));
 
 	while (fileStatus(tmpfile)==OK && strlen(tmpfile)<100) {
 		strncat(tmpfile, "_", 100-strlen(tmpfile));
@@ -915,8 +917,7 @@ LOCAL int connectScan(char* name, char* handShake, char* autoHandShake)
 
 	pscan->first_scan= TRUE;
 	pscan->scan_dim= 1;
-	strncpy(pscan->name, name, PVNAME_STRINGSZ-1);
-	pscan->name[PVNAME_STRINGSZ-1]='\0';
+	epicsSnprintf(pscan->name, PVNAME_STRINGSZ, "%s", name);
 	pscan->nxt= NULL;
 	epicsTimeGetCurrent(&(pscan->cpt_time));
 	pscan->cpt_monitored= FALSE;
@@ -1821,24 +1822,29 @@ LOCAL int connectRetryPVs(char *prefix)
 {
 	char pvName[PVNAME_STRINGSZ];
 
-	strncpy(pvName, prefix, PVNAME_STRINGSZ);
-	strncat(pvName, "saveData_currRetries", PVNAME_STRINGSZ-strlen(pvName));
+	strncpy(pvName, prefix, PVNAME_STRINGSZ - 1);
+	pvName[PVNAME_STRINGSZ - 1] = '\0';
+	strncat(pvName, "saveData_currRetries", PVNAME_STRINGSZ - 1 - strlen(pvName));
 	ca_search(pvName, &currRetries_chid);
 
-	strncpy(pvName, prefix, PVNAME_STRINGSZ);
-	strncat(pvName, "saveData_maxAllowedRetries", PVNAME_STRINGSZ-strlen(pvName));
+	strncpy(pvName, prefix, PVNAME_STRINGSZ - 1);
+	pvName[PVNAME_STRINGSZ - 1] = '\0';
+	strncat(pvName, "saveData_maxAllowedRetries", PVNAME_STRINGSZ - 1 - strlen(pvName));
 	ca_search(pvName, &maxAllowedRetries_chid);
 
-	strncpy(pvName, prefix, PVNAME_STRINGSZ);
-	strncat(pvName, "saveData_totalRetries", PVNAME_STRINGSZ-strlen(pvName));
+	strncpy(pvName, prefix, PVNAME_STRINGSZ - 1);
+	pvName[PVNAME_STRINGSZ - 1] = '\0';
+	strncat(pvName, "saveData_totalRetries", PVNAME_STRINGSZ - 1 - strlen(pvName));
 	ca_search(pvName, &totalRetries_chid);
 
-	strncpy(pvName, prefix, PVNAME_STRINGSZ);
-	strncat(pvName, "saveData_retryWaitInSecs", PVNAME_STRINGSZ-strlen(pvName));
+	strncpy(pvName, prefix, PVNAME_STRINGSZ - 1);
+	pvName[PVNAME_STRINGSZ - 1] = '\0';
+	strncat(pvName, "saveData_retryWaitInSecs", PVNAME_STRINGSZ - 1 - strlen(pvName));
 	ca_search(pvName, &retryWaitInSecs_chid);
 
-	strncpy(pvName, prefix, PVNAME_STRINGSZ);
-	strncat(pvName, "saveData_abandonedWrites", PVNAME_STRINGSZ-strlen(pvName));
+	strncpy(pvName, prefix, PVNAME_STRINGSZ - 1);
+	pvName[PVNAME_STRINGSZ - 1] = '\0';
+	strncat(pvName, "saveData_abandonedWrites", PVNAME_STRINGSZ - 1 - strlen(pvName));
 	ca_search(pvName, &abandonedWrites_chid);
 
 	if (ca_pend_io(0.5)!=ECA_NORMAL) {
@@ -1915,7 +1921,8 @@ LOCAL void extraDescCallback(struct event_handler_args eha)
 
 	epicsMutexLock(pnode->lock);
 
-	strncpy(pnode->desc, (char *)pval, MAX_STRING_SIZE);
+	strncpy(pnode->desc, (char *)pval, MAX_STRING_SIZE - 1);
+	pnode->desc[MAX_STRING_SIZE - 1] = '\0';
 	if (pnode->desc_chid) ca_clear_channel(pnode->desc_chid);
 
 	epicsMutexUnlock(pnode->lock);
@@ -2209,10 +2216,12 @@ LOCAL int initSaveDataTask()
 			} else {
 				buff2[0]= '\0';
 			}
-			strncpy(buff2, buff1, PVNAME_STRINGSZ);
-			strncat(buff2, ".AWAIT", PVNAME_STRINGSZ-strlen(buff2));
-			strncpy(buff3, buff1, PVNAME_STRINGSZ);
-			strncat(buff3, ".AAWAIT", PVNAME_STRINGSZ-strlen(buff3));
+			strncpy(buff2, buff1, PVNAME_STRINGSZ - 1);
+			buff2[PVNAME_STRINGSZ - 1] = '\0';
+			strncat(buff2, ".AWAIT", PVNAME_STRINGSZ - 1 - strlen(buff2));
+			strncpy(buff3, buff1, PVNAME_STRINGSZ - 1);
+			buff3[PVNAME_STRINGSZ - 1] = '\0';
+			strncat(buff3, ".AAWAIT", PVNAME_STRINGSZ - 1 - strlen(buff3));
 			Debug2(2,"saveData: call connectScan(%s,%s)\n", buff1, buff2);
 			connectScan(buff1, buff2, buff3);
 		}
@@ -2936,7 +2945,8 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 			}
 			/* Make file name */
 			if (scanFile_basename[0] == '\0') {
-				strncpy(scanFile_basename, ioc_prefix, COMPONENT_STRING_SIZE);
+				strncpy(scanFile_basename, ioc_prefix, COMPONENT_STRING_SIZE - 1);
+				scanFile_basename[COMPONENT_STRING_SIZE - 1] = '\0';
 			}
 			epicsSnprintf(pscan->fname, FNAMELEN, "%s%.4d.mda", scanFile_basename, (int)pscan->counter);
 #ifdef vxWorks
@@ -2992,8 +3002,8 @@ LOCAL void proc_scan_data(SCAN_TS_SHORT_MSG* pmsg)
 				pscan->name, pscan->scan_dim, pscan->dims_offset);
 			pscan->nxt->regular_offset= pscan->regular_offset;
 #endif
-			strncpy(pscan->nxt->fname, pscan->fname, FNAMELEN);
-			strncpy(pscan->nxt->ffname, pscan->ffname, FNAMELEN);
+			epicsSnprintf(pscan->nxt->fname, sizeof(pscan->nxt->fname), "%s", pscan->fname);
+			epicsSnprintf(pscan->nxt->ffname, sizeof(pscan->nxt->ffname), "%s", pscan->ffname);
 		}
 
 		pscan->savedSeekPos = 0;
@@ -3292,8 +3302,7 @@ LOCAL void proc_scan_pxsm(STRING_MSG* pmsg)
 {
 	epicsTimeStamp now;
 
-	strncpy(pmsg->pdest, pmsg->string, MAX_STRING_SIZE-1);
-	pmsg->pdest[MAX_STRING_SIZE-1]='\0';
+	epicsSnprintf(pmsg->pdest, MAX_STRING_SIZE, "%s", pmsg->string);
 
 	epicsTimeGetCurrent(&now);
 	DebugMsg2(2, "MSG_SCAN_PXSM(%s)= %f\n", pmsg->string, 
@@ -3499,7 +3508,8 @@ LOCAL void proc_scan_txnv(SCAN_INDEX_MSG* pmsg)
 			pscan->txpv[i][0]='\0';
 			pscan->txpvRec[i][0]='\0';
 		} else {
-			strncpy(pscan->txpvRec[i], pscan->txpv[i], PVNAME_STRINGSZ);
+			strncpy(pscan->txpvRec[i], pscan->txpv[i], PVNAME_STRINGSZ - 1);
+			pscan->txpvRec[i][PVNAME_STRINGSZ - 1] = '\0';
 			len= strcspn(pscan->txpvRec[i], ".");
 			pscan->txsc[i]= strncmp(&pscan->txpv[i][len], ".EXSC", 6);
 			pscan->txpvRec[i][len]='\0';
@@ -3535,8 +3545,7 @@ LOCAL void proc_desc(STRING_MSG* pmsg)
 {
 	epicsTimeStamp now;
 
-	strncpy(pmsg->pdest, pmsg->string, MAX_STRING_SIZE-1);
-	pmsg->pdest[MAX_STRING_SIZE-1]= '\0';
+	epicsSnprintf(pmsg->pdest, MAX_STRING_SIZE, "%s", pmsg->string);
 
 	epicsTimeGetCurrent(&now);
 	DebugMsg2(2, "MSG_DESC(%s)= %f\n", pmsg->string, 
@@ -3547,8 +3556,7 @@ LOCAL void proc_egu(STRING_MSG* pmsg)
 {
 	epicsTimeStamp now;
 
-	strncpy(pmsg->pdest, pmsg->string, 15);
-	pmsg->pdest[15]= '\0';
+	epicsSnprintf(pmsg->pdest, 16, "%s", pmsg->string);
 
 	epicsTimeGetCurrent(&now);
 	DebugMsg2(2, "MSG_EGU(%s)= %f\n", pmsg->string, 
@@ -3630,8 +3638,9 @@ LOCAL void remount_file_system(char* filesystem)
 #endif
 
 	if (file_system_state == FS_MOUNTED) {
-		strncpy(server_pathname, filesystem, COMPONENT_STRING_SIZE);
-		strncat(server_pathname, "/", COMPONENT_STRING_SIZE-strlen(server_pathname));
+		strncpy(server_pathname, filesystem, COMPONENT_STRING_SIZE - 1);
+		server_pathname[COMPONENT_STRING_SIZE - 1] = '\0';
+		strncat(server_pathname, "/", COMPONENT_STRING_SIZE - 1 - strlen(server_pathname));
 		server_subdir= &server_pathname[strlen(server_pathname)];  
 
 		if (checkRWpermission(path)!=OK) {

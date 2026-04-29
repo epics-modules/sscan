@@ -429,9 +429,9 @@ long epicsShareAPI recDynLinkGetUnits(recDynLink *precDynLink,char *units,int ma
 	pdynLinkPvt = precDynLink->pdynLinkPvt;
 	if (pdynLinkPvt->state!=stateConnected) return(-1);
 	maxToCopy = MAX_UNITS_SIZE;
-	if (maxlen<maxToCopy) maxToCopy = maxlen;
+	if (maxlen - 1 < maxToCopy) maxToCopy = maxlen - 1;
 	strncpy(units,pdynLinkPvt->units,maxToCopy);
-	if (maxToCopy<maxlen) units[maxToCopy] = '\0';
+	units[maxToCopy] = '\0';
 	return(0);
 }
 
@@ -622,7 +622,8 @@ LOCAL void getCallback(struct event_handler_args eha)
 	pdynLinkPvt -> controlLow = pdata->lower_ctrl_limit;
 	pdynLinkPvt -> controlHigh = pdata->upper_ctrl_limit;
 	pdynLinkPvt -> precision = pdata->precision;
-	strncpy(pdynLinkPvt->units,pdata->units,MAX_UNITS_SIZE);
+	strncpy(pdynLinkPvt->units,pdata->units,MAX_UNITS_SIZE - 1);
+	pdynLinkPvt->units[MAX_UNITS_SIZE - 1] = '\0';
 	if (pdynLinkPvt->scalar) {
 		pdynLinkPvt->nRequest = 1;
 	} else {
