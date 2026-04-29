@@ -326,6 +326,7 @@
 #include <dbStaticLib.h>	/* for enumStrings stuff */
 #include <epicsVersion.h>       /* for LT_EPICSBASE macro */
 
+#include <epicsAssert.h>
 #include <epicsStdio.h>
 #include "epicsExport.h"
 #include "recDynLink.h"
@@ -569,6 +570,24 @@ typedef struct detFields {
 	epicsInt16      d_pr;	/* D1 Display Precision */
 } detFields;
 
+/*
+ * Compile-time verification that the posFields and detFields structs match
+ * the field layout stride in the generated sscanRecord.  If the DBD field
+ * order ever changes, these assertions will fail at compile time.
+ */
+STATIC_ASSERT(sizeof(posFields) == offsetof(sscanRecord, p2pp) - offsetof(sscanRecord, p1pp));
+STATIC_ASSERT(sizeof(detFields) == offsetof(sscanRecord, d02hr) - offsetof(sscanRecord, d01hr));
+
+/*
+ * Helper macros for obtaining posFields/detFields pointers from a sscanRecord.
+ * Casting through (char *) + offsetof avoids GCC -Warray-bounds false positives
+ * that arise from casting &psscan->p1pp (an epicsFloat64*) to posFields*.
+ */
+#define POS_FIELDS(psscan) \
+	((posFields *)((char *)(psscan) + offsetof(sscanRecord, p1pp)))
+#define DET_FIELDS(psscan) \
+	((detFields *)((char *)(psscan) + offsetof(sscanRecord, d01hr)))
+
 /* calledBy values */
 #define UNKNOWN					0x00
 #define SPECIAL_PAUS			0x01
@@ -793,7 +812,7 @@ init_record(dbCommon *pcommon, int pass)
 		/* Readbacks need double buffering. Allocate space and initialize */
 		/* Fill pointer and readback array pointers */
 		precPvt->validBuf = A_BUFFER;
-		pPos = (posFields *) & psscan->p1pp;
+		pPos = POS_FIELDS(psscan);
 		for (i = 0; i < NUM_RDKS; i++, pPos++) {
 			precPvt->posBufPtr[i].pBufA =
 				(double *) calloc(psscan->mpts, sizeof(double));
@@ -810,7 +829,7 @@ init_record(dbCommon *pcommon, int pass)
 
 		precPvt->nullArray = (float *) calloc(psscan->mpts, sizeof(float));
 		precPvt->nullArray2 = (float *) calloc(psscan->mpts, sizeof(float));
-		pDet = (detFields *) & psscan->d01hr;
+		pDet = DET_FIELDS(psscan);
 		for (i = 0; i < NUM_DET; i++, pDet++) {
 			puserPvt = (recDynLinkPvt *) precPvt->caLinkStruct[D1_IN + i].puserPvt;
 			if (i < 4) {
@@ -1736,7 +1755,7 @@ special(struct dbAddr *paddr, int after)
 
 	case (SPC_SC_MO):	/* Step Mode changed for a positioner */
 
-		pPos = (posFields *) & psscan->p1pp;
+		pPos = POS_FIELDS(psscan);
 		for (i = 0; i < NUM_POS; i++, pPos++) {
 			if (paddr->pfield == (void *) &pPos->p_sm) {
 				/* Entering Table mode ? */
@@ -1827,8 +1846,8 @@ static long
 cvt_dbaddr(struct dbAddr *paddr)
 {
 	sscanRecord	*psscan = (sscanRecord *) paddr->precord;
-	posFields	*pPos = (posFields *) & psscan->p1pp;
-	detFields	*pDet = (detFields *) & psscan->d01hr;
+	posFields	*pPos = POS_FIELDS(psscan);
+	detFields	*pDet = DET_FIELDS(psscan);
     int			i, fieldIndex = dbGetFieldIndex(paddr);
 	unsigned short	numFieldsInGroup;
 
@@ -2030,8 +2049,8 @@ static long
 get_units(struct dbAddr *paddr, char *units)
 {
 	sscanRecord *psscan = (sscanRecord *) paddr->precord;
-	posFields   *pPos = (posFields *) & psscan->p1pp;
-	detFields   *pDet = (detFields *) & psscan->d01hr;
+	posFields   *pPos = POS_FIELDS(psscan);
+	detFields   *pDet = DET_FIELDS(psscan);
     int          i, fieldIndex = dbGetFieldIndex(paddr);
 
 	if (fieldIndex >= sscanRecordP1PP) {
@@ -2056,8 +2075,8 @@ static long
 get_precision(const struct dbAddr *paddr, long *precision)
 {
 	sscanRecord *psscan = (sscanRecord *) paddr->precord;
-	posFields   *pPos = (posFields *) & psscan->p1pp;
-	detFields   *pDet = (detFields *) & psscan->d01hr;
+	posFields   *pPos = POS_FIELDS(psscan);
+	detFields   *pDet = DET_FIELDS(psscan);
     int          i, fieldIndex = dbGetFieldIndex(paddr);
 
 	if (fieldIndex >= sscanRecordP1PP) {
@@ -2084,8 +2103,8 @@ static long
 get_graphic_double(struct dbAddr *paddr, struct dbr_grDouble *pgd)
 {
 	sscanRecord *psscan = (sscanRecord *) paddr->precord;
-	posFields   *pPos = (posFields *) & psscan->p1pp;
-	detFields   *pDet = (detFields *) & psscan->d01hr;
+	posFields   *pPos = POS_FIELDS(psscan);
+	detFields   *pDet = DET_FIELDS(psscan);
     int          i, fieldIndex = dbGetFieldIndex(paddr);
 
 	if (fieldIndex >= sscanRecordP1PP) {
@@ -2134,8 +2153,8 @@ static void
 checkMonitors(sscanRecord *psscan)
 {
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	detFields      *pDet = (detFields *) & psscan->d01hr;
-	posFields      *pPos = (posFields *) & psscan->p1pp;
+	detFields      *pDet = DET_FIELDS(psscan);
+	posFields      *pPos = POS_FIELDS(psscan);
 	epicsTimeStamp  timeCurrent;
 	int             i, end_of_scan;
 
@@ -2605,8 +2624,8 @@ pvSearchCallback(recDynLink * precDynLink)
 	recDynLinkPvt  *puserPvt = (recDynLinkPvt *) precDynLink->puserPvt;
 	sscanRecord    *psscan = puserPvt->psscan;
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	posFields      *pPos = (posFields *) & psscan->p1pp;
-	detFields      *pDet = (detFields *) & psscan->d01hr;
+	posFields      *pPos = POS_FIELDS(psscan);
+	detFields      *pDet = DET_FIELDS(psscan);
 	unsigned short  linkIndex = puserPvt->linkIndex;
 	unsigned short  pvIndex = linkIndex % NUM_PVS;
 	unsigned short  detIndex, rdbkIndex;
@@ -2733,7 +2752,8 @@ pvSearchCallback(recDynLink * precDynLink)
 			status = dbGet(puserPvt->pAddr, DBR_FLOAT, precPvt->pDynLinkInfo,
 					&options, &nRequest, NULL);
 			if (status == OK) {
-				strcpy(pPos->p_eu, precPvt->pDynLinkInfo->units);
+				strncpy(pPos->p_eu, precPvt->pDynLinkInfo->units, sizeof(pPos->p_eu));
+			pPos->p_eu[sizeof(pPos->p_eu) - 1] = '\0';
 #if LT_EPICSBASE(3,14,10,0)
 				pPos->p_pr = precPvt->pDynLinkInfo->precision;
 #else
@@ -2796,7 +2816,8 @@ pvSearchCallback(recDynLink * precDynLink)
 			status = dbGet(puserPvt->pAddr, DBR_FLOAT, precPvt->pDynLinkInfo,
 					&options, &nRequest, NULL);
 			if (status == OK) {
-				strcpy(pDet->d_eu, precPvt->pDynLinkInfo->units);
+				strncpy(pDet->d_eu, precPvt->pDynLinkInfo->units, sizeof(pDet->d_eu));
+			pDet->d_eu[sizeof(pDet->d_eu) - 1] = '\0';
 #if LT_EPICSBASE(3,14,10,0)
 				pPos->p_pr = precPvt->pDynLinkInfo->precision;
 #else
@@ -2912,7 +2933,7 @@ pvSearchCallback(recDynLink * precDynLink)
 			precPvt->calledBy =  PVSEARCH;
 
 			if (sscanRecordDebug) {
-				pPos = (posFields *) &psscan->p1pp;
+				pPos = POS_FIELDS(psscan);
 				errlogPrintf("%s:pvSearchCallback: scan pending - call scanOnce() p1cv=%f\n",	psscan->name, pPos->p_cv);
 			}
 			scanOnce((struct dbCommon *)psscan);
@@ -2931,7 +2952,7 @@ posMonCallback(recDynLink * precDynLink)
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	unsigned short  linkIndex = puserPvt->linkIndex;
 	unsigned short  pvIndex = linkIndex % NUM_PVS;
-	posFields      *pPos = (posFields *) & psscan->p1pp + pvIndex;
+	posFields      *pPos = POS_FIELDS(psscan) + pvIndex;
 	long            status;
 	size_t          nRequest = 1;
 	unsigned short *pPvStat = &psscan->p1nv + pvIndex;
@@ -2984,7 +3005,7 @@ posMonCallbackGetCB(recDynLink * precDynLink)
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
 	unsigned short  linkIndex = puserPvt->linkIndex;
 	unsigned short  pvIndex = linkIndex % NUM_PVS;
-	posFields      *pPos = (posFields *) & psscan->p1pp + pvIndex;
+	posFields      *pPos = POS_FIELDS(psscan) + pvIndex;
 	long            i;
 	size_t          nRequest = 1;
 	unsigned short *pPvStat = &psscan->p1nv + pvIndex;
@@ -3043,7 +3064,7 @@ posMonCallbackGetCB(recDynLink * precDynLink)
 		precPvt->calledBy = POSMON;
 
 		if (sscanRecordDebug) {
-			pPos = (posFields *) &psscan->p1pp;
+			pPos = POS_FIELDS(psscan);
 			errlogPrintf("%s:posMonCallbackGetCB: scan pending - call scanOnce() p1cv=%f\n",	psscan->name, pPos->p_cv);
 		}
 		scanOnce((struct dbCommon *)psscan);
@@ -3247,7 +3268,7 @@ initScan(sscanRecord *psscan)
 	/* Then calculate the starting position */
 	precPvt->haveFlyModePositioner = precPvt->flying = 0;	/* clear haveFlyModePositioner flag */
 	pPvStat = &psscan->p1nv;
-	pPos = (posFields *) & psscan->p1pp;
+	pPos = POS_FIELDS(psscan);
 	for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
 		if (*pPvStat == PV_OK) {
 			/* Figure out starting positions for each positioner */
@@ -3282,8 +3303,8 @@ static void
 contScan(sscanRecord *psscan)
 {
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	posFields      *pPos = (posFields *) & psscan->p1pp;
-	detFields      *pDet = (detFields *) & psscan->d01hr;
+	posFields      *pPos = POS_FIELDS(psscan);
+	detFields      *pDet = DET_FIELDS(psscan);
 	recDynLinkPvt  *puserPvt;
 	epicsTimeStamp  currentTime;
 	unsigned short *pPvStat;
@@ -3346,7 +3367,7 @@ contScan(sscanRecord *psscan)
 
 		if (precPvt->haveFlyModePositioner && !precPvt->flying) {
 			/* determine target position for fly-mode positioners. */
-			pPos = (posFields *) & psscan->p1pp;
+			pPos = POS_FIELDS(psscan);
 			pPvStat = &psscan->p1nv;
 			for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
 				if ((*pPvStat == PV_OK) &&
@@ -3388,7 +3409,7 @@ contScan(sscanRecord *psscan)
 		/* Positioner readbacks */
 		pPvStat = &psscan->r1nv;
 		pPvStatPos = &psscan->p1nv;
-		pPos = (posFields *) & psscan->p1pp;
+		pPos = POS_FIELDS(psscan);
 		for (i = 0; i < NUM_POS; i++, pPos++, pPvStatPos++, pPvStat++) {
 			/* if readback PV is OK, use that value */
 			puserPvt = precPvt->caLinkStruct[i + NUM_POS].puserPvt;
@@ -3405,7 +3426,7 @@ contScan(sscanRecord *psscan)
 
 		/* Detectors */
 		pPvStat = &psscan->d01nv;
-		pDet = (detFields *) & psscan->d01hr;
+		pDet = DET_FIELDS(psscan);
 		for (i = 0; i < precPvt->valDetPvs; i++, pDet++, pPvStat++) {
 			if (precPvt->acqDet[i] && (precPvt->detBufPtr[i].pFill != NULL)) {
 				if (*pPvStat == PV_OK) {
@@ -3444,7 +3465,7 @@ contScan(sscanRecord *psscan)
 		/* from RxCV or PxDV or TIME */
 		pPvStat = &psscan->r1nv;
 		pPvStatPos = &psscan->p1nv;
-		pPos = (posFields *) & psscan->p1pp;
+		pPos = POS_FIELDS(psscan);
 		for (i = 0; i < NUM_POS; i++, pPos++, pPvStatPos++, pPvStat++) {
 			/* if readback PV is OK, use that value */
 			puserPvt = precPvt->caLinkStruct[i + NUM_POS].puserPvt;
@@ -3489,7 +3510,7 @@ contScan(sscanRecord *psscan)
 		/* read each valid detector PV, place data in buffered array */
 		status = 0;
 		pPvStat = &psscan->d01nv;
-		pDet = (detFields *) & psscan->d01hr;
+		pDet = DET_FIELDS(psscan);
 		for (i = 0; i < precPvt->valDetPvs; i++, pDet++, pPvStat++) {
 			if (precPvt->acqDet[i] && (precPvt->detBufPtr[i].pFill != NULL)) {
 				if (*pPvStat == PV_OK) {
@@ -3537,7 +3558,7 @@ contScan(sscanRecord *psscan)
 		/* Has number of points been reached ? */
 		if (psscan->cpt < (psscan->npts)) {
 			/* determine next desired position for each  positioner */
-			pPos = (posFields *) & psscan->p1pp;
+			pPos = POS_FIELDS(psscan);
 			pPvStat = &psscan->p1nv;
 
 			/* Figure out next position for non-fly-mode positioners. */
@@ -3603,8 +3624,8 @@ static void
 readArrays(sscanRecord *psscan)
 {
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	posFields      *pPos = (posFields *) & psscan->p1pp;
-	detFields      *pDet = (detFields *) & psscan->d01hr;
+	posFields      *pPos = POS_FIELDS(psscan);
+	detFields      *pDet = DET_FIELDS(psscan);
 	recDynLinkPvt  *puserPvt;
 	unsigned short *pPvStat;
 	unsigned short *pPvStatPos;
@@ -3637,7 +3658,7 @@ readArrays(sscanRecord *psscan)
 		 */
 		pPvStat = &psscan->r1nv;
 		pPvStatPos = &psscan->p1nv;
-		pPos = (posFields *) & psscan->p1pp;
+		pPos = POS_FIELDS(psscan);
 		for (i = 0; i < NUM_POS; i++, pPos++, pPvStatPos++, pPvStat++) {
 			/* if positioner-readback PV is OK, use it */
 			puserPvt = precPvt->caLinkStruct[i + NUM_POS].puserPvt;
@@ -3664,7 +3685,7 @@ readArrays(sscanRecord *psscan)
 		/* Queue reads for array-valued detectors, if any. */
 		status = 0;
 		pPvStat = &psscan->d01nv;
-		pDet = (detFields *) & psscan->d01hr;
+		pDet = DET_FIELDS(psscan);
 		for (i = 0; i < precPvt->valDetPvs; i++, pDet++, pPvStat++) {
 			if (precPvt->acqDet[i] && (precPvt->detBufPtr[i].pFill != NULL)) {
 				puserPvt = precPvt->caLinkStruct[i + D1_IN].puserPvt;
@@ -3707,7 +3728,7 @@ readArrays(sscanRecord *psscan)
 	/* Read array-valued positioner readbacks, if any */
 	pPvStat = &psscan->r1nv;
 	pPvStatPos = &psscan->p1nv;
-	pPos = (posFields *) & psscan->p1pp;
+	pPos = POS_FIELDS(psscan);
 	for (i = 0; i < NUM_POS; i++, pPos++, pPvStatPos++, pPvStat++) {
 		pDbuff = precPvt->posBufPtr[i].pFill;
 		/* if readback PV is OK, use that value */
@@ -3751,7 +3772,7 @@ readArrays(sscanRecord *psscan)
 	addToPrev = (psscan->acqm == sscanACQM_ADD) ||
 				((psscan->acqm == sscanACQM_ACC) && (precPvt->prevACQM == sscanACQM_ACC));
 	pPvStat = &psscan->d01nv;
-	pDet = (detFields *) & psscan->d01hr;
+	pDet = DET_FIELDS(psscan);
 	for (i = 0; i < precPvt->valDetPvs; i++, pDet++, pPvStat++) {
 		pFbuff = addToPrev ? (float *)precPvt->dataBuffer : precPvt->detBufPtr[i].pFill;
 		if (precPvt->acqDet[i] && (precPvt->detBufPtr[i].pFill != NULL)) {
@@ -3817,7 +3838,7 @@ static void copyLastPoint(sscanRecord *psscan, long pointNumber, long copyTo)
 	else
 		copyTo = MIN(copyTo, psscan->mpts);
 	pointNumber = MAX(0, pointNumber);
-	pDet = (detFields *) & psscan->d01hr;
+	pDet = DET_FIELDS(psscan);
 	for (i = 0; i < precPvt->valDetPvs; i++, pDet++) {
 		if (precPvt->acqDet[i]) {
 			d = precPvt->detBufPtr[i].pFill[pointNumber];
@@ -4018,7 +4039,7 @@ packData(sscanRecord *psscan, int caller)
 
 				if ((markIndex >= 0)  && (markIndex < (psscan->cpt))) found = 1;
 
-				pPos = (posFields *) & psscan->p1pp;
+				pPos = POS_FIELDS(psscan);
 				for (i = 0; i < precPvt->valPosPvs; i++, pPos++) {
 					pPBuf = precPvt->posBufPtr[i].pFill;
 					pPos->p_dv = found ? pPBuf[markIndex] : pPos->p_pp;
@@ -4030,7 +4051,7 @@ packData(sscanRecord *psscan, int caller)
 				/* Do for all valid positioners */
 				pPBuf = NULL;
 				pPvStat = &psscan->p1nv;
-				pPos = (posFields *) &psscan->p1pp;
+				pPos = POS_FIELDS(psscan);
 				for (j=0; j<NUM_POS; j++, pPvStat++, pPos++) {
 					if (*pPvStat == PV_OK) {
 						pPBuf = precPvt->posBufPtr[j].pFill;
@@ -4233,7 +4254,7 @@ doPuts(CALLBACK *pCB)
 			errlogPrintf("%s:doPuts:MOVE_MOTORS  - Point %ld\n", psscan->name, (long)psscan->cpt);
 		}
 
-		pPos = (posFields *) & psscan->p1pp;
+		pPos = POS_FIELDS(psscan);
 		pPvStat = &psscan->p1nv;
 
 		/*
@@ -4293,7 +4314,7 @@ doPuts(CALLBACK *pCB)
 		}
 
 		/* On first point, launch fly-mode positioners, using Put instead of PutCallback. */
-		pPos = (posFields *) & psscan->p1pp;
+		pPos = POS_FIELDS(psscan);
 		pPvStat = &psscan->p1nv;
 		for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
 			int flyMode = (pPos->p_sm == sscanP1SM_On_The_Fly) || (psscan->acqt == sscanACQT_1D_ARRAY);
@@ -4400,7 +4421,7 @@ doPuts(CALLBACK *pCB)
 
 		if (psscan->pasm) {
 			if (sscanRecordDebug >= 5) {errlogPrintf("%s:doPuts:RETRACE\n", psscan->name);}
-			pPos = (posFields *) & psscan->p1pp;
+			pPos = POS_FIELDS(psscan);
 			pPvStat = &psscan->p1nv;
 			for (i = 0; i < precPvt->valPosPvs; i++, pPos++, pPvStat++) {
 				if (*pPvStat == PV_OK) {
@@ -4525,7 +4546,7 @@ adjLinParms(paddr)
 {
 	sscanRecord *psscan = (sscanRecord *) (paddr->precord);
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	struct posFields *pParms = (posFields *) & psscan->p1pp;
+	struct posFields *pParms = POS_FIELDS(psscan);
 
 	int             special_type = paddr->special;
 	int             i;
@@ -4995,7 +5016,7 @@ changedNpts(psscan)
 {
 
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	posFields      *pParms = (posFields *) & psscan->p1pp;
+	posFields      *pParms = POS_FIELDS(psscan);
 	int             i;
 	unsigned short  freezeState = 0, *pPvStat = &psscan->p1nv;
 
@@ -5110,7 +5131,7 @@ checkScanLimits(psscan)
 
 	recDynLinkPvt  *puserPvt;
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	posFields      *pPos = (posFields *) & psscan->p1pp;
+	posFields      *pPos = POS_FIELDS(psscan);
 	unsigned short *pPvStat = &psscan->p1nv;
 
 
@@ -5136,7 +5157,7 @@ checkScanLimits(psscan)
 	}
 	/* Update "previous position" of positioners to use in relative mode */
 	pPvStat = &psscan->p1nv;
-	pPos = (posFields *) & psscan->p1pp;
+	pPos = POS_FIELDS(psscan);
 	for (i = 0; i < NUM_POS; i++, pPos++, pPvStat++) {
 		j = i+1;
 		if (*pPvStat == PV_OK) {
@@ -5170,7 +5191,7 @@ checkScanLimits(psscan)
 
 	/* First check if any valid pos'rs are in Table mode with insufficient points */
 	pPvStat = &psscan->p1nv;
-	pPos = (posFields *) & psscan->p1pp;
+	pPos = POS_FIELDS(psscan);
 	for (i = 0; i < NUM_POS; i++, pPos++, pPvStat++) {
 		if ((*pPvStat == PV_OK) &&
 		    (pPos->p_sm == sscanP1SM_Table) &&
@@ -5186,7 +5207,7 @@ checkScanLimits(psscan)
 	/* Stop on first error */
 
 	pPvStat = &psscan->p1nv;
-	pPos = (posFields *) & psscan->p1pp;
+	pPos = POS_FIELDS(psscan);
 	for (i = 0; i < NUM_POS; i++, pPos++, pPvStat++) {
 		if (*pPvStat == PV_OK) {
 			for (j = 0; j < psscan->npts; j++) {
@@ -5274,7 +5295,7 @@ previewScan(psscan)
 
 	/* Update "previous position" of positioners to use in relative mode */
 	pPvStat = &psscan->p1nv;
-	pPos = (posFields *) & psscan->p1pp;
+	pPos = POS_FIELDS(psscan);
 	for (i = 0; i < NUM_POS; i++, pPos++, pPvStat++) {
 		if (*pPvStat == PV_OK) {
 			puserPvt = precPvt->caLinkStruct[i].puserPvt;
@@ -5291,8 +5312,8 @@ previewScan(psscan)
 
 	/* Run through entire scan for each valid positioner */
 	pPvStat = &psscan->p1nv;
-	pPos = (posFields *) & psscan->p1pp;
-	pDet = (detFields *) & psscan->d01hr;
+	pPos = POS_FIELDS(psscan);
+	pDet = DET_FIELDS(psscan);
 	for (i = 0; i < NUM_POS; i++, pPos++, pPvStat++, pDet++) {
 		if (*pPvStat == PV_OK) {
 			/* must use the current buffer pointer */
@@ -5367,7 +5388,7 @@ saveFrzFlags(psscan)
 {
 
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	posFields      *pPos = (posFields *) & psscan->p1pp;
+	posFields      *pPos = POS_FIELDS(psscan);
 	int             i;
 
 
@@ -5387,7 +5408,7 @@ savePosParms(sscanRecord * psscan, unsigned short i)
 {
 
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	posFields      *pPos = (posFields *) & psscan->p1pp + i;
+	posFields      *pPos = POS_FIELDS(psscan) + i;
 
 	/* save state of linear scan parameters 0 */
 	/* Do this when in table mode so operator is not confused */
@@ -5402,7 +5423,7 @@ static void
 zeroPosParms(sscanRecord * psscan, unsigned short i)
 {
 
-	posFields      *pPos = (posFields *) & psscan->p1pp + i;
+	posFields      *pPos = POS_FIELDS(psscan) + i;
 
 	/* set them to 0 */
 	/* Do this when in table mode so operator is not confused */
@@ -5418,7 +5439,7 @@ resetFrzFlags(psscan)
 	sscanRecord *psscan;
 {
 
-	posFields      *pPos = (posFields *) & psscan->p1pp;
+	posFields      *pPos = POS_FIELDS(psscan);
 	int             i;
 
 	/* reset each frzFlag, post monitor if changed */
@@ -5444,7 +5465,7 @@ restoreFrzFlags(psscan)
 {
 
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	posFields      *pPos = (posFields *) & psscan->p1pp;
+	posFields      *pPos = POS_FIELDS(psscan);
 	int             i;
 
 
@@ -5471,7 +5492,7 @@ restorePosParms(sscanRecord * psscan, unsigned short i)
 {
 
 	recPvtStruct   *precPvt = (recPvtStruct *) psscan->rpvt;
-	posFields      *pPos = (posFields *) & psscan->p1pp + i;
+	posFields      *pPos = POS_FIELDS(psscan) + i;
 
 	pPos->p_sp = precPvt->posParms[i].p_sp; POST(&pPos->p_sp);
 	pPos->p_si = precPvt->posParms[i].p_si; POST(&pPos->p_si);
