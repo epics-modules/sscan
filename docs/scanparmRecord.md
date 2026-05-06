@@ -210,9 +210,3 @@ dbLoadTemplate("scanParms.substitutions")
 | File | Description |
 |---|---|
 | scanParms\_Settings.req | Sample request file to be included in auto\_settings.req to save the user modifiable settings of one scanParms.db database. To use this, add a line of the following form in auto\_settings.req for each scanParms database: `file scanParms_settings.req P=xxx: M=m1` |
-
-## Restrictions
-
-Suggestions and comments to:
-[Tim Mooney](mailto:mooney@aps.anl.gov) : (mooney@aps.anl.gov)
-Last modified: December 11, 2007

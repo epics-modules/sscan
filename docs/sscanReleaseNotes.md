@@ -1,12 +1,18 @@
 ---
 layout: default
 title: Release Notes
-nav_order: 3
+nav_order: 2
 ---
 
 
 sscan Release Notes
 ===================
+
+Release 2-12 - May xx 2025
+-----------------------
+
+* Fix CPT field not posting reliably during scans
+* Switched saveData path PVs to long strings, moving the character limit from 40 to 256
 
 Release 2-11-6 - Sep 21, 2023
 -----------------------------
@@ -78,7 +84,7 @@ Release 2-10 - Oct 22, 2014
 *   For positioner-input links, check waitingForPosMon along with connectInProgress. Wait until links disconnect before calling lookupPV. Previously, was setting badOutPutPv before changing positioner-input links, and badInputPv before changing positioner-output links. No longer init p\_cv to -HUGE\_VAL (replaced by waitingForPosMon)
 *   When changing positioner links, and waiting for the first monitor callback after the change (to get current position for, e.g., relative scan about that position), do a recDynLinkGetCallback from posMonCallback() to defend against old monitors from the previous positioner PV.
 *   scanAux.db: Make record name $(P)$(S), add macro for MPTS
-*   sscanRecord.c: check access-security permissions for links  
+*   sscanRecord.c: check access-security permissions for links
     scan\*.adl: show write links that are read-only because of access security
 *   recDynLink.c: added recDynLinkCheckReadWriteAccess() to check access-security permissions.
 *   scan\_full.adl: TnNV were implemented wrong: showed red with no PV name.
@@ -172,9 +178,9 @@ Release 2-6
 -----------
 
 *   The sscan record can now post current-data arrays during a scan. While ATIME >= 0.1, ALL arrays will be posted when a new data point has been acquired and ATIME seconds have elapsed since the last array posting. New sets of array PV's have been added for this purpose, since the old array PV's must contain the previous scan's data to avoid breaking data-storage clients. The new PV's are PnCA (positioners, e.g., P1CA), and DnnCA (detectors, e.g., D01CA). During a scan, arrays are posted with the attribute DBE\_VALUE; at end of scan, they are posted with DBE\_LOG as well.
-    
+
     Unfortunately, posting current-data arrays during a scan results unavoidably in the posting of the previous-data arrays, PnRA and DnnDA. Clients that monitor these PV's can regain their old behavior by specifying the mask DBE\_LOG in their ca\_add\_event() or ca\_create\_subscription() call.
-    
+
 *   The MEDM display scanDetPlot.adl now uses the new current-data PV's to display data. (These PV's also get end-of-scan data.) The MEDM display scanDetPlotRT.adl has been renamed scanDetPlotFromScalars.adl.
 *   Previously, the sscan record repeated final data values out to the ends of arrays, when a scan was finished, to aid display clients that don't know how to plot only a PV-specified number of data points. Now this treatment can be done also during a scan, as controlled by the PV COPYTO.
 
@@ -204,23 +210,23 @@ Release 2-5-3
 -------------
 
 *   Added sscanApp/op/python directory, with the following programs:
-    
+
     addMDA.py
-    
+
     Front end for adding MDA files, uses readMDA, opMDA, and writeMDA from mda.py
-    
+
     mda.py
-    
+
     Python API for MDA files. Supports reading, writing, and arithmetic operations for up to 4-dimensional MDA files
-    
+
     mdaAsc.py
-    
+
     Uses mda.py to render a 1-dimensional MDA file as ascii text.
-    
+
     opMDA.py
-    
+
     Front end for operating on MDA files, uses readMDA, opMDA, and writeMDA from mda.py
-    
+
 *   Fixed problems in the communication between the sscan record and saveData that caused corrupted data files to be written:
     *   The basic problem was that saveData was getting bufferred data arrays, but an unbuffered copy of the sscan record's CPT field. The sscan record now maintains the field BCPT (bufferred CPT) which is posted when data array buffers are switched.
     *   A second problem was that saveData was not able to put AWAIT=1 quickly enough to stop a very fast scan in time to ensure integrity of the data file. saveData now writes '1' to the sscan record's AAWAIT field on init, and writes '0' if it ever exits (not a supported operation at this time). As a consequence, AAWAIT no longer occurs in the autosave-request file scan\_settings.req.
@@ -273,18 +279,18 @@ This is the first release of the synApps sscan module. Version numbering for thi
 This version is intended to build with EPICS base 3.14.5. Differences from software as previously released in std 2.2:
 
 *   Converted to EPICS 3.14. Currently saveData runs on vxWorks only.
-    
+
 *   Docs updated and moved to sscan/documentation
-    
+
 *   saveData - added iocsh support; changed number of data points from short to long int, to support very large scans. The data file format is unchanged, however, because the number of points was already being written as a four-byte quantity.
-    
+
 *   sscanRecord - Number of points in a scan is essentially limited only by available memory. save-restored value of NPTS is now checked against MPTS. Array mode (ACQT="1D ARRAY") was broken. (The change from ACQM="ARRAYS" to ACQT="1D ARRAY" wasn't done correctly.)
-    
+
     Previously, the sscan record's response to an abort request (.EXSC=0) while no scan was in progress (.BUSY==0) was to return nonzero from special(), and EPICS tolerated this without comment. Now it signals an error to the client. But we don't (always?) want this action to be regarded as an error. For now, the scan database just declines to abort a sscan record that isn't busy, but clients writing directly to the sscan record directly can still get this error message.
-    
+
 *   recDynLink - Fixed memory leak (epicsMutex created but not destroyed). Switched communication with link tasks from ring buffer to message queue. recDynOut was calling ca\_pend\_event, which used to flush the ca buffer, but evidently no longer does; replaced with ca\_flush\_io.
-    
+
 *   saveData\_settings.req - new file.
-    
+
 *   scan\_settings.req - added fields ACQT and ACQM.
-  
+

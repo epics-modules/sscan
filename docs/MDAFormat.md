@@ -1,19 +1,27 @@
+---
+layout: default
+title: MDA File Format
+nav_order: 6
+---
+
+
 Note, in the following, that an "xdr_counted_string" is not part of the XDR
 standard, but a definition added on top of the standard.  It consists of an
 xdr_short, containing the number of characters in the string, possibly followed
 by an xdr_string.  Only if the xdr_short value is nonzero will an xdr_string
 follow it.  Thus an empty string looks like this:
 
-	<xdr_short=0>
+`<xdr_short=0>`
 
 and a nonempty string looks like this:
 
-	<xdr_short=3><xdr_string>
+`<xdr_short=3><xdr_string>`
 
------------------------------------------------------------------------
+- - - - - 
 
-scan file format
+# scan file format
 
+```
 FILE HEADER
 	xdr_float:	VERSION  (1.3 == 3FA66666)
 	xdr_long:	scan number
@@ -98,25 +106,32 @@ EXTRA PVs
 		xdr_vector(count, xdr_float):	value
 	    DBR_CTRL_DOUBLE:
 		xdr_vector(count, xdr_double):	value
------------------------------------------------------------------------
+
+```
+
+- - - - - 
 
 A 1D scan looks like this:
 
+```
 	header
 	scan1
 	extra PV's
+```
 
 A 2D scan looks like this
 
+```
 	header
 	scan2
 		scan1
 		scan1
 		...
 	extra PV's
+```
 
 A 3D scan looks like this
-
+```
 	header
 	scan3
 		scan2
@@ -129,9 +144,13 @@ A 3D scan looks like this
 			...
 		...
 	extra PV's
+```
 
 A counted string looks like this:
+
+```
 	int number of characters
 	# if number of characters>0:
 		int number of characters
 		char[number_of_characters]
+```

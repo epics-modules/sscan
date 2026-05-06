@@ -19,7 +19,7 @@ The sscan record documentation. This also includes some information on saveData,
 
 The scanparm record documentation.
 
-[saveData\_fileFormat.txt](saveData_fileFormat.txt)
+[MDAFormat](MDAFormat.md)
 
 description of the 'MDA' (multidimensional archive) file format written by saveData. This file format uses the XDR standard for cross-platform compatibility.
 
