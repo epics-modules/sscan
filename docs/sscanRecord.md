@@ -9,37 +9,37 @@ nav_order: 4
 
 Author: Tim M. Mooney  
 Based on the scan record, written by Ned D. Arnold.  
-Advanced Photon Source
-Argonne National Laboratory
+Advanced Photon Source  
+Argonne National Laboratory  
 
 Contents:
-[__1.__ Introduction](#1-introduction)
-[__1.1.__ A Simple One Dimensional Scan](#11-a-simple-one-dimensional-scan)
-[__1.2.__ Multidimensional Scans](#12-multidimensional-scans)
-[__1.3.__ Interaction with clients](#13-interaction-with-clients)
-[__1.3.1__ Starting a scan](#131-starting-a-scan)
-[__1.3.2__ Stopping a scan](#132-stopping-a-scan)
-[__1.3.3__ Pausing a scan](#133-pausing-a-scan)
-[__1.3.4__ Displaying scan data](#134-displaying-scan-data)
-[__1.3.5__ Handshaking with data-storage clients](#135-handshaking-with-data-storage-clients)
-[__1.3.6__ Handshaking with CA clients that implement positioners or detectors](#136-handshaking-with-ca-clients-that-implement-positioners-or-detectors)
-[__1.4.__ Completion of positioner and detector-trigger operations](#14-completion-of-positioner-and-detector-trigger-operations)
-[__1.5.__ Fly scans](#15-fly-scans)
-[__1.5.1.__ Scalar-mode fly scans](#151-scalar-mode-fly-scans)
-[__1.5.2.__ Array-mode fly scans](#152-array-mode-fly-scans)
-[__2.__ sscan-Record Fields](#2-sscan-record-fields)
-[__2.1.__ Control Fields](#21-control-fields)
-[__2.2.__ Positioner Fields](#22-positioner-fields)
-[__2.2.1__ LINEAR Mode](#221-linear-mode)
-[__2.2.2.__ TABLE Mode](#222-table-mode)
-[__2.2.3.__ FLY Mode](#223-fly-mode)
-[__2.3.__ Detector-Trigger Fields](#23-detector-trigger-fields)
-[__2.4.__ Delay Fields](#24-delay-fields)
-[__2.5.__ Client Handshaking Fields](#25-client-handshaking-fields)
-[__2.6.__ Detector Fields](#26-detector-fields)
-[__2.7.__ Execution Fields](#27-execution-fields)
-[__2.8.__ Status/Progress Fields](#28-statusprogress-fields)
-[__2.10.__ Miscellaneous Fields](#210-miscellaneous-fields)
+- [__1.__ Introduction](#1-introduction)
+- [__1.1.__ A Simple One Dimensional Scan](#11-a-simple-one-dimensional-scan)
+- [__1.2.__ Multidimensional Scans](#12-multidimensional-scans)
+- [__1.3.__ Interaction with clients](#13-interaction-with-clients)
+- [__1.3.1__ Starting a scan](#131-starting-a-scan)
+- [__1.3.2__ Stopping a scan](#132-stopping-a-scan)
+- [__1.3.3__ Pausing a scan](#133-pausing-a-scan)
+- [__1.3.4__ Displaying scan data](#134-displaying-scan-data)
+- [__1.3.5__ Handshaking with data-storage clients](#135-handshaking-with-data-storage-clients)
+- [__1.3.6__ Handshaking with CA clients that implement positioners or detectors](#136-handshaking-with-ca-clients-that-implement-positioners-or-detectors)
+- [__1.4.__ Completion of positioner and detector-trigger operations](#14-completion-of-positioner-and-detector-trigger-operations)
+- [__1.5.__ Fly scans](#15-fly-scans)
+- [__1.5.1.__ Scalar-mode fly scans](#151-scalar-mode-fly-scans)
+- [__1.5.2.__ Array-mode fly scans](#152-array-mode-fly-scans)
+- [__2.__ sscan-Record Fields](#2-sscan-record-fields)
+- [__2.1.__ Control Fields](#21-control-fields)
+- [__2.2.__ Positioner Fields](#22-positioner-fields)
+- [__2.2.1__ LINEAR Mode](#221-linear-mode)
+- [__2.2.2.__ TABLE Mode](#222-table-mode)
+- [__2.2.3.__ FLY Mode](#223-fly-mode)
+- [__2.3.__ Detector-Trigger Fields](#23-detector-trigger-fields)
+- [__2.4.__ Delay Fields](#24-delay-fields)
+- [__2.5.__ Client Handshaking Fields](#25-client-handshaking-fields)
+- [__2.6.__ Detector Fields](#26-detector-fields)
+- [__2.7.__ Execution Fields](#27-execution-fields)
+- [__2.8.__ Status/Progress Fields](#28-statusprogress-fields)
+- [__2.10.__ Miscellaneous Fields](#210-miscellaneous-fields)
 
 
 # 1. Introduction

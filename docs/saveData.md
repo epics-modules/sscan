@@ -53,7 +53,7 @@ The following sections are recognized:
 
 Example `saveData.req`:
 
-```ini
+```
 [prefix]
 $(P)
 
