@@ -23,7 +23,7 @@ Original Author: Tim Mooney
 
 ## Overview
 
-This documentation describes the EPICS scanparm record, and related EPICS software required to build and use it. This version of the record is compatible with EPICS 3.14.8.2, and is incompatible with any 3.13.x version of EPICS.
+This documentation describes the EPICS scanparm record, and related EPICS software required to build and use it. This version of the record is compatible with EPICS 3.14.8.2 and onward, and is incompatible with any 3.13.x version of EPICS.
 
 The scanparm record stores parameters intended to be written to the EPICS sscan record, and provides the EPICS end user with a convenient way to load those parameters into the sscan record and cause the sscan record to perform a scan. The idea is to allow the user to configure and execute a predefined scan with a single mouse click.
 
