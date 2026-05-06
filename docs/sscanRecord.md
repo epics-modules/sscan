@@ -5,57 +5,52 @@ nav_order: 4
 ---
 
 
-The sscan record
-================
+# The sscan record
 
-Author: Tim M. Mooney  
-Based on the scan record, written by Ned D. Arnold.  
- Advanced Photon Source   
+Author: Tim M. Mooney
+Based on the scan record, written by Ned D. Arnold.
+ Advanced Photon Source
  Argonne National Laboratory
 
-Contents:   
-[__1.__  Introduction](#HEADING_1)  
-[__1.1.__ A Simple One Dimensional Scan](#HEADING_1-1)  
-[__1.2.__ Multidimensional Scans](#HEADING_1-2)  
-[__1.3.__ Interaction with clients](#HEADING_1-3)  
-[__1.3.1__ Starting a scan](#HEADING_1-3-1)  
-[__1.3.2__ Stopping a scan](#HEADING_1-3-2)  
-[__1.3.3__ Pausing a scan](#HEADING_1-3-3)  
-[__1.3.4__ Displaying scan data](#HEADING_1-3-4)  
-[__1.3.5__ Handshaking with data-storage clients](#HEADING_1-3-5)  
-[__1.3.6__ Handshaking with CA clients that implement positioners or detectors](#HEADING_1-3-6)  
-[__1.4.__ Completion of positioner and detector-trigger operations](#HEADING_1-4)  
-[__1.5.__ Fly scans](#HEADING_1-5)  
-[__1.5.1.__ Scalar-mode fly scans](#HEADING_1-5-1)  
-[__1.5.2.__ Array-mode fly scans](#HEADING_1-5-2)  
-[__2.__  sscan-Record Fields](#HEADING_2)  
-[__2.1.__ Control Fields](#HEADING_2-1)  
-[__2.2.__ Positioner Fields](#HEADING_2-2)  
-[__2.2.1__ LINEAR Mode](#HEADING_2-2-1)  
-[__2.2.2.__ TABLE Mode](#HEADING_2-2-2)  
-[__2.2.3.__ FLY Mode](#HEADING_2-2-3)  
-[__2.3.__ Detector-Trigger Fields](#HEADING_2-3)  
-[__2.4.__ Delay Fields](#HEADING_2-4)  
-[__2.5.__ Client Handshaking Fields](#HEADING_2-5)  
-[__2.6.__ Detector Fields](#HEADING_2-6)  
-[__2.7.__ Execution Fields](#HEADING_2-7)  
-[__2.8.__ Status/Progress Fields](#HEADING_2-8)  
+Contents:
+[__1.__  Introduction](#HEADING_1)
+[__1.1.__ A Simple One Dimensional Scan](#HEADING_1-1)
+[__1.2.__ Multidimensional Scans](#HEADING_1-2)
+[__1.3.__ Interaction with clients](#HEADING_1-3)
+[__1.3.1__ Starting a scan](#HEADING_1-3-1)
+[__1.3.2__ Stopping a scan](#HEADING_1-3-2)
+[__1.3.3__ Pausing a scan](#HEADING_1-3-3)
+[__1.3.4__ Displaying scan data](#HEADING_1-3-4)
+[__1.3.5__ Handshaking with data-storage clients](#HEADING_1-3-5)
+[__1.3.6__ Handshaking with CA clients that implement positioners or detectors](#HEADING_1-3-6)
+[__1.4.__ Completion of positioner and detector-trigger operations](#HEADING_1-4)
+[__1.5.__ Fly scans](#HEADING_1-5)
+[__1.5.1.__ Scalar-mode fly scans](#HEADING_1-5-1)
+[__1.5.2.__ Array-mode fly scans](#HEADING_1-5-2)
+[__2.__  sscan-Record Fields](#HEADING_2)
+[__2.1.__ Control Fields](#HEADING_2-1)
+[__2.2.__ Positioner Fields](#HEADING_2-2)
+[__2.2.1__ LINEAR Mode](#HEADING_2-2-1)
+[__2.2.2.__ TABLE Mode](#HEADING_2-2-2)
+[__2.2.3.__ FLY Mode](#HEADING_2-2-3)
+[__2.3.__ Detector-Trigger Fields](#HEADING_2-3)
+[__2.4.__ Delay Fields](#HEADING_2-4)
+[__2.5.__ Client Handshaking Fields](#HEADING_2-5)
+[__2.6.__ Detector Fields](#HEADING_2-6)
+[__2.7.__ Execution Fields](#HEADING_2-7)
+[__2.8.__ Status/Progress Fields](#HEADING_2-8)
 [__2.10.__ Miscellaneous Fields](#HEADING_2-10)
 
-- - - - - -
 
 <a name="HEADING_1"></a>
 
-1. Introduction
-===============
+# 1. Introduction
 
-- - - - - -
-
-The purpose of the sscan record is to move *positioners* through a series of positions and record *detector* data at each of the positions. This series of operations is commonly referred to as a *scan*, or as one loop of a multi-dimensional scan. After parameters defining the scan have been initialized and the scan has been launched, the sscan record begins a possibly long and involved sequence of operations normally without further input, and notifies any interested clients as the scan progresses. The data are collected into arrays within the record so that clients needn't handle them point by point. A separate piece of software ("saveData", which is included with the sscan record in the synApps sscan module) can coordinate with the sscan record to write scan data to disk. 
+The purpose of the sscan record is to move *positioners* through a series of positions and record *detector* data at each of the positions. This series of operations is commonly referred to as a *scan*, or as one loop of a multi-dimensional scan. After parameters defining the scan have been initialized and the scan has been launched, the sscan record begins a possibly long and involved sequence of operations normally without further input, and notifies any interested clients as the scan progresses. The data are collected into arrays within the record so that clients needn't handle them point by point. A separate piece of software ("saveData", which is included with the sscan record in the synApps sscan module) can coordinate with the sscan record to write scan data to disk.
 
 > Note that the word "scan" is used frequently in other EPICS documentation to mean something quite different from what is meant here. In the *EPICS Application Developers Guide*, "scan" connotes record processing or execution, as in "Database scanning is the mechanism for deciding when to process a record." Also, periodic record processing is performed by "scan tasks", and the field that controls when a record will be processed is named "SCAN". None of these uses of "scan" have anything to do with the sscan record, and the word will not have the EPICS meaning in the rest of this documentation.
 
-A single sscan record supports a one dimensional scan. Several sscan records can be linked together to perform a multi-dimensional scan. Each sscan record can control up to four positioners, trigger up to four detectors, and acquire data from up to 74 process variables (70 detector values of type floatand four positioner readbacks of type double).
+A single sscan record supports a one dimensional scan. Several sscan records can be linked together to perform a multi-dimensional scan. Each sscan record can control up to four positioners, trigger up to four detectors, and acquire data from up to 74 process variables (70 detector values of type float and four positioner readbacks of type double).
 
 In the most common use, the sscan record moves motors and acquires scaler (pulse counter) data at each motor position, but obviously it can also be used for other purposes. Any writable EPICS PV (process variable) can be scanned through a set of values while data are recorded from any other PVs. For example, one of the positioner PVs could be used to vary the gain or dwell time of a detector during a scan. Therefore, throughout this document the term *positioner* should be taken to mean "any PV to which you can write a number". Similarly, the term *detector trigger* will typically refer to a PV that will cause data acquisition to begin when it is written to, but it could be taken to mean "any PV to which you can write a number". Finally, the term *detector* refers to any readable numeric PV. ("Signal" might be a better word for this.)
 
@@ -67,17 +62,31 @@ Before a scan can start, all of the links that aren't blank must connect with th
 
 <a name="HEADING_1-1"></a>
 
-1.1. A Simple One Dimensional Scan
-----------------------------------
+## 1.1. A Simple One Dimensional Scan
 
-In the simplest reasonably complete configuration for a one-dimensional scan, the following fields are used: P1PV the name of a positioner (e.g., "myMotor.VAL") P1SP start position -- the first position at which data will be acquired P1EP end position -- the last position at which data will be acquired NPTS the total number of positions to visit T1PV the name of a detector-trigger PV. This PV will be written to after the positioner has arrived at each position, and it is expected to initiate some data-acquisition operation. D01PV the name of a detector (signal) PV. The value of this PV will be recorded after the detector trigger has finished acquiring data. When a scan is started (by writing a 1 to the EXSC field) the sscan record commands the positioner to move to its starting position. The sscan record uses recDynLinkPutCallback() to tell the positioner to move, and waits for the resulting callback, indicating that the positioner is finished, before moving on to the next phase of the scan, which is to trigger the detector. The detector is also triggered using recDynLinkPutCallback(), and the sscan record waits for it to finish before reading detectors and going on to perform another (move, trigger, read) sequence to acquire the next data point. This algorithm continues until the sscan record has completed NPTS steps, or the scan is aborted (by a client writing 0 to the EXSC field). At the end of the scan, the sscan record has filled in an array of the positions visited (P1RA), and an array of detector values acquired (D01DA). Let's run through that again, this time more generally, with more detail, and including more of the available options.
+In the simplest reasonably complete configuration for a one-dimensional scan, the following fields are used:
 
-Positioners You can specify zero to four positioners. Positioners are expected to tell the sscan record when they're done moving (more about this later). After all positioners have declared themselves done, the sscan record waits for a user-specified settling time (PDLY, normally zero) before writing to detector triggers. (If no positioners, then no positioner settling time.) Positions to visit There are lots of possibilities here. You can specify any combination of the set \[*start, end, center, width, step-size*\] for each positioner; you can load a table of positions for each positioner; or you can specify that positioners are to be moved continuously during a scan. You can specify that positions be regarded as absolute, or as relative to the pre-scan position. Detector triggers Detector triggers act much like positioners, in that they write a value and wait for any ensuing processing to finish, but they send the same value at every data point (T*n*CD). After all triggered detectors have declared themselves done, the sscan record waits for a user-specified settling time (DDLY, normally zero) before reading data from detector-signal PVs. (If no detector triggers, then no detector settling time.) Detector signals Typically, detector signals are scalar PVs, but they can be array-valued PVs. If so, the sscan record will read NPTS values from them at the end of the scan. If array-valued PVs require processing to acquire their values, the sscan record can write to a special array trigger (A1PVA1CD, exactly analogous to detector triggers), and wait for any ensuing processing to finish before reading the arrays. If all detector signals are array valued, it's probably better to use the array acquisition type. (See ACQT.) Detector-signal values can be accumulated from scan to scan, so you can sweep over a set of positions, building up statistical precision and averaging over any positioning errors or variable external conditions. (See ACQM.)
+* P1PV the name of a positioner (e.g., "myMotor.VAL")
+* P1SP start position -- the first position at which data will be acquired
+* P1EP end position -- the last position at which data will be acquired
+* NPTS the total number of positions to visit
+* T1PV the name of a detector-trigger PV. This PV will be written to after the positioner has arrived at each position, and it is expected to initiate some data-acquisition operation.
+* D01PV the name of a detector (signal) PV. The value of this PV will be recorded after the detector trigger has finished acquiring data.
 
-After the scan You can tell positioners what to do after the scan is finished, using the PASM field. The default behavior is simply to remain where the scan left them, but you could tell them to return to their pre-scan positions, go to their start positions, or go to positions calculated from acquired data (e.g., the position at which a specified detector signal REFD reached its peak value during the scan). <a name="HEADING_1-2"></a>
+When a scan is started (by writing a 1 to the EXSC field) the sscan record commands the positioner to move to its starting position. The sscan record uses recDynLinkPutCallback() to tell the positioner to move, and waits for the resulting callback, indicating that the positioner is finished, before moving on to the next phase of the scan, which is to trigger the detector. The detector is also triggered using recDynLinkPutCallback(), and the sscan record waits for it to finish before reading detectors and going on to perform another (move, trigger, read) sequence to acquire the next data point. This algorithm continues until the sscan record has completed NPTS steps, or the scan is aborted (by a client writing 0 to the EXSC field). At the end of the scan, the sscan record has filled in an array of the positions visited (P1RA), and an array of detector values acquired (D01DA).
 
-1.2. Multidimensional Scans
----------------------------
+Let's run through that again, this time more generally, with more detail, and including more of the available options.
+
+* Positioners You can specify zero to four positioners. Positioners are expected to tell the sscan record when they're done moving (more about this later). After all positioners have declared themselves done, the sscan record waits for a user-specified settling time (PDLY, normally zero) before writing to detector triggers. (If no positioners, then no positioner settling time.)
+* Positions to visit There are lots of possibilities here. You can specify any combination of the set \[*start, end, center, width, step-size*\] for each positioner; you can load a table of positions for each positioner; or you can specify that positioners are to be moved continuously during a scan. You can specify that positions be regarded as absolute, or as relative to the pre-scan position.
+* Detector triggers Detector triggers act much like positioners, in that they write a value and wait for any ensuing processing to finish, but they send the same value at every data point (T*n*CD). After all triggered detectors have declared themselves done, the sscan record waits for a user-specified settling time (DDLY, normally zero) before reading data from detector-signal PVs. (If no detector triggers, then no detector settling time.)
+* Detector signals Typically, detector signals are scalar PVs, but they can be array-valued PVs. If so, the sscan record will read NPTS values from them at the end of the scan. If array-valued PVs require processing to acquire their values, the sscan record can write to a special array trigger (A1PVA1CD, exactly analogous to detector triggers), and wait for any ensuing processing to finish before reading the arrays. If all detector signals are array valued, it's probably better to use the array acquisition type. (See ACQT.)
+* Detector-signal values can be accumulated from scan to scan, so you can sweep over a set of positions, building up statistical precision and averaging over any positioning errors or variable external conditions. (See ACQM.)
+* After the scan You can tell positioners what to do after the scan is finished, using the PASM field. The default behavior is simply to remain where the scan left them, but you could tell them to return to their pre-scan positions, go to their start positions, or go to positions calculated from acquired data (e.g., the position at which a specified detector signal REFD reached its peak value during the scan).
+
+<a name="HEADING_1-2"></a>
+
+## 1.2. Multidimensional Scans
 
 Multidimensional scans are easy: an outer-loop sscan record (which we'll call "scan2") regards an inner-loop sscan record ("scan1") as a detector to be triggered, and each sscan record acquires its own data. Thus, scan2.T1PV, is set to scan1.EXSC, and scan2.T1CD is set to 1. In words, scan2 writes a 1 to the "execute scan" field (EXSC) of scan1. To initiate the scan, the scan2 record is commanded to begin (scan2.EXSC is set to 1). scan2 sends its *positioners* to their starting points, and waits for their callbacks. Then scan2 writes to its *detector trigger*(s), (one of) which in this case causes scan1 to begin its own scan. The scan1 record will now go through its entire programmed scan, acquiring data from its detectors at each point.
 
@@ -91,8 +100,7 @@ Clearly, this calls for some handshaking between the client and the sscan record
 
 <a name="HEADING_1-3"></a>
 
-1.3. Interaction with clients
------------------------------
+## 1.3. Interaction with clients
 
 Clients of the sscan record include the software that starts, stops, or pauses a scan; software that displays data acquired by a scan; software that writes scan data to disk; and software that participates in the a scan by implementing positioner or detector operation. A single client may do any or all of these things, of course, but it seems best to discuss them separately.
 
@@ -102,7 +110,14 @@ Clients of the sscan record include the software that starts, stops, or pauses a
 
 The client writes the number 1 to the sscan record's EXSC field to start a scan. If the sscan record is able to start a new scan, it sets its BUSY field to 1 while the new scan is in progress, and it sets BUSY to 0 when the scan is done. If the sscan record is not able to start a new scan, the client will receive an error indication, and the command may be ignored. The sscan record will set its SMSG field to a string describing the reason why it cannot start a new scan. Possible reasons include the following:
 
- "Waiting for PV's to connect"One or more of the PVs specified as positioners, triggers, readbacks, etc. has not yet connected. If the offending PV must be written to, it's possible that the PV has connected but the ioc doesn't have permission to write to it, because of an EPICS access-security setting or condition. "Scan is paused ..."The sscan-record field PAUS has a nonzero value, indicating that some client has told the sscan record to stand by until PAUS is set back to 0. In this case, the sscan record will set FAZE to "SCAN\_PENDING", and wait until PAUS is rescinded before setting BUSY to 1 and starting the scan. "waiting for client ..."The sscan-record field WTNG has a nonzero value, indicating that some client has told the sscan record to wait. (See "Handshaking with data-storage clients", below, for details.) In this case the command will be ignored. "Already scanning"A scan is already in progress. Setting EXSC to 1 while scan is in progress has no effect on that scan. In this case, the command will be ignored. "Waiting for saveData"A new scan cannot be started because the data-storage client, "saveData", is still using one of the two sets of data arrays, and the other set is full of scan data also waiting for service by saveData. In this case, the sscan record will wait until saveData has finished using the arrays (which saveData indicates by writing 0 to the sscan record's AWAIT field) before setting BUSY to 1 and starting the scan. "Waiting for callback"The previous scan is essentially complete, but one of the commands the sscan record issued has not yet completed. In this case, the command to start a new scan will be ignored. In all but the "Waiting for PV's to connect" and "Scan is paused" cases, the start command will be ignored, and the scan will not automatically start when the condition that prevented it from starting is removed. A new start command must be issued.
+ * "Waiting for PV's to connect" - One or more of the PVs specified as positioners, triggers, readbacks, etc. has not yet connected. If the offending PV must be written to, it's possible that the PV has connected but the ioc doesn't have permission to write to it, because of an EPICS access-security setting or condition.
+ * "Scan is paused ..." - The sscan-record field PAUS has a nonzero value, indicating that some client has told the sscan record to stand by until PAUS is set back to 0. In this case, the sscan record will set FAZE to "SCAN\_PENDING", and wait until PAUS is rescinded before setting BUSY to 1 and starting the scan.
+ * "waiting for client ..." - The sscan-record field WTNG has a nonzero value, indicating that some client has told the sscan record to wait. (See "Handshaking with data-storage clients", below, for details.) In this case the command will be ignored.
+ * "Already scanning" - A scan is already in progress. Setting EXSC to 1 while scan is in progress has no effect on that scan. In this case, the command will be ignored.
+ * "Waiting for saveData" - A new scan cannot be started because the data-storage client, "saveData", is still using one of the two sets of data arrays, and the other set is full of scan data also waiting for service by saveData. In this case, the sscan record will wait until saveData has finished using the arrays (which saveData indicates by writing 0 to the sscan record's AWAIT field) before setting BUSY to 1 and starting the scan.
+ * "Waiting for callback" - The previous scan is essentially complete, but one of the commands the sscan record issued has not yet completed. In this case, the command to start a new scan will be ignored.
+
+ In all but the "Waiting for PV's to connect" and "Scan is paused" cases, the start command will be ignored, and the scan will not automatically start when the condition that prevented it from starting is removed. A new start command must be issued.
 
 <a name="HEADING_1-3-2"></a>
 
@@ -130,13 +145,13 @@ A scan can be paused by writing "PAUSE", or the number 1, to the PAUS field. Whi
 
 ### 1.3.4 Displaying scan data
 
-Scan data is published by the sscan record using EPICS Channel Access, just as any other EPICS record would publish the values of its fields. The act of publishing data via Channel Access is referred to here as *posting*, because the EPICS function that performs this function is db\_post\_events(). After a field has been posted, a client can get the new value by issuing the Channel Access call ca\_get(). A client can also arrange, in advance, to receive posted data from a particular field, whenever it is posted, by *monitoring* -- also called *subscribing to*-- the field. See the Channel Access Reference Manual (specifically, ca\_add\_event() or ca\_create\_subscription()) for the details of how this is done. The purpose here is simply to introduce the terms *post*and *monitor*, so that I can use them in this documentation. The sscan record maintains two sets of array PV's for scan data: data from a completed scan are posted as P*n*RA and D*nn*DA (e.g., P1RA, D01DA); data from a scan in progress are posted as P*n*CA and D*nn*CA. During a scan, arrays are posted only if the user requests this by setting the array-posting period, ATIME, to a value greater than or equal to 0.1 (seconds). After a scan has completed, all data arrays are posted, marked with the mask DBE\_LOG, and the completed-scan postings (P*n*RA and D*nn*DA) remain available to clients until the next scan completes.
+Scan data is published by the sscan record using EPICS Channel Access, just as any other EPICS record would publish the values of its fields. The act of publishing data via Channel Access is referred to here as *posting*, because the EPICS function that performs this function is db\_post\_events(). After a field has been posted, a client can get the new value by issuing the Channel Access call ca\_get(). A client can also arrange, in advance, to receive posted data from a particular field, whenever it is posted, by *monitoring* -- also called *subscribing to*-- the field. See the Channel Access Reference Manual (specifically, ca\_add\_event() or ca\_create\_subscription()) for the details of how this is done. The purpose here is simply to introduce the terms *post* and *monitor*, so that I can use them in this documentation. The sscan record maintains two sets of array PV's for scan data: data from a completed scan are posted as P*n*RA and D*nn*DA (e.g., P1RA, D01DA); data from a scan in progress are posted as P*n*CA and D*nn*CA. During a scan, arrays are posted only if the user requests this by setting the array-posting period, ATIME, to a value greater than or equal to 0.1 (seconds). After a scan has completed, all data arrays are posted, marked with the mask DBE\_LOG, and the completed-scan postings (P*n*RA and D*nn*DA) remain available to clients until the next scan completes.
 
 > Because the sscan record implements double-buffered data arrays, and because of the way in which posting is accomplished in EPICS, the posting of scan-in-progress data arrays results unavoidably in useless reposting of completed-scan data arrays. If this presents a problem for a data-display or data-storage client, there are two ways to avoid the problem: 1) Tell the sscan record not to post arrays during scans by leaving the array-post period, ATIME, at its default value of zero; 2) modify the client so that it monitors only postings flagged with the DBE\_LOG mask.
 
 A more efficient, but more difficult, way for a client to get data from a scan in progress is to monitor the scalar current-value PVs, such as R1CV, D01CV, etc., and collect their values into arrays. Positioners actually have two fields that might be suitable for display while a scan is in progress: the positioner's desired value (P*n*DV) and the readback's current value (R*n*CV). (If there is no readback PV, the posted readback value will be a copy of the desired value.)
 
-Not all data points of a scan are guaranteed to be posted as scalar values, because the sscan record *throttles* it's posting, so that it doesn't exceed 20 data points per second. ("data point" means "all positioners and detectors".) This throttling is intended to limit the network activity caused by a scan, and it's necessary because displaying scan data is not more important that acquiring it, and because the sscan record also uses the network to acquire data.
+Not all data points of a scan are guaranteed to be posted as scalar values, because the sscan record *throttles* its posting, so that it doesn't exceed 20 data points per second. ("data point" means "all positioners and detectors".) This throttling is intended to limit the network activity caused by a scan, and it's necessary because displaying scan data is not more important that acquiring it, and because the sscan record also uses the network to acquire data.
 
 The task of accumulating posted scalar values into data arrays is complicated by the standard EPICS behavior of declining to post a field whose value has not changed since the last time the field was posted. If a client were simply to append each new posting to the data arrays it is accumulating, it would not be including those repeated values. The following algorithm will accumulate data correctly:
 
@@ -161,11 +176,11 @@ For *very* fast scans, or a very slow data-storage client, there might not be su
 
 NOTE: Because saveData sets AAWAIT for the sscan records it monitors, a scan cannot execute to completion until saveData has written the previous scan's data to disk (or has tried and failed a preset number of times to do this). The __sscan__ module currently does not provide a mechanism by which the end user can turn data storage off and on. Data storage is turned on at boot time, for each sscan record, by telling saveData to monitor that sscan record. The only way to turn data storage off is to edit the startup file and reboot.
 
- Only one data-storage client can use AWAIT. If you have more than one data-storage client, you must arrange for them to pool their use of the AWAITfield, so that it gets reset to zero only when all have finished. (It's OK if AWAIT gets set to one more than once. Only the first AWAIT==1 write has any effect.)
+ Only one data-storage client can use AWAIT. If you have more than one data-storage client, you must arrange for them to pool their use of the AWAIT field, so that it gets reset to zero only when all have finished. (It's OK if AWAIT gets set to one more than once. Only the first AWAIT==1 write has any effect.)
 
 Note that this AWAIT handshake protects scan data no matter how the sscan record gets executed, unlike the old method described next.
 
-2\) __The old way, using the WAIT, WCNT, and AWCTfields:__
+2\) __The old way, using the WAIT, WCNT, and AWCT fields:__
 
 Before the AWAIT field was introduced, the only means of handshaking was an extension of the mechanism by which the sscan record waits for detector triggers to signal completion. In this extension, the sscan record waits until all detector triggers have signalled completion, *and* the field WAIT is equal to zero. This extension's intended purpose is to support detectors that can't signal completion with a callback, but that can write to a PV -- for example, a detector that's implemented as a channel-access client -- and it can still be used for that purpose, while a data-storage client is using it to protect data acquired from an inner-loop scan.
 
@@ -185,7 +200,7 @@ Note that this form of handshaking doesn't do a very thorough job of data protec
 
 ### 1.3.6 Handshaking with CA clients that implement positioners or detectors
 
-A channel-access client can participate in scans driven by the sscan record if two criteria are met:  
+A channel-access client can participate in scans driven by the sscan record if two criteria are met:
 1. The client is driven by a PV to which one of the sscan record's positioner or detector-trigger links writes.
 2. The client can signal completion in a way that the sscan record understands.
 
@@ -221,14 +236,13 @@ Many of the databases in synApps contain *busy* records for this purpose, partic
 - The client performs its data-acquisition task.
 - The client writes 0 to &lt;scanrecord&gt;.WAIT, indicating that it's done.
 
-Several clients can use the WAIT field, each write of 1increments a wait count WCNT; each write of 0 decrements WCNT; the sscan record stops waiting when WCNT is decremented to zero. The sscan record doesn't care, by the way, who writes what to WAIT; it simply waits until the number of WAIT==0writes equals the number of WAIT==1 writes.
+Several clients can use the WAIT field, each write of 1 increments a wait count WCNT; each write of 0 decrements WCNT; the sscan record stops waiting when WCNT is decremented to zero. The sscan record doesn't care, by the way, who writes what to WAIT; it simply waits until the number of WAIT==0 writes equals the number of WAIT==1 writes.
 
 But what if clients are a little slow to react, and the sscan record checks its wait-count WCNT before the clients have had time to write 1's to it? If this is a problem, you can cause the sscan record to set WCNT at the appropriate time, by setting &lt;scanrecord&gt;.AWCT to the number of slow clients. (But now those slow clients must NOT write 1 to WAIT.)
 
  <a name="HEADING_1-4"></a>
 
- 1.4. Completion of positioner and detector-trigger operations
---------------------------------------------------------------
+## 1.4. Completion of positioner and detector-trigger operations
 
 As was mentioned previously, all of the process variable names used to identify positioners, detectors, and detector triggers are specified using *reassignable links*. These links are implemented differently than standard EPICS links. Reassignable links are channel-access links implemented with the recDynLink library (originally written by Marty Kraimer and Ned Arnold; modified to use callbacks and currently maintained by Tim Mooney). These links perform writes with the channel-access function, ca\_put\_callback(), and the sscan record expects the resulting callback function to be called only after all processing caused by the write operation has completed. (I'll call this expectation the *completion-callback criterion*, in this documentation, and I'll describe the conditions under which it is met.)
 
@@ -242,8 +256,7 @@ Database developers should note that a PP link from a record in one IOC to a rec
 
 <a name="HEADING_1-5"></a>
 
- 1.5. Fly scans
----------------
+## 1.5. Fly scans
 
 The term "fly scan" is generic for several types of scans that behave and are configured differently, though all involve one or more positioners moving while data are being acquired. Such positioners are said to be in "fly mode". Currently, the sscan record treats fly-mode positioners in essentially the same way for all types of fly scans: they are sent to their start positions (along with any non-fly-mode positioners), and the sscan record waits for all to complete; then, fly-mode positioners are launched toward their end points when detectors are triggered for the first (or only) time, and the sscan record does not wait for them to complete.
 
@@ -294,30 +307,32 @@ In array mode, the sscan record executes fly scans as follows:
 7. If PASM!=STAY, send all positioners to specified positions, and wait for completion. (It is assumed that these commands will redirect any fly-mode positioners that are still moving toward their end points.)
 8. Execute the after-scan link. Wait for completion if ASWAIT==Wait.
 
-Because the sscan record doesn't do any point-by-point writes to (or reads from) positioners during an array-mode scan, the data it acquires will represent an average over position, unless some external agent enforces a coordination between positioner values and the acquisition of detector-array elements. The advantage of array-mode fly scans over scalar-mode fly scans is that this coordination can be done externally by hardware that's capable of doing it well; the disavantage is that hardware positioner/detector coordination must be arranged.
+Because the sscan record doesn't do any point-by-point writes to (or reads from) positioners during an array-mode scan, the data it acquires will represent an average over position, unless some external agent enforces a coordination between positioner values and the acquisition of detector-array elements. The advantage of array-mode fly scans over scalar-mode fly scans is that this coordination can be done externally by hardware that's capable of doing it well; the disadvantage is that hardware positioner/detector coordination must be arranged.
 
 In one common implementation of an array-mode scan, detector data are acquired by a multichannel scaler, which is advanced from channel to channel either by a periodic signal, or by pulses from a motor. In contrast to the scalar-mode fly scans discussed above, this type of fly scan can have a very precise and reproducible association between positioner and detector values.
 
 > In releases of the sscan module lower than 2.7, fly mode was implemented slightly differently, as follows (differences are in *italics*) If the sscan record was in scalar mode (ACQT==SCALAR), and a positioner's step mode had the value FLY, the sscan record sent it to the start position at the beginning of a scan, waited for it to get there, *acquired one data point (trigger, read),* sent the positioner to the end position, and began acquiring the remaining data points while the positioner was travelling to the end position. *If the record was in array mode (ACQT==1D ARRAY), positioners that were not explicitly in fly mode (PnSM!=FLY) were not sent to the end position at all.*
 
-  
-  
-  
-- - - - - -
 
 <a name="HEADING_2"></a>
 
-sscan-Record Fields
-===================
-
-- - - - - -
+# 2. sscan-Record Fields
 
 Many options are available to control the execution of a scan. All parameters for a particular sscan record must be configured prior to initiating the scan, as the sscan record will not allow most fields to be written to while a scan is in progress. However, in a multidimensional scan, outer scans can modify the parameters of inner scans, because at the time an outer sscan record is writing to positioners, all inner sscan records are idle. You should use caution in programming such self modifying scans, because clients displaying or analyzing multidimensional scan data may have trouble dealing with parameters changing during a scan. In this documentation, many of the sscan-record fields will be listed in tables containing the following informational headings:
 
-__Field__The name of the sscan-record field__Summary__Basic purpose of the field__Type__Data type of the field. If the field is a menu, the menu choices (text strings) are listed in quotes. (Don't include the quotes when you write to the field.) Note that if you write a numeric value to a menu field, the number will be interpreted as an index into the list of menu choices. The first item in the list has the index 0.__DCT__Can this field be modified by database-configuration tools?__Initial/Default__Value if the field is not specified in the .db file. If the field is a menu, the text string will be shown, followed by the corresponding index. __Read__Can user read this field?__Modify__Is user ever allowed to write to this field? (Note that the sscan record will reject writes to certain otherwise writable fields while a scan is underway.)__Posted__If the record should modify the field, will the new value be posted?__PP__Does a channel-access write to this field cause the record to process?<a name="HEADING_2-1"></a>
+* __Field__ - The name of the sscan-record field
+* __Summary__ - Basic purpose of the field
+* __Type__ - Data type of the field. If the field is a menu, the menu choices (text strings) are listed in quotes. (Don't include the quotes when you write to the field.) Note that if you write a numeric value to a menu field, the number will be interpreted as an index into the list of menu choices. The first item in the list has the index 0.
+* __DCT__ - Can this field be modified by database-configuration tools?
+* __Initial/Default__ - Value if the field is not specified in the .db file. If the field is a menu, the text string will be shown, followed by the corresponding index.
+* __Read__ - Can user read this field?
+* __Modify__ - Is user ever allowed to write to this field? (Note that the sscan record will reject writes to certain otherwise writable fields while a scan is underway.)
+* __Posted__ - If the record should modify the field, will the new value be posted?
+* __PP__ - Does a channel-access write to this field cause the record to process?
 
-2.1. Control Fields
--------------------
+<a name="HEADING_2-1"></a>
+
+## 2.1. Control Fields
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
 |---|---|---|---|---|---|---|---|---|
@@ -363,8 +378,7 @@ __Field__The name of the sscan-record field__Summary__Basic purpose of the field
 
 <a name="HEADING_2-2"></a>
 
-2.2. Positioner Fields
-----------------------
+## 2.2. Positioner Fields
 
 Each sscan record can control up to four *positioners*, by which it sets conditions under which data will be acquired. A positioner is any numeric PV to which the sscan record can write, and you specify that a positioner is to be scanned by typing its PV name into one of the sscan record's fields PnPV. If the value written to the PV (the *desired* value) might not accurately indicate the true value of the underlying hardware positioner, you can specify a readback PV to retrieve a more accurate value. I'll sometimes call the PV that the sscan record writes to the "drive" PV. If no readback PV is specified, the drive PV will also be used as the readback PV. There are three possible modes for determining desired values for a positioner: LINEAR, TABLE, and FLY. Each positioner has its own mode PV, and you specify which mode you want for a positioner by setting its PnSM field (e.g., P1SM for positioner 1). If PnSM== LINEAR, the desired values are determined from parameters such as start position, step increment, number of points, and end position. If PnSM==TABLE, the desired values are found in an array (PnPA), which must have been loaded into the sscan record prior to initiating a scan. If PnSM==FLY, the desired values are the start and end positions for LINEAR mode.
 
@@ -380,12 +394,10 @@ For *n* in \[1..4\]:
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
 |---|---|---|---|---|---|---|---|---|
-| P*n*PV | Positioner *n* Process Variable ame | STRING \[40\] | Yes | Null | Yes | Yes | No | No |
+| P*n*PV | Positioner *n* Process Variable Name | STRING \[40\] | Yes | Null | Yes | Yes | No | No |
 | P*n*NV | P*n*PV Name Valid | MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV illegal2", "PV BAD")   "PV OK" and "No PV" are good states; all others will prevent a scan from starting | No | 0 | Yes | Yes | Yes | No |
 | P*n*SM | Positioner *n* step-mode | Menu ("LINEAR", "TABLE", "FLY") | Yes | "LINEAR" (0) | Yes | Yes | No | No |
 | P*n*AR | Positioner *n* Absolute/Relative Mode | Menu ("ABSOLUTE", "RELATIVE") | Yes | "ABSOLUTE" (0) | Yes | Yes | No | No |
-| P*n*DV | Pos. *n* Desired Value | DOUBLE | No | 0 | Yes | No | Yes | No |
-| P*n*LV | Pos. *n* Last Value | DOUBLE | No | 0 | Yes | No | No | No |
 | P*n*DV | Pos. *n* Desired Value | DOUBLE | No | 0 | Yes | No | Yes | No |
 | P*n*LV | Pos. *n* Last Value | DOUBLE | No | 0 | Yes | No | No | No |
 | P*n*EU | Positioner *n* Eng. Units | STRING \[16\] | Yes | 16 | Yes | Yes | No | No |
@@ -402,7 +414,7 @@ For *n* in \[1..4\]:
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
 |---|---|---|---|---|---|---|---|---|
 | R*n*PV | Readback *n* Process Variable | STRING \[40\] | Yes | Null | Yes | Yes | No | No |
-| R*n*NV | Readback */n* Name Valid | MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV illegal2", "PV BAD")   "PV OK" and "No PV" are good states; all others will prevent a scan from starting, though "PV NoWrite" is impossible for this readback PV | No | 0 | Yes | Yes | Yes | No |
+| R*n*NV | Readback *n* Name Valid | MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV illegal2", "PV BAD")   "PV OK" and "No PV" are good states; all others will prevent a scan from starting, though "PV NoWrite" is impossible for this readback PV | No | 0 | Yes | Yes | Yes | No |
 | R*n*DL | Readback *n* Difference Limit | DOUBLE | Yes | 0 | Yes | Yes | No | No |
 | R*n*CV | Readback *n* Current Value | DOUBLE | No | 0 | Yes | No | Yes | No |
 | R*n*LV | Readback *n* Last Value | DOUBLE | No | 0 | Yes | No | No | No |
@@ -411,7 +423,7 @@ For *n* in \[1..4\]:
 
 Clients that display scan data will most likely be interested in only one of the two positioner-array fields: P*n*CA or P*n*RA. These array fields are backed by the same double-buffered arrays, so they cannot be posted separately.
 
-P*n*CA will yield data from the scan that currently is executing. This array can be read at any time during the scan, and it may be posted with the mask, DBE\_VALUE, while the scan is in progress. (ATIMEcontrols this.) When the scan completes, P*n*CA will be posted with the mask, DBE\_VALUE\|DBE\_LOG.
+P*n*CA will yield data from the scan that currently is executing. This array can be read at any time during the scan, and it may be posted with the mask, DBE\_VALUE, while the scan is in progress. (ATIME controls this.) When the scan completes, P*n*CA will be posted with the mask, DBE\_VALUE\|DBE\_LOG.
 
 P*n*RA will yield data from the most recently completed scan. This array's data will remain available while the next scan's data are being acquired, and will become unavailable when that scan completes. Clients interested only in completed-scan data should use this field. Clients that monitor this field should always specify the mask, DBE\_LOG, in their ca\_add\_event() or ca\_create\_subscription() call. If this field is monitored with the mask, DBE\_VALUE, the client may receive multiple postings of the same data.
 
@@ -465,7 +477,7 @@ To load an array of positions into P*n*PA, you can use any channel-access client
 caput -m 2idb1:scan1.P1PA 0.,1.,2.
 ```
 
-works. For another version, you specify the flag `-a`, specify the number of values to be written, and specify the values separated by spaces: 
+works. For another version, you specify the flag `-a`, specify the number of values to be written, and specify the values separated by spaces:
 ```
 caput -a 2idb1:scan1.P1PA 3 0. 1. 2.
 ```
@@ -505,7 +517,7 @@ If a fly-mode positioner has a specified readback PV (R*n*PV), its value will be
 2.3. Detector-Trigger Fields
 ----------------------------
 
-If valid process variable names are entered into the detector trigger fields (T1PV-T4PV ) fields, the sscan record will write the specified command data (the floating point numbers T1CD-T4CD) to those process variables between the positioning phase and the data acquisition phase. If no detector trigger field contains a valid PV, the sscan record will skip this step and acquire the data immediately.For *n* in \[1..4\]:
+If valid process variable names are entered into the detector trigger fields (T1PV-T4PV ) fields, the sscan record will write the specified command data (the floating point numbers T1CD-T4CD) to those process variables between the positioning phase and the data acquisition phase. If no detector trigger field contains a valid PV, the sscan record will skip this step and acquire the data immediately. For *n* in \[1..4\]:
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
 |---|---|---|---|---|---|---|---|---|
@@ -518,7 +530,7 @@ If valid process variable names are entered into the detector trigger fields (T1
 2.4. Delay Fields
 -----------------
 
-Generally, after the sscan record has written to positioners and waited for all positioners to declare themselves done, it waits an additional settling time, specified in seconds by the PDLY field, before entering the next scan phase. Similarly, after detector triggers have declared themselves done, the sscan record waits for DDLY seconds before reading positioner and detector data. If no positioners are defined, then PDLY is ignored. If no detector triggers are defined, then DDLY is ignored. PDLYdoes not apply to after-scan positioner motions.
+Generally, after the sscan record has written to positioners and waited for all positioners to declare themselves done, it waits an additional settling time, specified in seconds by the PDLY field, before entering the next scan phase. Similarly, after detector triggers have declared themselves done, the sscan record waits for DDLY seconds before reading positioner and detector data. If no positioners are defined, then PDLY is ignored. If no detector triggers are defined, then DDLY is ignored. PDLY does not apply to after-scan positioner motions.
 
 <a name="HEADING_2-5"></a>
 
@@ -544,15 +556,10 @@ A client may not be able to write quickly enough to AWAIT to ensure that the sca
 | AWAIT | Waiting for data-storage client | SHORT | No | 0 | Yes | Yes | Yes | Yes |
 | AAWAIT | AutoWait for data-storage client | MENU ("NO","YES") | Yes | 0 | Yes | Yes | No | No |
 
-  
-- - - - - -
 
 <a name="HEADING_2-6"></a>
 
-2.6 Detector Fields
--------------------
-
-- - - - - -
+## 2.6 Detector Fields
 
 Each sscan record can acquire data from up to 74 process variables (70 detector signals, D01-D70, and four positioner readbacks, R1-R4) at each point in the scan. These data will most commonly be from a detector or from a position readback (which would record the actual motor positions at each point and could then be compared to the desired position array). Although positioner readbacks, R1-R4, are normally used to confirm the position at which data actually were acquired (as opposed to the position to which the sscan record *told* a positioner to go), they can be used to record any data. These four variables are the only place to record double-precision scan data. Note that these readbacks are not full-fledged detectors, because the sscan record currently cannot read into them from a array-valued PV's, as it can for actual detectors.
 
@@ -590,17 +597,10 @@ For *nn* in \[01..70\] (e.g., "D01PV", "D02PV", ... "D70PV")
 | D*nn*CV | Detector *nn* Current Value | FLOAT | No | 0 | Yes | No | Yes | No |
 | D*nn*LV | Detector *nn* Last Value | FLOAT | No | 0 | Yes | No | No | No |
 
-  
-  
-  
-- - - - - -
 
 <a name="HEADING_2-7"></a>
 
-2.7 Execution fields
---------------------
-
-- - - - - -
+## 2.7 Execution fields
 
 A scan is started when a client writes 1 to the EXSC field.
 
@@ -624,23 +624,16 @@ The command (CMND) field supports eight commands, as follows:
 | 6 | Clear all positioner-name and readback-name PVs, freeze flags, modes, and switches. |
 | 7 | Clear positioner-name and readback-name PVs. |
 
-  
-  
-  
-- - - - - -
 
 <a name="HEADING_2-8"></a>
 
-2.8 Status/Progress Fields
-==========================
-
-- - - - - -
+## 2.8 Status/Progress Fields
 
 These fields are used to process the record, to implement monitors for certain fields, and/or to keep track of data for processing and/or for the operator. None of these fields are configurable by a database configuration tool. Most of them can be accessed at run-time, and many can be modified at run-time. The Current Point (CPT) field contains the current point of an active scan.
 
  The BUSY field indicates whether (1) or not (0) a scan is in progress.
 
-The DATA field indicates the state of the data arrays. DATAis set to 0 at the beginning of a scan, and is set to 1 after the data arrays have been posted. Note that data arrays are not posted during a scan, but only at the end.
+The DATA field indicates the state of the data arrays. DATA is set to 0 at the beginning of a scan, and is set to 1 after the data arrays have been posted. Note that data arrays are not posted during a scan, but only at the end.
 
 The VAL field is used only as a progress indicator. It is posted after all point-by-point PVs (e.g., R1CV, D01CV) have been posted. (So, if a PV you're interested in hasn't been posted by the time you get the VAL-field monitor, that PVs value hasn't changed since the last time it was posted.)
 
@@ -691,17 +684,10 @@ The data-state (DSTATE) field indicates in what state is the processing of data 
 | 6 | PACKED | Arrays are filled, and buffers have been switched, but they haven't yet been posted.    If a client should read an array now, it would get last scan's data. |
 | 7 | POSTED | Data arrays have been posted.    Now the data-storage client can read this scan's array data. |
 
-  
-  
-  
-- - - - - -
 
 <a name="HEADING_2-10"></a>
 
-2.10 Miscellaneous Fields
--------------------------
-
-- - - - - -
+## 2.10 Miscellaneous Fields
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
 |---|---|---|---|---|---|---|---|---|
