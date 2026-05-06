@@ -10,10 +10,11 @@ nav_order: 1
 
 The following documentation is available:
 
-- [sscanRecord](sscanRecord.md) -- The sscan record documentation. This also includes some information on saveData, the synApps client program that writes scan data to disk.
+- [sscanRecord](sscanRecord.md) -- The sscan record documentation.
 - [scanparmRecord](scanparmRecord.md) -- The scanparm record documentation.
-- [MDA Format](MDAFormat.md) -- Description of the 'MDA' (multidimensional archive) file format written by saveData. This file format uses the XDR standard for cross-platform compatibility.
-- [saveData.req](saveData.req) -- Sample copy of the file that tells saveData what to do.
+- [saveData](saveData.md) -- Configuration and usage of the saveData data-storage client, which writes scan data to disk in MDA format.
+- [MDA Format](MDAFormat.md) -- Description of the MDA (multidimensional archive) file format written by saveData.
+- [saveData.req](saveData.req) -- Sample saveData configuration file.
 - [XDR_RFC1014.txt](XDR_RFC1014.txt) -- A description of the XDR (External Data Representation) standard.
 - [Scans.ppt](Scans.ppt) -- Powerpoint presentation that describes the sscan module; shows how to use the sscan record; describes saveData's MDA file format; and explains how EPICS putNotify/ca_put_callback() completion behaves, and how to handle processing chains that don't satisfy EPICS' execution-tracing requirements.
 

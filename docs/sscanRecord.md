@@ -177,6 +177,8 @@ The advantage of the autoWaitCount==0 method is that scans can be performed whet
 
 Note that this form of handshaking doesn't do a very thorough job of data protection, because it does not directly prevent a sscan record from overwriting its own arrays; it only prevents an outer-loop sscan record from *telling* an inner-loop record to start a new scan line. If the sscan record is executed by some other agent, the WAIT handshake doesn't protect data at all.
 
+For details on configuring and using saveData itself, see the [saveData documentation](saveData.md).
+
 ### 1.3.6 Handshaking with CA clients that implement positioners or detectors
 
 A channel-access client can participate in scans driven by the sscan record if two criteria are met:
