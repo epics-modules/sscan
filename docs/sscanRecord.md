@@ -7,39 +7,39 @@ nav_order: 4
 
 # The sscan record
 
-Author: Tim M. Mooney
-Based on the scan record, written by Ned D. Arnold.
- Advanced Photon Source
- Argonne National Laboratory
+Author: Tim M. Mooney  
+Based on the scan record, written by Ned D. Arnold.  
+ Advanced Photon Source  
+ Argonne National Laboratory  
 
 Contents:
-[__1.__  Introduction](#HEADING_1)
-[__1.1.__ A Simple One Dimensional Scan](#HEADING_1-1)
-[__1.2.__ Multidimensional Scans](#HEADING_1-2)
-[__1.3.__ Interaction with clients](#HEADING_1-3)
-[__1.3.1__ Starting a scan](#HEADING_1-3-1)
-[__1.3.2__ Stopping a scan](#HEADING_1-3-2)
-[__1.3.3__ Pausing a scan](#HEADING_1-3-3)
-[__1.3.4__ Displaying scan data](#HEADING_1-3-4)
-[__1.3.5__ Handshaking with data-storage clients](#HEADING_1-3-5)
-[__1.3.6__ Handshaking with CA clients that implement positioners or detectors](#HEADING_1-3-6)
-[__1.4.__ Completion of positioner and detector-trigger operations](#HEADING_1-4)
-[__1.5.__ Fly scans](#HEADING_1-5)
-[__1.5.1.__ Scalar-mode fly scans](#HEADING_1-5-1)
-[__1.5.2.__ Array-mode fly scans](#HEADING_1-5-2)
-[__2.__  sscan-Record Fields](#HEADING_2)
-[__2.1.__ Control Fields](#HEADING_2-1)
-[__2.2.__ Positioner Fields](#HEADING_2-2)
-[__2.2.1__ LINEAR Mode](#HEADING_2-2-1)
-[__2.2.2.__ TABLE Mode](#HEADING_2-2-2)
-[__2.2.3.__ FLY Mode](#HEADING_2-2-3)
-[__2.3.__ Detector-Trigger Fields](#HEADING_2-3)
-[__2.4.__ Delay Fields](#HEADING_2-4)
-[__2.5.__ Client Handshaking Fields](#HEADING_2-5)
-[__2.6.__ Detector Fields](#HEADING_2-6)
-[__2.7.__ Execution Fields](#HEADING_2-7)
-[__2.8.__ Status/Progress Fields](#HEADING_2-8)
-[__2.10.__ Miscellaneous Fields](#HEADING_2-10)
+[__1.__  Introduction](#HEADING_1)  
+[__1.1.__ A Simple One Dimensional Scan](#HEADING_1-1)  
+[__1.2.__ Multidimensional Scans](#HEADING_1-2)  
+[__1.3.__ Interaction with clients](#HEADING_1-3)  
+[__1.3.1__ Starting a scan](#HEADING_1-3-1)  
+[__1.3.2__ Stopping a scan](#HEADING_1-3-2)  
+[__1.3.3__ Pausing a scan](#HEADING_1-3-3)  
+[__1.3.4__ Displaying scan data](#HEADING_1-3-4)  
+[__1.3.5__ Handshaking with data-storage clients](#HEADING_1-3-5)  
+[__1.3.6__ Handshaking with CA clients that implement positioners or detectors](#HEADING_1-3-6)  
+[__1.4.__ Completion of positioner and detector-trigger operations](#HEADING_1-4)  
+[__1.5.__ Fly scans](#HEADING_1-5)  
+[__1.5.1.__ Scalar-mode fly scans](#HEADING_1-5-1)  
+[__1.5.2.__ Array-mode fly scans](#HEADING_1-5-2)  
+[__2.__  sscan-Record Fields](#HEADING_2)  
+[__2.1.__ Control Fields](#HEADING_2-1)  
+[__2.2.__ Positioner Fields](#HEADING_2-2)  
+[__2.2.1__ LINEAR Mode](#HEADING_2-2-1)  
+[__2.2.2.__ TABLE Mode](#HEADING_2-2-2)  
+[__2.2.3.__ FLY Mode](#HEADING_2-2-3)  
+[__2.3.__ Detector-Trigger Fields](#HEADING_2-3)  
+[__2.4.__ Delay Fields](#HEADING_2-4)  
+[__2.5.__ Client Handshaking Fields](#HEADING_2-5)  
+[__2.6.__ Detector Fields](#HEADING_2-6)  
+[__2.7.__ Execution Fields](#HEADING_2-7)  
+[__2.8.__ Status/Progress Fields](#HEADING_2-8)  
+[__2.10.__ Miscellaneous Fields](#HEADING_2-10)  
 
 
 <a name="HEADING_1"></a>
@@ -66,22 +66,21 @@ Before a scan can start, all of the links that aren't blank must connect with th
 
 In the simplest reasonably complete configuration for a one-dimensional scan, the following fields are used:
 
-* P1PV the name of a positioner (e.g., "myMotor.VAL")
-* P1SP start position -- the first position at which data will be acquired
-* P1EP end position -- the last position at which data will be acquired
-* NPTS the total number of positions to visit
-* T1PV the name of a detector-trigger PV. This PV will be written to after the positioner has arrived at each position, and it is expected to initiate some data-acquisition operation.
-* D01PV the name of a detector (signal) PV. The value of this PV will be recorded after the detector trigger has finished acquiring data.
+* P1PV - the name of a positioner (e.g., "myMotor.VAL")
+* P1SP - start position -- the first position at which data will be acquired
+* P1EP - end position -- the last position at which data will be acquired
+* NPTS - the total number of positions to visit
+* T1PV - the name of a detector-trigger PV. This PV will be written to after the positioner has arrived at each position, and it is expected to initiate some data-acquisition operation.
+* D01PV - the name of a detector (signal) PV. The value of this PV will be recorded after the detector trigger has finished acquiring data.
 
 When a scan is started (by writing a 1 to the EXSC field) the sscan record commands the positioner to move to its starting position. The sscan record uses recDynLinkPutCallback() to tell the positioner to move, and waits for the resulting callback, indicating that the positioner is finished, before moving on to the next phase of the scan, which is to trigger the detector. The detector is also triggered using recDynLinkPutCallback(), and the sscan record waits for it to finish before reading detectors and going on to perform another (move, trigger, read) sequence to acquire the next data point. This algorithm continues until the sscan record has completed NPTS steps, or the scan is aborted (by a client writing 0 to the EXSC field). At the end of the scan, the sscan record has filled in an array of the positions visited (P1RA), and an array of detector values acquired (D01DA).
 
 Let's run through that again, this time more generally, with more detail, and including more of the available options.
 
-* Positioners You can specify zero to four positioners. Positioners are expected to tell the sscan record when they're done moving (more about this later). After all positioners have declared themselves done, the sscan record waits for a user-specified settling time (PDLY, normally zero) before writing to detector triggers. (If no positioners, then no positioner settling time.)
-* Positions to visit There are lots of possibilities here. You can specify any combination of the set \[*start, end, center, width, step-size*\] for each positioner; you can load a table of positions for each positioner; or you can specify that positioners are to be moved continuously during a scan. You can specify that positions be regarded as absolute, or as relative to the pre-scan position.
-* Detector triggers Detector triggers act much like positioners, in that they write a value and wait for any ensuing processing to finish, but they send the same value at every data point (T*n*CD). After all triggered detectors have declared themselves done, the sscan record waits for a user-specified settling time (DDLY, normally zero) before reading data from detector-signal PVs. (If no detector triggers, then no detector settling time.)
-* Detector signals Typically, detector signals are scalar PVs, but they can be array-valued PVs. If so, the sscan record will read NPTS values from them at the end of the scan. If array-valued PVs require processing to acquire their values, the sscan record can write to a special array trigger (A1PVA1CD, exactly analogous to detector triggers), and wait for any ensuing processing to finish before reading the arrays. If all detector signals are array valued, it's probably better to use the array acquisition type. (See ACQT.)
-* Detector-signal values can be accumulated from scan to scan, so you can sweep over a set of positions, building up statistical precision and averaging over any positioning errors or variable external conditions. (See ACQM.)
+* Positioners - You can specify zero to four positioners. Positioners are expected to tell the sscan record when they're done moving (more about this later). After all positioners have declared themselves done, the sscan record waits for a user-specified settling time (PDLY, normally zero) before writing to detector triggers. (If no positioners, then no positioner settling time.)
+* Positions to visit - There are lots of possibilities here. You can specify any combination of the set \[*start, end, center, width, step-size*\] for each positioner; you can load a table of positions for each positioner; or you can specify that positioners are to be moved continuously during a scan. You can specify that positions be regarded as absolute, or as relative to the pre-scan position.
+* Detector triggers - Detector triggers act much like positioners, in that they write a value and wait for any ensuing processing to finish, but they send the same value at every data point (T*n*CD). After all triggered detectors have declared themselves done, the sscan record waits for a user-specified settling time (DDLY, normally zero) before reading data from detector-signal PVs. (If no detector triggers, then no detector settling time.)
+* Detector signals - Typically, detector signals are scalar PVs, but they can be array-valued PVs. If so, the sscan record will read NPTS values from them at the end of the scan. If array-valued PVs require processing to acquire their values, the sscan record can write to a special array trigger (A1PVA1CD, exactly analogous to detector triggers), and wait for any ensuing processing to finish before reading the arrays. If all detector signals are array valued, it's probably better to use the array acquisition type. (See ACQT.) Detector-signal values can be accumulated from scan to scan, so you can sweep over a set of positions, building up statistical precision and averaging over any positioning errors or variable external conditions. (See ACQM.)
 * After the scan You can tell positioners what to do after the scan is finished, using the PASM field. The default behavior is simply to remain where the scan left them, but you could tell them to return to their pre-scan positions, go to their start positions, or go to positions calculated from acquired data (e.g., the position at which a specified detector signal REFD reached its peak value during the scan).
 
 <a name="HEADING_1-2"></a>
@@ -340,7 +339,16 @@ Many options are available to control the execution of a scan. All parameters fo
 | MPTS | Maximum Number of Points | LONG | Yes | 100 | Yes | No | No | No |
 | PASM | Positioner After-Scan Mode | Menu ("STAY", "START POS", "PRIOR POS", "PEAK POS", "VALLEY POS", "+EDGE POS", "-EDGE POS", CNTR OF MASS) | Yes | "STAY" (0) | Yes | Yes | No | No |
 
-> PASM allows the user to control where positioners are left after a scan is finished. Here are the possibilities:  "STAY"Do nothing. Leave positioners where they were when the last data point was acquired. "START POS"Go the the position of the first data point acquired. "PRIOR POS"Go to the position they occupied prior to the scan. "PEAK POS"Attempt to find the highest point in the data from the detector specified by the REFD field. If a highest point is found, go to its position, else "STAY". "VALLEY POS"Attempt to find the lowest point in the data from the detector specified by the REFD field. If a lowest point is found, go to its position, else "STAY". "+EDGE POS"Take the derivative of the REFD data, then do "PEAK POS". "-EDGE POS"Take the derivative of the REFD data, then do "VALLEY POS". "CNTR OF MASS"Like "PEAK POS", but sends positioner(s) the position of the center of mass of the data, as calculated with reference to positioner 1. Note that the calculated center of mass depends on the distribution of positioner data. If multiple positioners are involved in a scan, they will not, in general, have the same center of mass.
+> PASM allows the user to control where positioners are left after a scan is finished. Here are the possibilities:
+>
+> * **"STAY"** - Do nothing. Leave positioners where they were when the last data point was acquired.
+> * **"START POS"** - Go to the position of the first data point acquired.
+> * **"PRIOR POS"** - Go to the position they occupied prior to the scan.
+> * **"PEAK POS"** - Attempt to find the highest point in the data from the detector specified by the REFD field. If a highest point is found, go to its position, else "STAY".
+> * **"VALLEY POS"** - Attempt to find the lowest point in the data from the detector specified by the REFD field. If a lowest point is found, go to its position, else "STAY".
+> * **"+EDGE POS"** - Take the derivative of the REFD data, then do "PEAK POS".
+> * **"-EDGE POS"** - Take the derivative of the REFD data, then do "VALLEY POS".
+> * **"CNTR OF MASS"** - Like "PEAK POS", but sends positioner(s) the position of the center of mass of the data, as calculated with reference to positioner 1. Note that the calculated center of mass depends on the distribution of positioner data. If multiple positioners are involved in a scan, they will not, in general, have the same center of mass.
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
 |---|---|---|---|---|---|---|---|---|
@@ -514,8 +522,7 @@ If a fly-mode positioner has a specified readback PV (R*n*PV), its value will be
 
 <a name="HEADING_2-3"></a>
 
-2.3. Detector-Trigger Fields
-----------------------------
+## 2.3. Detector-Trigger Fields
 
 If valid process variable names are entered into the detector trigger fields (T1PV-T4PV ) fields, the sscan record will write the specified command data (the floating point numbers T1CD-T4CD) to those process variables between the positioning phase and the data acquisition phase. If no detector trigger field contains a valid PV, the sscan record will skip this step and acquire the data immediately. For *n* in \[1..4\]:
 
@@ -527,15 +534,13 @@ If valid process variable names are entered into the detector trigger fields (T1
 
 <a name="HEADING_2-4"></a>
 
-2.4. Delay Fields
------------------
+## 2.4. Delay Fields
 
 Generally, after the sscan record has written to positioners and waited for all positioners to declare themselves done, it waits an additional settling time, specified in seconds by the PDLY field, before entering the next scan phase. Similarly, after detector triggers have declared themselves done, the sscan record waits for DDLY seconds before reading positioner and detector data. If no positioners are defined, then PDLY is ignored. If no detector triggers are defined, then DDLY is ignored. PDLY does not apply to after-scan positioner motions.
 
 <a name="HEADING_2-5"></a>
 
-2.5. Client Handshaking Fields
-------------------------------
+## 2.5. Client Handshaking Fields
 
 Immediately before data are to be read from positioners and detectors, the sscan record checks the WCNT field. If this field is nonzero, the sscan record waits until it gets set to zero before reading data and continuing with the scan. The WCNT is not directly writable by clients. Instead, a client wanting to put a hold on the scan writes a 1 to the WAIT field, which increments WCNT by one. When the client is ready for the scan to continue, it writes a 0 to the WAIT field, which decrements the WCNT field. This mechanism allows several clients independently to handshake with the sscan record, and it is intended or two purposes: 1\) A data-storage client can put a hold on a sscan record whose data it is writing by writing to the AWAIT field. This hold doesn't prevent the record from executing, or even from acquiring new data, but it does prevent the record from switching data buffers.
 
