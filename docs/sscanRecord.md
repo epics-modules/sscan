@@ -6,11 +6,18 @@ nav_order: 4
 
 
 # The sscan record
+{: .no_toc}
 
-Author: Tim M. Mooney  
-Based on the scan record, written by Ned D. Arnold.  
-Advanced Photon Source  
-Argonne National Laboratory  
+Author: Tim M. Mooney
+Based on the scan record, written by Ned D. Arnold.
+Advanced Photon Source
+Argonne National Laboratory
+
+## Table of contents
+{: .no_toc .text-delta }
+
+- TOC
+{:toc}
 
 Contents:
 - [__1.__ Introduction](#1-introduction)
@@ -46,7 +53,8 @@ Contents:
 
 The purpose of the sscan record is to move *positioners* through a series of positions and record *detector* data at each of the positions. This series of operations is commonly referred to as a *scan*, or as one loop of a multi-dimensional scan. After parameters defining the scan have been initialized and the scan has been launched, the sscan record begins a possibly long and involved sequence of operations normally without further input, and notifies any interested clients as the scan progresses. The data are collected into arrays within the record so that clients needn't handle them point by point. A separate piece of software ("saveData", which is included with the sscan record in the synApps sscan module) can coordinate with the sscan record to write scan data to disk.
 
-> Note that the word "scan" is used frequently in other EPICS documentation to mean something quite different from what is meant here. In the *EPICS Application Developers Guide*, "scan" connotes record processing or execution, as in "Database scanning is the mechanism for deciding when to process a record." Also, periodic record processing is performed by "scan tasks", and the field that controls when a record will be processed is named "SCAN". None of these uses of "scan" have anything to do with the sscan record, and the word will not have the EPICS meaning in the rest of this documentation.
+{: .note }
+> The word "scan" is used frequently in other EPICS documentation to mean something quite different from what is meant here. In the *EPICS Application Developers Guide*, "scan" connotes record processing or execution, as in "Database scanning is the mechanism for deciding when to process a record." Also, periodic record processing is performed by "scan tasks", and the field that controls when a record will be processed is named "SCAN". None of these uses of "scan" have anything to do with the sscan record, and the word will not have the EPICS meaning in the rest of this documentation.
 
 A single sscan record supports a one dimensional scan. Several sscan records can be linked together to perform a multi-dimensional scan. Each sscan record can control up to four positioners, trigger up to four detectors, and acquire data from up to 74 process variables (70 detector values of type float and four positioner readbacks of type double).
 
@@ -130,6 +138,7 @@ A scan can be paused by writing "PAUSE", or the number 1, to the PAUS field. Whi
 
 Scan data is published by the sscan record using EPICS Channel Access, just as any other EPICS record would publish the values of its fields. The act of publishing data via Channel Access is referred to here as *posting*, because the EPICS function that performs this function is db\_post\_events(). After a field has been posted, a client can get the new value by issuing the Channel Access call ca\_get(). A client can also arrange, in advance, to receive posted data from a particular field, whenever it is posted, by *monitoring* -- also called *subscribing to*-- the field. See the Channel Access Reference Manual (specifically, ca\_add\_event() or ca\_create\_subscription()) for the details of how this is done. The purpose here is simply to introduce the terms *post* and *monitor*, so that I can use them in this documentation. The sscan record maintains two sets of array PV's for scan data: data from a completed scan are posted as P*n*RA and D*nn*DA (e.g., P1RA, D01DA); data from a scan in progress are posted as P*n*CA and D*nn*CA. During a scan, arrays are posted only if the user requests this by setting the array-posting period, ATIME, to a value greater than or equal to 0.1 (seconds). After a scan has completed, all data arrays are posted, marked with the mask DBE\_LOG, and the completed-scan postings (P*n*RA and D*nn*DA) remain available to clients until the next scan completes.
 
+{: .important }
 > Because the sscan record implements double-buffered data arrays, and because of the way in which posting is accomplished in EPICS, the posting of scan-in-progress data arrays results unavoidably in useless reposting of completed-scan data arrays. If this presents a problem for a data-display or data-storage client, there are two ways to avoid the problem: 1) Tell the sscan record not to post arrays during scans by leaving the array-post period, ATIME, at its default value of zero; 2) modify the client so that it monitors only postings flagged with the DBE\_LOG mask.
 
 A more efficient, but more difficult, way for a client to get data from a scan in progress is to monitor the scalar current-value PVs, such as R1CV, D01CV, etc., and collect their values into arrays. Positioners actually have two fields that might be suitable for display while a scan is in progress: the positioner's desired value (P*n*DV) and the readback's current value (R*n*CV). (If there is no readback PV, the posted readback value will be a copy of the desired value.)
@@ -267,6 +276,7 @@ Scalar-mode fly scans are relatively easy to configure, because the only externa
 
 If ACQT==1D ARRAY ("array mode"), the sscan record will direct the acquisition of only a single "data point", and that data point will be a set of one-dimensional arrays of length NPTS. In an array-mode scan, all positioners are treated as being in fly mode, whatever the values of their step-mode PVs, because the sscan record writes to them only twice. After moving positioners to their start positions, the sscan record will execute only one (move, trigger, read) sequence.
 
+{: .note }
 > Array mode was originally intended merely to read a collection of array-valued detectors (multichannel analyzer spectra), and not to involve positioners at all. However, the sscan record does not erase any existing positioner PVs when array mode is selected, and if any exist then *something* must be done with them, so this documentation must describe it.
 
 In array mode, the sscan record executes fly scans as follows:
@@ -284,6 +294,7 @@ Because the sscan record doesn't do any point-by-point writes to (or reads from)
 
 In one common implementation of an array-mode scan, detector data are acquired by a multichannel scaler, which is advanced from channel to channel either by a periodic signal, or by pulses from a motor. In contrast to the scalar-mode fly scans discussed above, this type of fly scan can have a very precise and reproducible association between positioner and detector values.
 
+{: .note }
 > In releases of the sscan module lower than 2.7, fly mode was implemented slightly differently, as follows (differences are in *italics*) If the sscan record was in scalar mode (ACQT==SCALAR), and a positioner's step mode had the value FLY, the sscan record sent it to the start position at the beginning of a scan, waited for it to get there, *acquired one data point (trigger, read),* sent the positioner to the end position, and began acquiring the remaining data points while the positioner was travelling to the end position. *If the record was in array mode (ACQT==1D ARRAY), positioners that were not explicitly in fly mode (PnSM!=FLY) were not sent to the end position at all.*
 
 
@@ -309,16 +320,16 @@ Many options are available to control the execution of a scan. All parameters fo
 | MPTS | Maximum Number of Points | LONG | Yes | 100 | Yes | No | No | No |
 | PASM | Positioner After-Scan Mode | Menu ("STAY", "START POS", "PRIOR POS", "PEAK POS", "VALLEY POS", "+EDGE POS", "-EDGE POS", CNTR OF MASS) | Yes | "STAY" (0) | Yes | Yes | No | No |
 
-> PASM allows the user to control where positioners are left after a scan is finished. Here are the possibilities:
->
-> * **"STAY"** - Do nothing. Leave positioners where they were when the last data point was acquired.
-> * **"START POS"** - Go to the position of the first data point acquired.
-> * **"PRIOR POS"** - Go to the position they occupied prior to the scan.
-> * **"PEAK POS"** - Attempt to find the highest point in the data from the detector specified by the REFD field. If a highest point is found, go to its position, else "STAY".
-> * **"VALLEY POS"** - Attempt to find the lowest point in the data from the detector specified by the REFD field. If a lowest point is found, go to its position, else "STAY".
-> * **"+EDGE POS"** - Take the derivative of the REFD data, then do "PEAK POS".
-> * **"-EDGE POS"** - Take the derivative of the REFD data, then do "VALLEY POS".
-> * **"CNTR OF MASS"** - Like "PEAK POS", but sends positioner(s) the position of the center of mass of the data, as calculated with reference to positioner 1. Note that the calculated center of mass depends on the distribution of positioner data. If multiple positioners are involved in a scan, they will not, in general, have the same center of mass.
+PASM allows the user to control where positioners are left after a scan is finished. Here are the possibilities:
+
+* **"STAY"** - Do nothing. Leave positioners where they were when the last data point was acquired.
+* **"START POS"** - Go to the position of the first data point acquired.
+* **"PRIOR POS"** - Go to the position they occupied prior to the scan.
+* **"PEAK POS"** - Attempt to find the highest point in the data from the detector specified by the REFD field. If a highest point is found, go to its position, else "STAY".
+* **"VALLEY POS"** - Attempt to find the lowest point in the data from the detector specified by the REFD field. If a lowest point is found, go to its position, else "STAY".
+* **"+EDGE POS"** - Take the derivative of the REFD data, then do "PEAK POS".
+* **"-EDGE POS"** - Take the derivative of the REFD data, then do "VALLEY POS".
+* **"CNTR OF MASS"** - Like "PEAK POS", but sends positioner(s) the position of the center of mass of the data, as calculated with reference to positioner 1. Note that the calculated center of mass depends on the distribution of positioner data. If multiple positioners are involved in a scan, they will not, in general, have the same center of mass.
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
 |---|---|---|---|---|---|---|---|---|
@@ -328,7 +339,10 @@ Many options are available to control the execution of a scan. All parameters fo
 | BSCD | Before-Scan Command Data | FLOAT | Yes | 1 | Yes | Yes | No | No |
 | BSWAIT | Wait for completion? | MENU ("YES", "NO") | Yes | "YES" (0) | Yes | Yes | Yes | No |
 
-> BSPV, BSNV, BSCD, and BSWAIT allow the user to specify a PV to be written to before every scan starts. (If the sscan record is part of a multidimensional scan, each participating sscan record has its own set of before-scan parameters, so you can cause an action to occur before the whole scan starts, and before each nested loop starts.) To specify a before-scan PV write, write the name of the PV to BSPV, and the value to be written to BSCD. If you want the sscan record to wait for completion of processing triggered by the write, before going on with the rest of the scan, set BSWAIT to "YES" (1). You can check to status of the link by looking at BSNV. If the link is good, BSNV will be zero. >  > Note that the before-scan link is permitted to change only selected fields of its own sscan record: it cannot change PV names (i.e., links); and it cannot change the acquisition type (ACQT) or mode (ACQM). If this sscan record is part of a multidimensional scan, the before-scan link can change any field of a lower-level sscan record (i.e., one that its record it driving), and no field of a higher level scan record.
+BSPV, BSNV, BSCD, and BSWAIT allow the user to specify a PV to be written to before every scan starts. (If the sscan record is part of a multidimensional scan, each participating sscan record has its own set of before-scan parameters, so you can cause an action to occur before the whole scan starts, and before each nested loop starts.) To specify a before-scan PV write, write the name of the PV to BSPV, and the value to be written to BSCD. If you want the sscan record to wait for completion of processing triggered by the write, before going on with the rest of the scan, set BSWAIT to "YES" (1). You can check to status of the link by looking at BSNV. If the link is good, BSNV will be zero.
+
+{: .note }
+> The before-scan link is permitted to change only selected fields of its own sscan record: it cannot change PV names (i.e., links); and it cannot change the acquisition type (ACQT) or mode (ACQM). If this sscan record is part of a multidimensional scan, the before-scan link can change any field of a lower-level sscan record (i.e., one that its record it driving), and no field of a higher level scan record.
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
 |---|---|---|---|---|---|---|---|---|
@@ -337,7 +351,10 @@ Many options are available to control the execution of a scan. All parameters fo
 | ASCD | After-Scan Command Data | FLOAT | Yes | 1 | Yes | Yes | No | No |
 | ASWAIT | Wait for completion? | MENU ("YES", "NO") | Yes | "YES" (0) | Yes | Yes | Yes | No |
 
-> ASPV, ASNV, ASCD, and ASWAIT allow the user to specify a PV to be written to after every scan is finished. (If the sscan record is part of a multidimensional scan, each participating sscan record has its own set of after-scan parameters, so you can cause an action to occur after the whole scan is done, and after each nested loop is done.) To specify an after-scan PV write, write the name of the PV to ASPV, and the value to be written to ASCD. If you want the sscan record to wait for completion of processing triggered by the write, before going on with the rest of the scan wrap-up, set ASWAIT to "YES" (1). You can check to status of the link by looking at ASNV. If the link is good, ASNV will be zero. >  > Note that the after-scan link is permitted to change only selected fields of its own sscan record: it cannot change PV names (i.e., links); and it cannot change the acquisition type (ACQT) or mode (ACQM). If this sscan record is part of a multidimensional scan, the after-scan link can change any field of a lower-level sscan record (i.e., one that its record it driving), and no field of a higher level scan record.
+ASPV, ASNV, ASCD, and ASWAIT allow the user to specify a PV to be written to after every scan is finished. (If the sscan record is part of a multidimensional scan, each participating sscan record has its own set of after-scan parameters, so you can cause an action to occur after the whole scan is done, and after each nested loop is done.) To specify an after-scan PV write, write the name of the PV to ASPV, and the value to be written to ASCD. If you want the sscan record to wait for completion of processing triggered by the write, before going on with the rest of the scan wrap-up, set ASWAIT to "YES" (1). You can check to status of the link by looking at ASNV. If the link is good, ASNV will be zero.
+
+{: .note }
+> The after-scan link is permitted to change only selected fields of its own sscan record: it cannot change PV names (i.e., links); and it cannot change the acquisition type (ACQT) or mode (ACQM). If this sscan record is part of a multidimensional scan, the after-scan link can change any field of a lower-level sscan record (i.e., one that its record it driving), and no field of a higher level scan record.
 
 
 | Field | Summary | Type | DCT | Initial/Default | Read | Modify | Posted | PP |
@@ -346,19 +363,25 @@ Many options are available to control the execution of a scan. All parameters fo
 | A1NV | A1PV Name Valid | MENU("PV OK","No PV", "PV NoRead", "PV illegal1", "PV NoWrite", "PV illegal2", "PV BAD")   "PV OK" and "No PV" are good states; all others will prevent a scan from starting | No | 0 | Yes | No | Yes | No |
 | A1CD | A1 Cmnd | FLOAT | Yes | 1 | Yes | Yes | No | No |
 
-> A1PV, A1NV, and A1CD allow the user to specify a PV to be written to before the sscan record tries to read array-valued data. (It may be necessary, for example, to cause data to be read from hardware into a set of EPICS PVs, or to execute some calculation on the data, before the sscan record acquires it. The sscan record will wait for processing triggered by this write to complete before reading arrays. To specify an array-preparation PV write, write the name of the PV to A1PV, and the value to be written to A1CD. You can check to status of the link by looking at A1NV. If the link is good, A1NV will be zero.
+A1PV, A1NV, and A1CD allow the user to specify a PV to be written to before the sscan record tries to read array-valued data. It may be necessary, for example, to cause data to be read from hardware into a set of EPICS PVs, or to execute some calculation on the data, before the sscan record acquires it. The sscan record will wait for processing triggered by this write to complete before reading arrays. To specify an array-preparation PV write, write the name of the PV to A1PV, and the value to be written to A1CD. You can check to status of the link by looking at A1NV. If the link is good, A1NV will be zero.
 
 
 | ATIME | Array post time period | FLOAT | Yes | 0.0 | Yes | Yes | No | No |
 | COPYTO | Copy Last Array Point Thru This Element Number | LONG | Yes | 0 | Yes | Yes | No | No |
 
-> These fields control the posting of array data during a scan. ATIME is the minimal time period in seconds between array postings during a scan. If ATIME is greater than 0.1 (seconds), and if more than this time has elapsed since the last array posting of this scan's data, then the current-data arrays will be posted after the next data point has been acquired. __NOTE__: Posting current-data arrays also causes completed-scan data arrays to be posted (uselessly, because they were posted at the end of the previous scan, and the data they contain has not changed). Some display or storage clients may have a problem with this new behavior of the sscan record. If so, there are two alternatives: 1) leave ATIME at its default value of 0.0, or 2) have the client specify DBE\_LOG when it subscribes to the data array (using ca\_add\_event() or ca\_create\_subscription()). (If a client does not monitor data arrays, but instead uses ca\_get() to read them, then it won't care how often they are posted.) >  > Some data-display clients (notably, MEDM) cannot use a PV to tell them how many valid data points are being sent. This results in bizarre looking plots that can be made to look correct by repeating the last valid array values to fill the unused array elements. This can be a time-consuming process, so by default it's only done once, at the end of a scan. But arrays posted during a scan also will not be plotted correctly by such clients, so you can specify that the last valid array elements be copied for arrays posted during a scan, by setting COPYTO to the number of array elements in the client's data buffer. If COPYTO == 0, no copying will be done; if COPYTO == -1, the last value will be copied to all unused array elements in the sscan record's data buffers. If COPYTO is set to a value larger than MPTS, the value used will be MPTS.
+These fields control the posting of array data during a scan. ATIME is the minimal time period in seconds between array postings during a scan. If ATIME is greater than 0.1 (seconds), and if more than this time has elapsed since the last array posting of this scan's data, then the current-data arrays will be posted after the next data point has been acquired.
+
+{: .important }
+> Posting current-data arrays also causes completed-scan data arrays to be posted (uselessly, because they were posted at the end of the previous scan, and the data they contain has not changed). Some display or storage clients may have a problem with this new behavior of the sscan record. If so, there are two alternatives: 1) leave ATIME at its default value of 0.0, or 2) have the client specify DBE\_LOG when it subscribes to the data array (using ca\_add\_event() or ca\_create\_subscription()). (If a client does not monitor data arrays, but instead uses ca\_get() to read them, then it won't care how often they are posted.)
+
+Some data-display clients (notably, MEDM) cannot use a PV to tell them how many valid data points are being sent. This results in bizarre looking plots that can be made to look correct by repeating the last valid array values to fill the unused array elements. This can be a time-consuming process, so by default it's only done once, at the end of a scan. But arrays posted during a scan also will not be plotted correctly by such clients, so you can specify that the last valid array elements be copied for arrays posted during a scan, by setting COPYTO to the number of array elements in the client's data buffer. If COPYTO == 0, no copying will be done; if COPYTO == -1, the last value will be copied to all unused array elements in the sscan record's data buffers. If COPYTO is set to a value larger than MPTS, the value used will be MPTS.
 
 ## 2.2. Positioner Fields
 
 Each sscan record can control up to four *positioners*, by which it sets conditions under which data will be acquired. A positioner is any numeric PV to which the sscan record can write, and you specify that a positioner is to be scanned by typing its PV name into one of the sscan record's fields PnPV. If the value written to the PV (the *desired* value) might not accurately indicate the true value of the underlying hardware positioner, you can specify a readback PV to retrieve a more accurate value. I'll sometimes call the PV that the sscan record writes to the "drive" PV. If no readback PV is specified, the drive PV will also be used as the readback PV. There are three possible modes for determining desired values for a positioner: LINEAR, TABLE, and FLY. Each positioner has its own mode PV, and you specify which mode you want for a positioner by setting its PnSM field (e.g., P1SM for positioner 1). If PnSM== LINEAR, the desired values are determined from parameters such as start position, step increment, number of points, and end position. If PnSM==TABLE, the desired values are found in an array (PnPA), which must have been loaded into the sscan record prior to initiating a scan. If PnSM==FLY, the desired values are the start and end positions for LINEAR mode.
 
-> In addition to the positioner scan modes PnSM, there is another sscan record field that influences how positioners are scanned. The ACQT (acquisition type) field affects all positioners, and either directs them to behave as described above (when ACQT==SCALAR), or to all be effectively in fly mode (when ACQT==1D ARRAY. I'll sometimes refer to this as "array mode"). See the "Fly Scans" section for more detail.
+{: .note }
+> In addition to the positioner scan modes PnSM, there is another sscan record field that influences how positioners are scanned. The ACQT (acquisition type) field affects all positioners, and either directs them to behave as described above (when ACQT==SCALAR), or to all be effectively in fly mode (when ACQT==1D ARRAY). See the "Fly Scans" section for more detail.
 
 For each positioner, the user may specify a process variable in the R1PV-R4PV fields that corresponds to the actual (or measured) position of the motor. If this readback field is configured, the sscan record will confirm after each movement that the readback position differs by no more than a specified value from the desired position. The difference limit is specified in the R1DL -R4DL fields. If it's zero, no check is performed. Otherwise, if the difference limit is exceeded, the scan will abort and the record will go into an alarm state. A text field within the record (SMSG) will inform the operator of the error condition.
 
@@ -664,4 +687,4 @@ The data-state (DSTATE) field indicates in what state is the processing of data 
 | D*nn*DB | Detector *nn* dbAddr | NOACCESS | No | Null | No | No | No | No |
 
 
-> The database Address fields (*xx*DB) contain pointers to the dbAddr structures of the corresponding process variables. For instance, P1DB points to the dbAddr structure of P1PV.
+The database Address fields (*xx*DB) contain pointers to the dbAddr structures of the corresponding process variables. For instance, P1DB points to the dbAddr structure of P1PV.

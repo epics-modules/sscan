@@ -5,6 +5,13 @@ nav_order: 7
 ---
 
 # MDA File Format
+{: .no_toc}
+
+## Table of contents
+{: .no_toc .text-delta }
+
+- TOC
+{:toc}
 
 MDA (Multi-Dimensional Archive) is the binary file format used by the sscan module's `saveData` component to write scan data to disk. MDA files use the `.mda` file extension.
 

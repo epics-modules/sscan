@@ -5,6 +5,13 @@ nav_order: 2
 ---
 
 # sscan Release Notes
+{: .no_toc}
+
+## Table of contents
+{: .no_toc .text-delta }
+
+- TOC
+{:toc}
 
 ## Release 2-12 - May 6, 2026
 

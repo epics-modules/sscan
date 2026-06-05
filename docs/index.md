@@ -5,22 +5,33 @@ nav_order: 1
 ---
 
 # The sscan module
+{: .no_toc}
 
-## Documentation
+## Table of contents
+{: .no_toc .text-delta }
 
-The following documentation is available:
+- TOC
+{:toc}
 
-- [sscanRecord](sscanRecord.md) -- The sscan record documentation.
-- [scanparmRecord](scanparmRecord.md) -- The scanparm record documentation.
-- [saveData](saveData.md) -- Configuration and usage of the saveData data-storage client, which writes scan data to disk in MDA format.
-- [MDA Format](MDAFormat.md) -- Description of the MDA (multidimensional archive) file format written by saveData.
+## Overview
+
+The sscan module provides EPICS support for coordinated step-scanning of motors, detectors, and other process variables. It is part of [synApps](https://epics.anl.gov/bcda/synApps) and is developed by the Beamline Controls & Data Acquisition group at the Advanced Photon Source, Argonne National Laboratory.
+
+The module consists of three main components:
+
+- **[sscan record](sscanRecord.md)** -- A custom EPICS record type that moves positioners through a series of positions, triggers detectors at each position, and collects the resulting data into arrays. A single sscan record executes a one-dimensional scan; multiple sscan records can be chained together for multidimensional scans (up to 4D).
+- **[scanparm record](scanparmRecord.md)** -- A convenience record that stores scan parameters (start, end, number of points, positioner PV, etc.) and can load them into an sscan record and start a scan with a single write.
+- **[saveData](saveData.md)** -- A data-storage client that monitors sscan records via Channel Access and writes scan data to disk in the [MDA (Multi-Dimensional Archive)](MDAFormat.md) binary file format.
+
+The module depends on [EPICS Base](https://epics-controls.org/) (3.15 or later) and optionally on the [sequencer](https://github.com/ISISComputingGroup/EPICS-seq) (for the scan-progress monitoring feature).
+
+## Additional resources
+
 - [saveData.req](saveData.req) -- Sample saveData configuration file.
-- [XDR_RFC1014.txt](XDR_RFC1014.txt) -- A description of the XDR (External Data Representation) standard.
-- [Scans.ppt](Scans.ppt) -- Powerpoint presentation that describes the sscan module; shows how to use the sscan record; describes saveData's MDA file format; and explains how EPICS putNotify/ca_put_callback() completion behaves, and how to handle processing chains that don't satisfy EPICS' execution-tracing requirements.
+- [XDR_RFC1014.txt](XDR_RFC1014.txt) -- XDR (External Data Representation) standard reference.
+- [Scans.ppt](Scans.ppt) -- Presentation describing the sscan module, saveData, MDA file format, and EPICS putNotify/ca_put_callback() completion behavior.
 
-## Installation and use of the sscan module
-
-### Installation and Building
+## Installation and Building
 
 After obtaining a copy of the distribution, it must be installed and built for use at your site. Usually, these steps only need to be performed once.
 
@@ -34,9 +45,9 @@ After obtaining a copy of the distribution, it must be installed and built for u
 
 3. Run `make` in the top level directory and check for any compilation errors.
 
-### Use of the sscan module in an EPICS IOC
+## Using sscan in an IOC
 
-The **sscan** module is not intended to run an IOC application directly, but rather to contribute code libraries, databases, MEDM displays, etc., to an IOC application. SynApps contains an example IOC application (the **xxx** module), which pulls software from the **sscan** module and deploys it in an IOC.
+The sscan module is not intended to run an IOC application directly, but rather to contribute code libraries, databases, and display files to an IOC application. SynApps contains an example IOC application (the **xxx** module), which pulls software from the sscan module and deploys it in an IOC.
 
 The essential steps in applying sscan-module code in an IOC application ("example") are the following:
 
@@ -69,14 +80,9 @@ The essential steps in applying sscan-module code in an IOC application ("exampl
    file saveData_settings.req P=$(P)
    ```
 
-5. Tell saveData how to initialize by editing the file `saveData.req`, and placing it in the IOC's startup directory. Usually, the only part of this file that you modify is the section marked `[extraPV]`. In this section, enter the names of the PVs you want saveData to include in every scan-data file. If a PV is not well described by its record's `.DESC` field, you can append your own description.
+5. Configure and initialize saveData. See the [saveData documentation](saveData.md) for details on the configuration file format and initialization.
 
-6. Initialize saveData by including the following line in `st.cmd`, after `iocInit`:
-   ```
-   saveData_Init("saveData.req", "P=xxx:")
-   ```
-
-7. Before running any scans, specify where saveData is to write scan-data files. Bring up the medm display `scan_saveData.adl` and fill in the "File system" and "Subdirectory" fields (i.e., the PVs `$(P)saveData_fileSystem` and `$(P)saveData_subDir`).
+6. Before running any scans, specify where saveData is to write scan-data files. Bring up the medm display `scan_saveData.adl` and fill in the "File system" and "Subdirectory" fields (i.e., the PVs `$(P)saveData_fileSystem` and `$(P)saveData_subDir`).
 
 Suggestions and Comments to:
 [Keenan Lang](mailto:klang@anl.gov) : (klang@anl.gov)

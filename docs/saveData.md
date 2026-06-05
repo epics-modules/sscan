@@ -5,6 +5,13 @@ nav_order: 6
 ---
 
 # saveData
+{: .no_toc}
+
+## Table of contents
+{: .no_toc .text-delta }
+
+- TOC
+{:toc}
 
 ## Overview
 
@@ -12,7 +19,8 @@ saveData is a data-storage client included with the sscan module. It monitors ss
 
 saveData coordinates with sscan records using the AWAIT/AAWAIT handshake mechanism to ensure that scan data arrays are not overwritten before they have been written to disk. For details on how the sscan record implements this handshake, see [section 1.3.5 of the sscan record documentation](sscanRecord.md#135-handshaking-with-data-storage-clients).
 
-> **Important**: Once saveData is initialized, scan records that it monitors will *always* write data files. There is no runtime on/off switch for data storage. Data storage is configured at boot time by specifying which sscan records to monitor in the `saveData.req` file. The only way to disable data storage is to remove saveData from the startup script and reboot.
+{: .important }
+> Once saveData is initialized, scan records that it monitors will *always* write data files. There is no runtime on/off switch for data storage. Data storage is configured at boot time by specifying which sscan records to monitor in the `saveData.req` file. The only way to disable data storage is to remove saveData from the startup script and reboot.
 
 ## Setup
 

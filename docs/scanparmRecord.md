@@ -5,10 +5,15 @@ nav_order: 5
 ---
 
 # Scanparm Record and Related Software
+{: .no_toc}
 
 Original Author: Tim Mooney
 
-## Contents
+## Table of contents
+{: .no_toc .text-delta }
+
+- TOC
+{:toc}
 
 - [Overview](#overview)
 - [Field Descriptions](#field-descriptions)
@@ -23,18 +28,12 @@ Original Author: Tim Mooney
 
 ## Overview
 
-This documentation describes the EPICS scanparm record, and related EPICS software required to build and use it. This version of the record is compatible with EPICS 3.14.8.2 and onward, and is incompatible with any 3.13.x version of EPICS.
+This documentation describes the EPICS scanparm record, and related EPICS software required to build and use it. The scanparm record is compatible with EPICS Base 3.15 and later.
 
 The scanparm record stores parameters intended to be written to the EPICS sscan record, and provides the EPICS end user with a convenient way to load those parameters into the sscan record and cause the sscan record to perform a scan. The idea is to allow the user to configure and execute a predefined scan with a single mouse click.
 
-> By the way, the word *scan*, in EPICS, normally refers to the execution of a record, and particularly to the method by which a record is selected for execution. In this documentation, *scan* will never have that meaning. Here, a *scan* is what the sscan record does:
-> 
-> - send a positioner to some position, and wait for it to arrive
-> - trigger a detector, and wait for it to finish acquiring
-> - read and store data from the positioner and detector
-> - repeat
-> 
-> For more about scans, see the sscan record documentation.
+{: .note }
+> The word *scan*, in EPICS, normally refers to the execution of a record, and particularly to the method by which a record is selected for execution. In this documentation, *scan* will never have that meaning. Here, a *scan* is what the sscan record does: send a positioner to some position and wait for it to arrive, trigger a detector and wait for it to finish acquiring, read and store data from the positioner and detector, and repeat. For more about scans, see the [sscan record documentation](sscanRecord.md).
 
 In the simplest and most common use, a scanparm record is associated at boot time with a particular positioner (e.g., a motor) and targeted to configure and run a particular sscan record. At run time, the user typically will write start and end positions, and the number of data points to be acquired, to a scanparm record, and from then on can run that scan with a single write to the scanparm record. It is possible to have more than one scanparm record associated with a positioner, and it is possible to gang scanparm records together into a database that stores parameters for scans involving more than one positioner, and more than one sscan record.
 
