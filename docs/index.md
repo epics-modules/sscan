@@ -45,18 +45,13 @@ The essential steps in applying sscan-module code in an IOC application ("exampl
    SSCAN=<full path to sscan module>
    ```
 
-2. Include the following lines in `example/exampleApp/src/exampleInclude.dbd`:
+2. Include the following line in `example/exampleApp/src/Makefile`:
    ```
-   include "sscanSupport.dbd"
-   include "scanProgressSupport.dbd"
-   ```
-
-3. Include the following line in `example/exampleApp/src/Makefile`:
-   ```
-   example_LIBS += sscan scanProgress
+   example_dbd_file_DBD ++ $(SSCAN_IOC_DBDS)
+   example_LIBS += $(SSCAN_IOC_LIBS)
    ```
 
-4. Load the databases by including the following lines in `st.cmd`:
+3. Load the databases by including the following lines in `st.cmd`:
    ```
    dbLoadRecords("$(SSCAN)/sscanApp/Db/standardScans.db","P=xxx:,MAXPTS1=2000,MAXPTS2=1000,MAXPTS3=1000,MAXPTS4=10,MAXPTSH=2000")
    dbLoadRecords("$(SSCAN)/sscanApp/Db/saveData.db","P=xxx:")
@@ -68,20 +63,20 @@ The essential steps in applying sscan-module code in an IOC application ("exampl
    iocshLoad("$(SSCAN)/iocsh/sscan.iocsh", "PREFIX=xxx:,SSCAN=$(SSCAN)")
    ```
 
-5. If you use autosave, include `standardScans_settings.req` and `saveData_settings.req` in your autosave request file:
+4. If you use autosave, include `standardScans_settings.req` and `saveData_settings.req` in your autosave request file:
    ```
    file standardScans_settings.req P=$(P)
    file saveData_settings.req P=$(P)
    ```
 
-6. Tell saveData how to initialize by editing the file `saveData.req`, and placing it in the IOC's startup directory. Usually, the only part of this file that you modify is the section marked `[extraPV]`. In this section, enter the names of the PVs you want saveData to include in every scan-data file. If a PV is not well described by its record's `.DESC` field, you can append your own description.
+5. Tell saveData how to initialize by editing the file `saveData.req`, and placing it in the IOC's startup directory. Usually, the only part of this file that you modify is the section marked `[extraPV]`. In this section, enter the names of the PVs you want saveData to include in every scan-data file. If a PV is not well described by its record's `.DESC` field, you can append your own description.
 
-7. Initialize saveData by including the following line in `st.cmd`, after `iocInit`:
+6. Initialize saveData by including the following line in `st.cmd`, after `iocInit`:
    ```
    saveData_Init("saveData.req", "P=xxx:")
    ```
 
-8. Before running any scans, specify where saveData is to write scan-data files. Bring up the medm display `scan_saveData.adl` and fill in the "File system" and "Subdirectory" fields (i.e., the PVs `$(P)saveData_fileSystem` and `$(P)saveData_subDir`).
+7. Before running any scans, specify where saveData is to write scan-data files. Bring up the medm display `scan_saveData.adl` and fill in the "File system" and "Subdirectory" fields (i.e., the PVs `$(P)saveData_fileSystem` and `$(P)saveData_subDir`).
 
 Suggestions and Comments to:
 [Keenan Lang](mailto:klang@anl.gov) : (klang@anl.gov)

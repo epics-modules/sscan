@@ -4,6 +4,7 @@ O.*
 *BAK.adl
 bin/
 /db/
+cfg/
 dbd/
 html/
 include/

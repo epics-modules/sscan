@@ -31,6 +31,7 @@ DBD += sscanSupport.dbd
 DBD += sscanProgressSupport.dbd
 DBD += menuSscan.dbd
 INC += recDynLink.h
+CFG += SSCAN_DEPS
 
 #=============================
 
