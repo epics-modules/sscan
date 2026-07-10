@@ -5248,11 +5248,11 @@ checkScanLimits(psscan)
 					value = 0;
 				}
 
-				if ((pPos->p_lr != 0) && (value < pPos->p_lr)) {
+				if ((pPos->p_lr != pPos->p_hr) && (value < pPos->p_lr)) {
 					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%-ld Value < LO_Limit @ point %1ld", i + 1, j);
 					psscan->alrt = 1;
 					return (ERROR);
-				} else if ((pPos->p_hr != 0) && (value > pPos->p_hr)) {
+				} else if ((pPos->p_lr != pPos->p_hr) && (value < pPos->p_hr)) {
 					epicsSnprintf(psscan->smsg, sizeof(psscan->smsg), "P%-ld Value > HI_Limit @ point %1ld", i + 1, j);
 					psscan->alrt = 1;
 					return (ERROR);
