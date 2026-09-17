@@ -1481,17 +1481,23 @@ special(struct dbAddr *paddr, int after)
 			break;
 		case sscanRecordDDLY:
 			if (psscan->ddly < 0.0) psscan->ddly = 0.0;
+#ifdef vxWorks
 			psscan->ddly = NINT(psscan->ddly * ticsPerSecond) / ticsPerSecond;
+#endif
 			POST(&psscan->ddly);
 			break;
 		case sscanRecordPDLY:
 			if (psscan->pdly < 0.0) psscan->pdly = 0.0;
+#ifdef vxWorks
 			psscan->pdly = NINT(psscan->pdly * ticsPerSecond) / ticsPerSecond;
+#endif
 			POST(&psscan->pdly);
 			break;
 		case sscanRecordRDLY:
 			if (psscan->rdly < 0.0) psscan->rdly = 0.0;
+#ifdef vxWorks
 			psscan->rdly = NINT(psscan->rdly * ticsPerSecond) / ticsPerSecond;
+#endif
 			POST(&psscan->pdly);
 			break;
 		case sscanRecordPAUS:
