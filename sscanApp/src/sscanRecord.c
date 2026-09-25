@@ -4596,7 +4596,7 @@ adjLinParms(paddr)
 			if (fabs(pParms->p_si) <= DBL_EPSILON) {
 				psscan->npts = psscan->mpts;
 			} else {
-				psscan->npts = ((pParms->p_ep - pParms->p_sp) / pParms->p_si) + 1;
+				psscan->npts = round(((pParms->p_ep - pParms->p_sp) / pParms->p_si) + 1);
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
@@ -4636,7 +4636,7 @@ adjLinParms(paddr)
 			if (fabs(pParms->p_si) <= DBL_EPSILON) {
 				psscan->npts = psscan->mpts;
 			} else {
-				psscan->npts = ((pParms->p_cp - pParms->p_sp) * 2 / pParms->p_si) + 1;
+				psscan->npts = round(((pParms->p_cp - pParms->p_sp) * 2 / pParms->p_si) + 1);
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
@@ -4677,7 +4677,7 @@ adjLinParms(paddr)
 						POST(&pParms->p_si);
 					}
 				}
-				psscan->npts = ((pParms->p_ep - pParms->p_sp) / pParms->p_si) + 1;
+				psscan->npts = round(((pParms->p_ep - pParms->p_sp) / pParms->p_si) + 1);
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
@@ -4742,7 +4742,7 @@ adjLinParms(paddr)
 			if (fabs(pParms->p_si) <= DBL_EPSILON) {
 				psscan->npts = psscan->mpts;
 			} else {
-				psscan->npts = ((pParms->p_ep - pParms->p_sp) / pParms->p_si) + 1;
+				psscan->npts = round(((pParms->p_ep - pParms->p_sp) / pParms->p_si) + 1);
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
@@ -4781,7 +4781,7 @@ adjLinParms(paddr)
 			if (fabs(pParms->p_si) <= DBL_EPSILON) {
 				psscan->npts = psscan->mpts;
 			} else {
-				psscan->npts = (((pParms->p_ep - pParms->p_cp) * 2) / pParms->p_si) + 1;
+				psscan->npts = round((((pParms->p_ep - pParms->p_cp) * 2) / pParms->p_si) + 1);
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
@@ -4842,7 +4842,7 @@ adjLinParms(paddr)
 			if (fabs(pParms->p_si) <= DBL_EPSILON) {
 				psscan->npts = psscan->mpts;
 			} else {
-				psscan->npts = (((pParms->p_cp - pParms->p_sp) * 2) / pParms->p_si) + 1;
+				psscan->npts = round((((pParms->p_cp - pParms->p_sp) * 2) / pParms->p_si) + 1);
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
@@ -4865,7 +4865,7 @@ adjLinParms(paddr)
 			if (fabs(pParms->p_si) <= DBL_EPSILON) {
 				psscan->npts = psscan->mpts;
 			} else {
-				psscan->npts = (((pParms->p_ep - pParms->p_cp) * 2) / pParms->p_si) + 1;
+				psscan->npts = round((((pParms->p_ep - pParms->p_cp) * 2) / pParms->p_si) + 1);
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
@@ -4907,7 +4907,7 @@ adjLinParms(paddr)
 			if (fabs(pParms->p_si) <= DBL_EPSILON) {
 				psscan->npts = psscan->mpts;
 			} else {
-				psscan->npts = (pParms->p_wd / pParms->p_si) + 1;
+				psscan->npts = round((pParms->p_wd / pParms->p_si) + 1);
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
@@ -4948,7 +4948,7 @@ adjLinParms(paddr)
 			if (fabs(pParms->p_si) <= DBL_EPSILON) {
 				psscan->npts = psscan->mpts;
 			} else {
-				psscan->npts = (pParms->p_wd / pParms->p_si) + 1;
+				psscan->npts = round((pParms->p_wd / pParms->p_si) + 1);
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
@@ -4971,7 +4971,7 @@ adjLinParms(paddr)
 			if (fabs(pParms->p_si) <= DBL_EPSILON) {
 				psscan->npts = psscan->mpts;
 			} else {
-				psscan->npts = (pParms->p_wd / pParms->p_si) + 1;
+				psscan->npts = round((pParms->p_wd / pParms->p_si) + 1);
 			}
 			if (psscan->npts > psscan->mpts) {
 				psscan->npts = psscan->mpts;
