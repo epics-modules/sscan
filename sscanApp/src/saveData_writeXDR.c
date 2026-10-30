@@ -756,14 +756,15 @@ LOCAL int fileStatus(char* fname)
 LOCAL int checkRWpermission(char* path) {
 	/* Quick and dirty way to check for R/W permission */
 	int  file;
-	char tmpfile[100];
+	/* must hold a COMPONENT_STRING_SIZE path, "/rix_", and the appended '_'s */
+	char tmpfile[COMPONENT_STRING_SIZE + 16];
 	
 	strncpy(tmpfile, path, sizeof(tmpfile) - 1);
 	tmpfile[sizeof(tmpfile) - 1] = '\0';
 	strncat(tmpfile, "/rix_", sizeof(tmpfile) - 1 - strlen(tmpfile));
 
-	while (fileStatus(tmpfile)==OK && strlen(tmpfile)<100) {
-		strncat(tmpfile, "_", 100-strlen(tmpfile));
+	while (fileStatus(tmpfile)==OK && strlen(tmpfile)<sizeof(tmpfile)-1) {
+		strncat(tmpfile, "_", sizeof(tmpfile) - 1 - strlen(tmpfile));
 	}
 
 	if (fileStatus(tmpfile)==OK) {
